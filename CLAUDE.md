@@ -6,6 +6,10 @@ The product is OnQuest (`onquest.in`). "Scrapbook" in code, like `ScrapbookPage`
 
 Specs: `docs/travel-scrapbook-mvp-prd.md` (what), `docs/01-hld.md` (how it fits together), `docs/02-lld.md` (details), `docs/03-security-visibility-seo.md` (privacy, security, SEO). Visual source of truth for the Beach template: `docs/reference/goa-trip.html`.
 
+## How work arrives
+
+Approved product PRDs go in `docs/prds/`. The `tech-lead` agent (`.claude/agents/tech-lead.md`) turns each one into a spec in `docs/specs/<feature>.md` (from `docs/specs/TEMPLATE.md`) plus one GitHub issue per task. Build only what an approved spec describes; if the spec and the code disagree, stop and ask. Work is tracked in the "OnQuest Build Tracker" Google Sheet.
+
 ## Stack
 
 Next.js 16 (App Router) · React 19 · TypeScript (strict) · Tailwind (app screens) · CSS modules (templates) · Supabase (Auth, Postgres, Storage) · Zustand (editor only) · zod · MapLibre GL · modern-screenshot · PostHog · Sentry · Vitest · Playwright
