@@ -1,0 +1,15 @@
+@import 'tailwindcss';
+
+/* Tailwind is for app screens (editor, settings). Trip pages are styled by their template. */
+
+html {
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
