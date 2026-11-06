@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push to the same branch cancels the run that's still going.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Typecheck, lint, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Placeholders so the build can start. CI never talks to a real Supabase project
+      # and never gets real keys; database tests run in PGlite (in-memory Postgres).
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit and database access tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
