@@ -4,7 +4,7 @@ A home on the web for your trips: each trip is an interactive scrapbook page (`/
 
 The product is OnQuest (`onquest.in`). "Scrapbook" in code, like `ScrapbookPage`, is the name of the page style and stays.
 
-Specs: `docs/travel-scrapbook-mvp-prd.md` (what), `docs/01-hld.md` (how it fits together), `docs/02-lld.md` (details), `docs/03-security-visibility-seo.md` (privacy, security, SEO). Visual source of truth for the Beach template: `docs/reference/goa-trip.html`.
+Specs: `docs/travel-scrapbook-mvp-prd.md` (what), `docs/01-hld.md` (how it fits together), `docs/02-lld.md` (details), `docs/03-security-visibility-seo.md` (privacy, security, SEO). Decisions that override older docs: `docs/decisions/`. Visual source of truth for the Beach template: `docs/reference/goa-trip.html`.
 
 ## How work arrives
 
@@ -59,6 +59,7 @@ Imports flow one way: `app → features → templates → lib`. Templates never 
 
 ## Data rules
 
+- **No in-place updates** (`docs/decisions/0001-no-in-place-updates.md`). Every record has one permanent `key` (no second id, no version number); a row, once written, never changes. Every save moves the current row to the archive and inserts the new one under the same key, in one Postgres function (one transaction). All lookups, references, URLs, cache tags and analytics use the `key`. No `.update()` or `.upsert()` on data tables, no update grants, policies or `updated_at` triggers. Saves pass the `saved_at` of the row they were based on and fail with a conflict if the live row has changed. The only real delete is a user's trip or account deletion, which removes the live row, its archived rows and the files. *The current schema doesn't follow this yet; new work must, and the migration spec will fix the rest.*
 - All writes go through server actions built with `action()` from `lib/action.ts` (zod-validated, signed-in check, typed `{ ok, data | error }` result).
 - The browser talks to Supabase directly only to upload photo files.
 - Public pages read only via `get_trip`, `get_profile`, `list_sitemap_trips`. Never add an anonymous `select` policy to a table.
@@ -84,6 +85,7 @@ Published trips, shared links, drafts and stored photos already exist, and the p
 - Don't change `jitter` keys, its algorithm or template defaults unless the spec says existing pages should change.
 - Storage paths and variant names never change; a replaced photo gets a new id.
 - Test changes to stored shapes with old-shape data, not only new data.
+- Archived rows keep their old shape forever: reading them follows the same rules.
 
 ## Templates
 
