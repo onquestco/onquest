@@ -8,7 +8,7 @@ Specs: `docs/travel-scrapbook-mvp-prd.md` (what), `docs/01-hld.md` (how it fits 
 
 ## How work arrives
 
-Approved product PRDs go in `docs/prds/`. The `tech-lead` agent (`.claude/agents/tech-lead.md`) turns each one into a spec in `docs/specs/<feature>.md` (from `docs/specs/TEMPLATE.md`) plus one GitHub issue per task. Build only what an approved spec describes; if the spec and the code disagree, stop and ask. Work is tracked in the "OnQuest Build Tracker" Google Sheet.
+Approved product PRDs go in `docs/prds/`. The `tech-lead` agent (`.claude/agents/tech-lead.md`) turns each one into a spec in `docs/specs/<feature>.md` (from `docs/specs/TEMPLATE.md`) plus one GitHub issue per task. The `reviewer` agent reviews the PRD and spec together before the CTO approves, and can audit the whole setup on request (reports in `docs/reviews/`). Build only what an approved spec describes; if the spec and the code disagree, stop and ask. Every PR must pass CI (`.github/workflows/ci.yml`: typecheck, lint, test, build) and a review by the `reviewer` agent (`.claude/agents/reviewer.md`) before the human UX test and code review. Work is tracked in the "OnQuest Build Tracker" Google Sheet.
 
 ## Stack
 
@@ -73,6 +73,17 @@ Imports flow one way: `app → features → templates → lib`. Templates never 
 - The secret key is only used in `lib/supabase/admin.ts` (`import 'server-only'`).
 - Use `supabase.auth.getUser()` on the server to identify the user.
 - Don't log user text, emails or photo URLs.
+
+## Backward compatibility (do not break)
+
+Published trips, shared links, drafts and stored photos already exist, and the previous release must work if we roll back.
+
+- `trips.content` has no version and is parsed on every view: add fields as optional with defaults in `toTripData()`; never narrow a limit, make a field required, rename or remove one without a migration that rewrites old rows.
+- Migrations: additive first, remove later (expand → contract). Old code must keep working while a migration runs.
+- Never change a public URL without a permanent redirect. Never change `get_*` function arguments or remove returned fields.
+- Don't change `jitter` keys, its algorithm or template defaults unless the spec says existing pages should change.
+- Storage paths and variant names never change; a replaced photo gets a new id.
+- Test changes to stored shapes with old-shape data, not only new data.
 
 ## Templates
 
