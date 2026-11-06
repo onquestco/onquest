@@ -21,6 +21,7 @@ Rules we design by:
 2. **The phone does the image work** (resize, EXIF, Instagram rendering). No image servers.
 3. **The database enforces privacy** (RLS). App code never decides alone who sees what.
 4. **Templates are plain React components** that take `TripData` and return markup. A new template is a new folder.
+5. **Records are never updated in place.** Each record has one permanent key; every save moves the current row to the archive and inserts the new one under the same key, and all lookups are by key (`docs/decisions/0001-no-in-place-updates.md`). The tables below still describe the first version of the schema, which updates in place; the migration spec will bring them in line.
 
 ---
 

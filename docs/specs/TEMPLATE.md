@@ -48,6 +48,7 @@ New or changed `get_*` functions, their arguments and returned fields. "None" if
 ## 5. Database and storage
 
 - Migration file name and what it does
+- No in-place updates (`docs/decisions/0001-no-in-place-updates.md`): for each record touched, its key, the save function that archives + inserts, what each action archives (save / publish / unpublish / visibility / delete), the `saved_at` conflict check, and how a user's delete removes the live row, archived rows and files
 - RLS policies (owner-only unless stated)
 - Database tests to add in `tests/db/`
 - Storage paths and bucket rules
@@ -70,6 +71,7 @@ What already exists and must keep working: published trips, shared links and Ins
 | Stored `trips.content` (old rows still parse) | | | |
 | Drafts in progress | | | |
 | Migrations (expand → contract, rollback-safe) | | | |
+| Archived rows (old shapes still readable) | | | |
 | Public functions and their zod schemas | | | |
 | Public URLs, slugs, handles, OG | | | |
 | Existing trip rendering (jitter keys, defaults, templates) | | | |
