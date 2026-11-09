@@ -39,14 +39,15 @@ You don't write migrations, database tests, save functions or server action logi
 1. **Branch:** `git checkout -b feat/<issue-number>-<short-slug>` from an up-to-date `main`.
 2. **Follow the PRD exactly:** its flow, its copy word for word, every state (loading, empty, error, success, offline). Show action errors to the user in plain words; never swallow them.
 3. **Mobile first:** design for a phone in portrait first; tap targets at least 44 px; works with touch only (nothing hover-only); labels on icon buttons; respects `prefers-reduced-motion`; readable contrast.
-4. **Server components by default;** `'use client'` only where there's interaction. Public pages render their text on the server (SEO and link previews).
-5. **Templates stay pure:** `TripData` in, markup out. No fetching, no global state, no `Math.random()` (use `jitter(seed, key)`). Build from `templates/shared`. Hide anything with missing data; never render an empty box. Check a small trip (1 day / 3 photos / no text) and a big one (10 days / 60 photos).
-6. **Don't change what published trips look like** unless the spec says so: keep `jitter` keys, slot positions, template defaults and registered template ids exactly as they are.
-7. **Images:** use the pre-generated sizes (thumb first, display near the viewport), lazy-load below the fold, set width and height to avoid layout shift.
-8. **Public pages:** `generateMetadata`, the right index/noindex (unlisted, thin trips, empty profiles and app pages are noindex), OG image, sitemap only for indexable pages. Never change a public URL without a redirect.
-9. **Security:** never `dangerouslySetInnerHTML` with user text; JSON-LD escapes `<`; no secrets or `SUPABASE_SECRET_KEY` in client code; don't put user text, emails or photo URLs in logs or analytics properties.
-10. **Analytics:** add exactly the events the spec lists, with its names and properties.
-11. **Layering:** imports flow `app → features → templates → lib`. Small files, plain names, no `any`, no barrel files.
+4. **Use the design system on every app screen** (decision 0002, `design-system/README.md`): colours, fonts, type styles and radii come only from `design-system/tokens.ts`, as Tailwind token classes (`bg-brand-strong`, `text-ink`, `text-title`, `rounded-pill`), the components in `design-system/components/`, or `color('…')` for raw values. No hex, `rgb()`, palette classes (`slate-*`), arbitrary values (`p-[13px]`) or font families in `app/`, `features/` or `lib/`; `noRawStyles.test.ts` fails the build. A missing colour or size is a design-system change, not a one-off: list it in the PR for the founder. Templates keep their own look and never import `design-system/`.
+5. **Server components by default;** `'use client'` only where there's interaction. Public pages render their text on the server (SEO and link previews).
+6. **Templates stay pure:** `TripData` in, markup out. No fetching, no global state, no `Math.random()` (use `jitter(seed, key)`). Build from `templates/shared`. Hide anything with missing data; never render an empty box. Check a small trip (1 day / 3 photos / no text) and a big one (10 days / 60 photos).
+7. **Don't change what published trips look like** unless the spec says so: keep `jitter` keys, slot positions, template defaults and registered template ids exactly as they are.
+8. **Images:** use the pre-generated sizes (thumb first, display near the viewport), lazy-load below the fold, set width and height to avoid layout shift.
+9. **Public pages:** `generateMetadata`, the right index/noindex (unlisted, thin trips, empty profiles and app pages are noindex), OG image, sitemap only for indexable pages. Never change a public URL without a redirect.
+10. **Security:** never `dangerouslySetInnerHTML` with user text; JSON-LD escapes `<`; no secrets or `SUPABASE_SECRET_KEY` in client code; don't put user text, emails or photo URLs in logs or analytics properties.
+11. **Analytics:** add exactly the events the spec lists, with its names and properties.
+12. **Layering:** imports flow `app → features → templates → lib`. Small files, plain names, no `any`, no barrel files.
 
 ## Before you open the PR
 
