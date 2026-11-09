@@ -10,17 +10,18 @@ Companion to `01-hld.md` and `02-lld.md`. Part A: who can see what. Part B: keep
 
 | | Public | Unlisted | Private | Draft |
 |---|---|---|---|---|
-| URL | `/@swati/goa-2026` | `/@swati/goa-2026-k3f9x2` (random 6-char suffix) | none | none |
-| Owner | ✓ | ✓ | ✓ at `/trips/[id]/preview` | ✓ in editor |
-| Anyone with the link | ✓ | ✓ | 404 | 404 |
+| URL | `/@swati/goa-2026` | `/@swati/goa-2026-k3f9x2` (random 6-char suffix, when first published as unlisted) | keeps its URL | none |
+| Owner | ✓ | ✓ | ✓ at `/quests/[key]/view` | ✓ in editor |
+| Anyone with the link | ✓ | ✓ | "This Quest is private." (no data) | 404 |
+| In search and feeds | ✓ | ✗ | ✗ | ✗ |
 | On profile, profile map, stats | ✓ | ✗ | ✗ | ✗ |
 | Search engines | ✓ if ≥ 80 words of text, else `noindex` | `noindex` | — | — |
 | WhatsApp/IG link preview | ✓ | ✓ | — | — |
 
-- **New trips default to Unlisted.** The publish screen explains the three options in one line each.
+- **New Quests default to the creator's "New Quests start as" setting, Public unless changed** (MVP PRD screen 8). The publish screen explains the three options in one line each.
 - **Why the suffix:** without it `/@swati/goa-2026` is guessable. 36⁶ ≈ 2 billion combinations makes guessing impractical.
-- **Public → Unlisted** gives the trip a new suffixed URL; the old one 404s, so it can't lead anyone to the new link.
-- **Unlisted → Public** keeps the same URL.
+- **The URL is fixed at first publish.** Changing visibility never changes it (MVP PRD M28: "its link still works"), so a Quest made unlisted after being public keeps its guessable URL. Deleted Quests' URLs show "This Quest was removed." Old handles redirect to the new one.
+- **Likes** are anonymous to viewers and to the creator (count only). **View counts** are for the OnQuest team only (PostHog), never stored in our database.
 - **Profiles** are always public. A profile with no public trips is `noindex`.
 
 ### A.2 Photos: the one honest trade-off
@@ -53,7 +54,7 @@ Later: a private bucket with signed URLs for private trips (all storage code is 
 ### B.2 Rules for the code
 
 1. Every table has RLS on. Policies are owner-only.
-2. Public data comes only from `get_trip`, `get_profile`, `list_sitemap_trips`.
+2. Public data comes only from security-definer functions that return published public/unlisted data: `get_trip`, `get_profile`, `list_sitemap_trips`, and in the MVP `get_trip_social`, `get_trip_status`, `resolve_handle`, `list_trending_quests`, `list_place_chips`, `search_public`, `list_quest_cards`, `list_sitemap_profiles` (specs B and C §4). Search, feeds and lists only ever include `public` Quests.
 3. All writes go through server actions using `lib/action.ts` (zod + signed-in check).
 4. Server code uses `supabase.auth.getUser()`, not `getSession()`, to decide who the user is.
 5. Browser uses the **publishable** key; server admin tasks use the **secret** key. Don't use the legacy anon/service_role keys (retiring end of 2026).
@@ -80,9 +81,9 @@ CSP stays report-only during the friends test, then gets enforced once the repor
 ### B.4 Accounts, privacy and legal basics
 
 - Delete account (in Settings) removes all trips, files and the login.
-- Simple **Terms** and **Privacy** pages before the friends test: users own their photos and let us display them; minimum age **18**; what we collect; the services we use (Supabase, Vercel, PostHog, Sentry, MapTiler, geocoder, Resend); how to delete; a contact email for complaints.
+- Simple **Terms** and **Privacy** pages before the friends test: users own their photos and let us display them; minimum age **18**; what we collect; the services we use (Supabase, Vercel, PostHog, Sentry, MapTiler, geocoder, Resend, Anthropic for captions); how to delete; a contact email for complaints.
 - India's **DPDP Act 2023** applies to Indian users (its Rules are being phased in). Notice at signup, working deletion, and a grievance contact cover the basics. Setting the minimum age at 18 avoids the parental-consent requirements for children. *Not legal advice; get a short review before a public launch.*
-- PostHog in cookieless mode (no consent banner needed for the friends test).
+- PostHog through a first-party `/ingest` proxy with a random device id (`anon_id`) kept in `localStorage`, so unique viewers can be counted once per browser (MVP spec A §3.9, CTO decision C-A8). This replaces cookieless mode; the privacy policy must say so. No user text, emails, photo URLs or locations in any event.
 - MFA on all founder accounts (Supabase, Vercel, GitHub, Google, domain registrar). GitHub secret scanning + Dependabot on.
 
 **Later:** rate limiting and CAPTCHA (add when abuse shows up), a report form instead of mailto, nonce-based CSP on app pages.
@@ -100,7 +101,9 @@ CSP stays report-only during the friends test, then gets enforced once the repor
 | Public trip with ≥ 80 words | ✓ |
 | Public trip with < 80 words, empty profiles | `noindex, follow` (thin pages hurt the whole site) |
 | Unlisted trips | `noindex, nofollow` |
-| App pages (`/trips/*`, `/new`, `/login`, `/settings`, `/onboarding`) | `noindex` + disallowed in robots |
+| Private and removed Quest messages | `noindex` |
+| `/guides/[slug]` | ✓ |
+| App pages (`/quests/*`, `/home`, `/explore`, `/notifications`, `/welcome`, `/login`, `/settings`, `/onboarding`, followers/following lists) | `noindex` + disallowed in robots |
 
 ### C.2 Must-haves
 
