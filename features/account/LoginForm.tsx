@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useTransition, type FormEvent } from 'react';
+import { Button } from '@/design-system/components/Button';
+import { TextField } from '@/design-system/components/TextField';
 import { signInWithEmail, signInWithGoogle } from './actions';
 
 export function LoginForm({ initialError }: { initialError?: string }) {
@@ -27,43 +29,31 @@ export function LoginForm({ initialError }: { initialError?: string }) {
   }
 
   if (emailSent) {
-    return <p className="text-slate-700">Check your email for a sign-in link.</p>;
+    return <p className="text-body text-ink">Check your email for a sign-in link.</p>;
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <button
-        type="button"
-        onClick={continueWithGoogle}
-        disabled={pending}
-        className="rounded-full bg-slate-800 px-5 py-3 font-medium text-white disabled:opacity-50"
-      >
+      <Button onClick={continueWithGoogle} disabled={pending} block>
         Continue with Google
-      </button>
+      </Button>
 
       <form onSubmit={sendEmail} className="flex flex-col gap-3">
-        <label className="flex flex-col gap-1 text-sm text-slate-700">
-          Or get a link by email
-          <input
-            type="email"
-            required
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-3 text-base"
-          />
-        </label>
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-full border-2 border-slate-800 px-5 py-3 font-medium text-slate-800 disabled:opacity-50"
-        >
+        <TextField
+          label="Or get a link by email"
+          type="email"
+          required
+          autoComplete="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+        />
+        <Button type="submit" variant="secondary" disabled={pending} block>
           Send sign-in link
-        </button>
+        </Button>
       </form>
 
       {error && (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-label font-normal text-danger">
           {error}
         </p>
       )}

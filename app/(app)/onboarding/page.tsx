@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getCurrentUser, getMyProfile } from '@/features/account/getCurrentUser';
+import { Logo } from '@/design-system/components/Logo';
 import { HandleForm } from '@/features/account/HandleForm';
 import { SITE_NAME } from '@/lib/site';
 
@@ -15,8 +16,9 @@ export default async function OnboardingPage() {
   const suggestedName = user.user_metadata.full_name;
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-sm flex-col justify-center gap-6 px-4">
-      <h1 className="text-3xl font-semibold text-slate-800">Welcome to {SITE_NAME}</h1>
+    <main className="mx-auto flex min-h-svh max-w-sm flex-col justify-center gap-8 px-4">
+      <Logo />
+      <h1 className="text-title text-ink">Welcome to {SITE_NAME}</h1>
       <HandleForm initialName={typeof suggestedName === 'string' ? suggestedName : ''} />
     </main>
   );

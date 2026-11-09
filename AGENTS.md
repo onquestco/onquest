@@ -22,6 +22,7 @@ npm run typecheck
 npm run lint
 npm test              # unit + database access tests (in-memory Postgres, no Docker needed)
 npm run format        # Prettier
+npm run tokens        # regenerate design-system/tokens.css after changing tokens.ts
 supabase start        # local DB, auth, storage (from week 2)
 supabase db reset     # re-run migrations + seed
 supabase gen types typescript --local > lib/supabase/database.types.ts
@@ -40,11 +41,19 @@ app/         Routes only. Fetch data, render one feature component. No logic.
 features/    Product areas: trip-page, profile, editor, export, account.
              Each owns its components, server actions, helpers and tests.
 templates/   Scrapbook looks. shared/ = building blocks, beach/ mountain/ = templates.
+design-system/ App look: tokens.ts (the only colours, fonts, type styles, radii), generated tokens.css, fonts, Button/TextField/Logo.
 lib/         App-wide helpers: supabase clients, storage, geo, schemas, dates, analytics.
 supabase/    Migrations + seed.
 ```
 
-Imports flow one way: `app → features → templates → lib`. Templates never import from features. lib imports nothing from the app.
+Imports flow one way: `app → features → templates → lib`. Templates never import from features. lib imports nothing from the app. `app` and `features` use `design-system/`; templates never do.
+
+## Design system (do not break)
+
+- App colours, fonts, type styles and radii come only from `design-system/tokens.ts` (decision `docs/decisions/0002-design-system-single-source.md`), used as Tailwind classes (`bg-brand-strong`, `text-ink`, `text-title`, `rounded-pill`), the components in `design-system/components/`, or `color('…')` for raw values.
+- No hex, `rgb()`, Tailwind palette classes (`slate-*`), arbitrary values (`p-[13px]`), `text-sm`-style sizes or font families in `app/`, `features/` or `lib/`. `design-system/noRawStyles.test.ts` fails the build.
+- A new colour or size is a design-system change: the claude.ai design system page, then `tokens.ts`, then `npm run tokens`.
+- Templates keep their own palette and fonts (`theme.ts`, `fonts.ts`) and never import `design-system/`.
 
 ## Code style
 

@@ -1,6 +1,8 @@
 @import 'tailwindcss';
+/* The only colours, fonts, type sizes and radii in the app (decision 0002). */
+@import '../design-system/tokens.css';
 
-/* Tailwind is for app screens (editor, settings). Trip pages are styled by their template. */
+/* Tailwind is for app screens. Trip pages are styled by their template. */
 
 html {
   scroll-behavior: smooth;

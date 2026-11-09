@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/features/account/getCurrentUser';
+import { Logo } from '@/design-system/components/Logo';
 import { LoginForm } from '@/features/account/LoginForm';
 import { SITE_NAME } from '@/lib/site';
 
@@ -13,8 +14,9 @@ export default async function LoginPage({ searchParams }: Props) {
   const { error } = await searchParams;
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-sm flex-col justify-center gap-6 px-4">
-      <h1 className="text-3xl font-semibold text-slate-800">Sign in to {SITE_NAME}</h1>
+    <main className="mx-auto flex min-h-svh max-w-sm flex-col justify-center gap-8 px-4">
+      <Logo />
+      <h1 className="text-title text-ink">Sign in to {SITE_NAME}</h1>
       <LoginForm initialError={error ? 'That sign-in link did not work. Please try again.' : undefined} />
     </main>
   );

@@ -1,0 +1,64 @@
+/* Generated from design-system/tokens.ts by `npm run tokens`. Do not edit by hand. */
+
+@theme {
+  --color-*: initial;
+  --font-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --spacing: 4px;
+
+  --color-brand: #ea6100;
+  --color-brand-bright: #ff6900;
+  --color-brand-hover: #f86f0a;
+  --color-brand-strong: #c25000;
+  --color-logo-brown: #402b09;
+  --color-brand-tint: #f7ceb0;
+  --color-brand-wash: #fdefe5;
+  --color-on-brand: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-page: #f9fafb;
+  --color-ink: #111827;
+  --color-ink-muted: #374151;
+  --color-ink-subtle: #9ca3af;
+  --color-line: #d1d5db;
+  --color-line-control: #6b7280;
+  --color-night: #000000;
+  --color-night-band: #210d0d;
+  --color-on-night: #ffffff;
+  --color-on-night-muted: #ffffffcc;
+  --color-accent-blue: #3b82f6;
+  --color-accent-green: #22c55e;
+  --color-danger: #b91c1c;
+  --color-success: #15803d;
+
+  --font-sans: var(--font-inter), Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --text-display: 72px;
+  --text-display--line-height: 1.1;
+  --text-display--font-weight: 700;
+  --text-display--letter-spacing: -1.8px;
+  --text-headline: 48px;
+  --text-headline--line-height: 1.1;
+  --text-headline--font-weight: 700;
+  --text-title: 24px;
+  --text-title--line-height: 32px;
+  --text-title--font-weight: 700;
+  --text-lead: 18px;
+  --text-lead--line-height: 28px;
+  --text-lead--font-weight: 500;
+  --text-body: 16px;
+  --text-body--line-height: 24px;
+  --text-body--font-weight: 400;
+  --text-label: 14px;
+  --text-label--line-height: 20px;
+  --text-label--font-weight: 500;
+  --text-caption: 12.8px;
+  --text-caption--line-height: 1.25;
+  --text-caption--font-weight: 400;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 24px;
+  --radius-pill: 9999px;
+}

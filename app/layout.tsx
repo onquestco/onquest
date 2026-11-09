@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
+import { appFontClassName } from '@/design-system/fonts';
+import { color } from '@/design-system/tokens';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 import './globals.css';
 
@@ -14,12 +16,13 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: 'cover',
   colorScheme: 'light',
+  themeColor: color('surface'),
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" className={appFontClassName}>
+      <body className="text-ink antialiased">{children}</body>
     </html>
   );
 }
