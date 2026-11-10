@@ -28,7 +28,7 @@ function runWorker(file: File): Promise<ProcessedImage> {
   });
 }
 
-function processInTurn(file: File): Promise<ProcessedImage> {
+export function processInTurn(file: File): Promise<ProcessedImage> {
   const result = lastProcessing.then(() => runWorker(file));
   lastProcessing = result.catch(() => undefined);
   return result;

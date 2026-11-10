@@ -24,7 +24,7 @@ export type UploadDeps = {
 };
 
 export type UploadCallbacks = {
-  onStart: (uploadId: string, fileName: string) => void;
+  onStart: (uploadId: string, file: File) => void;
   /** Metadata is ready: arranging can start before the upload finishes. */
   onProcessed: (uploadId: string, photo: PickedPhoto) => void;
   /** Thumb and display are stored: the photo can join the draft. */
@@ -125,7 +125,7 @@ export function createUploadQueue(tripKey: string, deps: UploadDeps, callbacks: 
     add(files: File[]) {
       for (const file of files) {
         const uploadId = deps.createId();
-        callbacks.onStart(uploadId, file.name);
+        callbacks.onStart(uploadId, file);
         waiting.push({ uploadId, file });
       }
       startNext();
