@@ -35,9 +35,14 @@ const SUPABASE_STANDINS = `
 
   grant usage on schema public, auth, storage to anon, authenticated;
   grant execute on function auth.uid() to anon, authenticated;
+
+  -- Supabase's own defaults: everything new in public is open to every API role until a
+  -- migration takes it away. Without these, a forgotten revoke passes here and leaks on Supabase.
+  alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+  alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
+  alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
 `;
 
-// Public tables get no default grants here: our migrations must grant what the app needs.
 const STORAGE_GRANTS = `
   grant select, insert, delete on storage.objects to anon, authenticated;
 `;
