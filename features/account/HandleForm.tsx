@@ -24,7 +24,7 @@ export function HandleForm({ initialName }: { initialName: string }) {
       } else if (!result.data.saved) {
         setError(result.data.reason);
       } else {
-        router.replace('/');
+        router.replace('/welcome');
       }
     });
   }
