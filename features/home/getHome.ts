@@ -29,8 +29,17 @@ async function getSuggestions(): Promise<QuestCard[]> {
   return toQuestCards(data);
 }
 
-/** Home (screen 11): the first feed page and "Suggested for you". */
-export async function getHome() {
-  const [feed, suggested] = await Promise.all([getFeedPage(new Date().toISOString(), 0), getSuggestions()]);
-  return { feed, suggested };
+/**
+ * Home (screen 11): the first feed page and "Suggested for you". Either failing leaves the rest
+ * of Home working: the feed says it couldn't load, suggestions are left out.
+ */
+export async function getHome(): Promise<{ feed: FeedPage | null; suggested: QuestCard[] }> {
+  const [feed, suggested] = await Promise.allSettled([
+    getFeedPage(new Date().toISOString(), 0),
+    getSuggestions(),
+  ]);
+  return {
+    feed: feed.status === 'fulfilled' ? feed.value : null,
+    suggested: suggested.status === 'fulfilled' ? suggested.value : [],
+  };
 }
