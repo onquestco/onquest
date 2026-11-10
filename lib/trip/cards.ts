@@ -19,6 +19,8 @@ export const QuestCardSchema = z.object({
   publishedAt: z.string().optional(),
   /** The live row's saved_at: the ⋯ menu's conflict token. Opaque, never parsed as a Date. */
   savedAt: z.string(),
+  /** Own cards only: whether comments are on (the ⋯ menu's switch). */
+  commentsOn: z.boolean().optional(),
   /** Own cards only: the draft's saved_at. */
   draftSavedAt: z.string().optional(),
   owner: z.object({

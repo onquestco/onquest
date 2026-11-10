@@ -6,7 +6,7 @@ import { z } from 'zod';
 // token the save functions compare, so it must be the exact string Postgres produces.
 
 const TRIP_COLUMNS =
-  'key, status, visibility, slug, seed, published_at, saved_at_text:saved_at::text, published_draft_saved_at_text:published_draft_saved_at::text';
+  'key, status, visibility, slug, seed, published_at, comments_on, saved_at_text:saved_at::text, published_draft_saved_at_text:published_draft_saved_at::text';
 const DRAFT_COLUMNS =
   'key, template_id, title, short_title, start_date, end_date, cover_photo_key, content, photos, places, started_at, saved_at_text:saved_at::text';
 
@@ -17,6 +17,7 @@ const TripRowSchema = z.object({
   slug: z.string(),
   seed: z.number(),
   published_at: z.string().nullable(),
+  comments_on: z.boolean(),
   saved_at_text: z.string(),
   published_draft_saved_at_text: z.string().nullable(),
 });

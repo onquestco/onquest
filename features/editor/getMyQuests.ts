@@ -34,6 +34,7 @@ export async function getMyQuests(): Promise<QuestCard[]> {
         commentCount: 0,
         publishedAt: trip.published_at ?? undefined,
         savedAt: trip.saved_at_text,
+        commentsOn: trip.comments_on,
         draftSavedAt: draft.saved_at_text,
         owner: { key: user.id, handle: profile.handle, name: profile.name ?? profile.handle },
       };

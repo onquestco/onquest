@@ -65,3 +65,8 @@ export const CloseIcon = ({ size = 24 }: Props) => (
     <path d="M6 6l12 12M18 6L6 18" />
   </svg>
 );
+export const MoreIcon = ({ size = 24 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M5 12h.01M12 12h.01M19 12h.01" strokeWidth={3} />
+  </svg>
+);
