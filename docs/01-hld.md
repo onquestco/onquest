@@ -12,7 +12,7 @@ Design goal: **the simplest system that is safe, fast on a phone, and makes addi
 |---|---|
 | Team | 2 people, ~4 weeks to friends test |
 | Scale (v1) | Hundreds of users, a few thousand trips. 100x should need tuning, not a rewrite |
-| Budget | Vercel Hobby (Pro once something earns money), Supabase Pro (prod + preview projects), Resend, Anthropic pay-as-you-go (Haiku 5.5, ≈ $0.0005 per Quest), Resend free, free tiers for maps/analytics |
+| Budget | Vercel Hobby (CTO, 10 Nov: no monetisation in the MVP; accepted risk that Hobby's terms read as non-commercial and allow one member; move to Pro the day Vercel flags anything or something earns money), Supabase Pro organisation (prod + preview projects, both on Pro), Resend free (100/day; notification emails capped at 70/day in code so sign-in links always send), Anthropic pay-as-you-go (Haiku 5.5, ≈ $0.0005 per Quest), Nominatim (free, 1 request/s, cached in Postgres), free tiers for maps/analytics |
 | Must be great at | Mobile trip page, smooth upload, pretty WhatsApp link previews |
 | Must not do | Leak unlisted/private trips, leak photo GPS, lose a draft |
 
@@ -184,7 +184,7 @@ Private Quests keep their URL, which shows "This Quest is private." The owner se
 | Env | Database |
 |---|---|
 | Local | `supabase start`, seeded with the Goa demo trip |
-| Vercel Preview | Points at the Supabase **preview** project (writes allowed, so the UX test can create Quests). Its own keys; never prod's secret key |
+| Vercel Preview | Points at the Supabase **preview** project (on the Pro org, so no pausing; writes allowed, so the UX test can create Quests). Its own keys; never prod's secret key |
 | Production | Supabase Pro, spend cap on, daily backups |
 
 CI: typecheck, lint, unit tests, database access tests against a local Supabase, one Playwright smoke test.

@@ -21,6 +21,9 @@ Companion to `01-hld.md` and `02-lld.md`. Part A: who can see what. Part B: keep
 - **New Quests default to the creator's "New Quests start as" setting, Public unless changed** (MVP PRD screen 8). The publish screen explains the three options in one line each.
 - **Why the suffix:** without it `/@swati/goa-2026` is guessable. 36⁶ ≈ 2 billion combinations makes guessing impractical.
 - **The URL is fixed at first publish.** Changing visibility never changes it (MVP PRD M28: "its link still works"), so a Quest made unlisted after being public keeps its guessable URL. Deleted Quests' URLs show "This Quest was removed." Old handles redirect to the new one.
+- **`get_trip_status`** tells anyone that a private or deleted Quest exists at a URL (it returns only the word, never content). Accepted.
+- **Usernames are never reused**, even after account deletion, so an old shared link can't be taken over; a deleted account's Quest links say "This Quest was removed."
+- **Retention** (MVP spec A C-A12): archived likes, comments and follows 90 days; archived Quests, drafts and profiles 180 days; tombstones and handle claims kept.
 - **Likes** are anonymous to viewers and to the creator (count only). **View counts** are for the OnQuest team only (PostHog), never stored in our database.
 - **Profiles** are always public. A profile with no public trips is `noindex`.
 
