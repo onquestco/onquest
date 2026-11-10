@@ -27,6 +27,9 @@ const TABLES: [string, string][] = [
   ['notification_reads', 'key'],
   ['notification_reads_archive', 'key'],
   ['email_send_log', 'key'],
+  ['follows', 'key'],
+  ['follows_archive', 'key'],
+  ['deleted_accounts', 'key'],
 ];
 
 type Db = Awaited<ReturnType<typeof createTestDatabase>>;

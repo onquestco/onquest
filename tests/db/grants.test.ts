@@ -14,6 +14,9 @@ const EXPECTED: Record<string, string[]> = {
   list_sitemap_trips: PUBLIC_PAGES,
   get_trip_social: PUBLIC_PAGES,
   get_trip_status: PUBLIC_PAGES,
+  resolve_handle: PUBLIC_PAGES,
+  list_quest_cards: PUBLIC_PAGES,
+  list_sitemap_profiles: PUBLIC_PAGES,
 
   is_handle_available: SIGNED_IN,
   save_profile: SIGNED_IN,
@@ -30,6 +33,12 @@ const EXPECTED: Record<string, string[]> = {
   list_my_notifications: SIGNED_IN,
   count_unread_notifications: SIGNED_IN,
   mark_notifications_seen: SIGNED_IN,
+  set_follow: SIGNED_IN,
+  get_my_follow_state: SIGNED_IN,
+  list_follows: SIGNED_IN,
+  get_my_quest_counts: SIGNED_IN,
+  list_my_comment_trip_keys: SIGNED_IN,
+  save_profile_settings: SIGNED_IN,
 
   geocode_cache_get: SERVER,
   geocode_cache_put: SERVER,
@@ -38,6 +47,9 @@ const EXPECTED: Record<string, string[]> = {
   get_unavailable_trip_key: SERVER,
   claim_email_budget: SERVER,
   save_profile_settings_as_admin: SERVER,
+  mark_account_deleted: SERVER,
+  delete_account_data: SERVER,
+  list_pending_deletions: SERVER,
 
   is_reserved_handle: NOBODY,
   trip_url_hash: NOBODY,
@@ -47,6 +59,8 @@ const EXPECTED: Record<string, string[]> = {
   insert_trip: NOBODY,
   archive_draft: NOBODY,
   can_see_trip: NOBODY,
+  person_json: NOBODY,
+  quest_card_json: NOBODY,
 };
 
 type GrantRow = { name: string; anon: boolean; authenticated: boolean; service_role: boolean };

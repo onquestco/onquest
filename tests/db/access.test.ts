@@ -71,7 +71,14 @@ describe('get_profile', () => {
     const profile = await getProfile('ALEX');
     expect(profile?.trips.map((t) => t.slug)).toEqual(['goa-2026']);
     expect(profile?.pins).toHaveLength(2);
-    expect(profile?.stats).toEqual({ trips: 1, places: 2, countries: 1, days: 5 });
+    expect(profile?.stats).toEqual({
+      trips: 1,
+      places: 2,
+      countries: 1,
+      days: 5,
+      followers: 0,
+      following: 0,
+    });
   });
 
   it('returns null for an unknown handle', async () => {
