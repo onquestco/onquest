@@ -5,10 +5,15 @@ import { HeartIcon } from '@/design-system/components/icons';
 import type { NotificationItem } from '@/lib/social/schema';
 import { notificationHref, notificationText, timeAgo } from './notificationText';
 
-type Props = { items: NotificationItem[]; now: Date };
+type Props = {
+  items: NotificationItem[];
+  now: Date;
+  /** Link to the next, older page when this one is full. */
+  olderHref?: string;
+};
 
 /** The bell's list (B-08): likes, comments and follows, newest first, unread ones tinted. */
-export function NotificationsView({ items, now }: Props) {
+export function NotificationsView({ items, now, olderHref }: Props) {
   return (
     <main className="mx-auto flex max-w-lg flex-col">
       <header className="flex items-center gap-2 border-b border-line px-4 py-2">
@@ -54,6 +59,11 @@ export function NotificationsView({ items, now }: Props) {
             </li>
           ))}
         </ul>
+      )}
+      {olderHref && (
+        <Link href={olderHref} className={`${buttonClassName({ variant: 'quiet', block: true })} my-4`}>
+          Show older
+        </Link>
       )}
     </main>
   );
