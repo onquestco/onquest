@@ -765,6 +765,7 @@ button.scrap:focus-visible {
 
 /* Quest player: one page at a time, tap or swipe to turn. */
 .player {
+  position: relative;
   display: grid;
   justify-items: center;
   gap: 12px;
@@ -794,4 +795,19 @@ button.scrap:focus-visible {
 }
 .playerDots i[data-on] {
   opacity: 1;
+}
+
+/* Full screen: only the Quest and the app's controls. Also the fallback where the Fullscreen API
+   can't take a div (iPhone Safari). */
+.player[data-fullscreen] {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  align-content: center;
+  overflow: auto;
+  padding: 56px 0 72px;
+  background: var(--paper);
+}
+.player[data-fullscreen] .playerDots {
+  display: none;
 }

@@ -33,6 +33,7 @@ export type Template = {
   defaults: { title: string; closingHeadline: string };
   theme: Theme;
   /** The full interactive trip page. Pure: TripData in, markup out. */
-  TripPage: (props: { trip: TripData }) => ReactNode;
+  /** `controls` is app chrome (full screen, like) placed inside the player; templates only pass it through. */
+  TripPage: (props: { trip: TripData; controls?: ReactNode }) => ReactNode;
   // Instagram StoryFrames / CarouselFrames are added in week 3 (see docs/02-lld.md §7).
 };

@@ -25,11 +25,13 @@ type Player = {
   goTo: (page: number) => void;
   next: () => void;
   previous: () => void;
+  fullscreen: boolean;
+  setFullscreen: (on: boolean) => void;
 };
 
 const PlayerContext = createContext<Player | null>(null);
 
-/** Current page and controls, for the full-screen counter and like bar (B-03). */
+/** Current page, controls and full screen, for the app's counter and like bar (B-03). */
 export function useQuestPlayer(): Player {
   const player = useContext(PlayerContext);
   if (!player) throw new Error('useQuestPlayer must be used inside QuestPlayer');
@@ -46,13 +48,34 @@ type Props = {
 export function QuestPlayer({ pages, children }: Props) {
   const [page, setPage] = useState(0);
   const count = pages.length;
-  const goTo = useCallback((target: number) => setPage(((target % count) + count) % count), [count]);
-  const player = useMemo(
-    () => ({ page, count, goTo, next: () => goTo(page + 1), previous: () => goTo(page - 1) }),
-    [page, count, goTo],
-  );
+  const [fullscreen, setFullscreenState] = useState(false);
   const start = useRef<{ x: number; y: number } | null>(null);
   const root = useRef<HTMLDivElement>(null);
+  const goTo = useCallback((target: number) => setPage(((target % count) + count) % count), [count]);
+
+  // The Fullscreen API where it exists; iPhone Safari has none for a div, so a fixed overlay
+  // (data-fullscreen in the CSS) covers the screen there. Either way the page number is kept.
+  const setFullscreen = useCallback((on: boolean) => {
+    const element = root.current;
+    setFullscreenState(on);
+    if (!element?.requestFullscreen) return;
+    if (on && !document.fullscreenElement) element.requestFullscreen().catch(() => undefined);
+    if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    // Escape in the browser's own full screen leaves it without calling us.
+    const sync = () => {
+      if (!document.fullscreenElement) setFullscreenState(false);
+    };
+    document.addEventListener('fullscreenchange', sync);
+    return () => document.removeEventListener('fullscreenchange', sync);
+  }, []);
+
+  const player = useMemo(
+    () => ({ page, count, goTo, next: () => goTo(page + 1), previous: () => goTo(page - 1), fullscreen, setFullscreen }),
+    [page, count, goTo, fullscreen, setFullscreen],
+  );
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -83,6 +106,7 @@ export function QuestPlayer({ pages, children }: Props) {
       <div
         ref={root}
         className={styles.player}
+        data-fullscreen={fullscreen ? '' : undefined}
         role="region"
         aria-roledescription="Quest"
         aria-label={`Page ${page + 1} of ${count}`}
@@ -90,6 +114,7 @@ export function QuestPlayer({ pages, children }: Props) {
         onKeyDown={(event) => {
           if (event.key === 'ArrowRight') player.next();
           if (event.key === 'ArrowLeft') player.previous();
+          if (event.key === 'Escape' && fullscreen) setFullscreen(false);
         }}
         onPointerDown={(event) => {
           start.current = { x: event.clientX, y: event.clientY };
@@ -112,8 +137,9 @@ export function QuestPlayer({ pages, children }: Props) {
             <i key={item.key} data-on={index === page ? '' : undefined} />
           ))}
         </div>
+        {/* Inside the player so they stay visible in full screen. */}
+        {children}
       </div>
-      {children}
     </PlayerContext.Provider>
   );
 }

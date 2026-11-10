@@ -50,3 +50,18 @@ export const BellIcon = ({ size = 24 }: Props) => (
     <path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4" />
   </svg>
 );
+export const HeartIcon = ({ size = 24, filled = false }: Props & { filled?: boolean }) => (
+  <svg {...base(size)} fill={filled ? 'currentColor' : 'none'}>
+    <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />
+  </svg>
+);
+export const ExpandIcon = ({ size = 24 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+  </svg>
+);
+export const CloseIcon = ({ size = 24 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M6 6l12 12M18 6L6 18" />
+  </svg>
+);
