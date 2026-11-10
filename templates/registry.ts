@@ -1,8 +1,9 @@
 import beach from './beach';
+import mountain from './mountain';
 import type { Template } from './types';
 
 // Every template, by id. To add one: create templates/<id>/ and add it here (see CLAUDE.md).
-export const templates = { beach } satisfies Record<string, Template>;
+export const templates = { beach, mountain } satisfies Record<string, Template>;
 
 export type TemplateId = keyof typeof templates;
 

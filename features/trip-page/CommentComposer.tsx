@@ -45,7 +45,10 @@ export function CommentComposer({ startOpen = false }: { startOpen?: boolean }) 
     setError(null);
     const result = await actions.postComment(text).catch(() => null);
     setSending(false);
-    if (!result?.ok) return setError((result && ERRORS[result.error]) ?? "Couldn't post your comment. Try again.");
+    if (result === null || !result.ok) {
+      setError((result && ERRORS[result.error]) ?? "Couldn't post your comment. Try again.");
+      return;
+    }
     addComment(result.data);
     setBody('');
   }

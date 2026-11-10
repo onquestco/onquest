@@ -3,8 +3,7 @@
 import Link from 'next/link';
 import { HeartIcon } from '@/design-system/components/icons';
 import { likeLabel } from './likeCopy';
-import type { LikeSource } from './socialActions';
-import { signInPath } from './socialActions';
+import { signInPath, type LikeSource } from './socialActions';
 import { useQuestSocial } from './useQuestSocial';
 
 const look =
