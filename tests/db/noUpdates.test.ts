@@ -19,6 +19,14 @@ const TABLES: [string, string][] = [
   ['geocoder_calls', 'key'],
   ['photos', 'id'],
   ['places', 'id'],
+  ['likes', 'key'],
+  ['likes_archive', 'key'],
+  ['comments', 'key'],
+  ['comments_archive', 'key'],
+  ['notifications', 'key'],
+  ['notification_reads', 'key'],
+  ['notification_reads_archive', 'key'],
+  ['email_send_log', 'key'],
 ];
 
 type Db = Awaited<ReturnType<typeof createTestDatabase>>;

@@ -27,6 +27,9 @@ describe('delete_trip', () => {
   });
 
   it('removes the live row, draft, archives and legacy rows, and leaves a tombstone', async () => {
+    await test.queryAs(STRANGER, `select public.save_profile(null, '{"handle": "sam", "name": "Sam"}')`);
+    await test.queryAs(STRANGER, 'select public.set_like($1, true)', [GOA]);
+    await test.queryAs(STRANGER, `select public.post_comment($1, 'Nice')`, [GOA]);
     const { trip } = await trips.rows(ALEX, GOA);
     await trips.setComments(ALEX, GOA, trip!.saved_at_text, false); // so there's an archive row
     expect(await count('select count(*) n from public.places where trip_id = $1', [GOA])).toBe(2);
@@ -35,6 +38,9 @@ describe('delete_trip', () => {
     expect(result).toEqual({ handles: ['alex'], slug: 'goa-2026' });
     for (const table of ['trips', 'trips_archive', 'trip_drafts', 'trip_drafts_archive']) {
       expect(await count(`select count(*) n from public.${table} where key = $1`, [GOA])).toBe(0);
+    }
+    for (const table of ['likes', 'comments', 'notifications']) {
+      expect(await count(`select count(*) n from public.${table} where trip_key = $1`, [GOA])).toBe(0);
     }
     expect(await count('select count(*) n from public.places where trip_id = $1', [GOA])).toBe(0);
     expect(
