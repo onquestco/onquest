@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | PRD | `docs/prds/onquest-mvp.md` (approved by the founder on 2026-11-09; social layer re-approved the same evening) |
-| Status | Revised for plan review round 3 (10 Nov 2026). Changes are listed in §17 and §18 |
+| Status | **Approved by the CTO on 10 Nov 2026** (plan review round 3: technical pass; all CTO decision items accepted as recommended). Founder items still open, F-A1 and F-B1 first. Revised for plan review round 3. Changes are listed in §17 and §18 |
 | Build mode | Backend + Frontend split. Frontend starts on sample data once A-01 (contract) lands; backend lands the data model first |
 | Tracker IDs | One row per task in `docs/specs/onquest-mvp-tasks.md` (A-01 … A-15) |
 | Sibling specs | B: `docs/specs/onquest-mvp-b-quest-page.md` (viewing, likes, comments, notifications, export). C: `docs/specs/onquest-mvp-c-social.md` (shell, home, feed, explore, guides, profiles, follow, settings, manage Quest) |

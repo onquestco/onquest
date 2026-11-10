@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | PRD | `docs/prds/onquest-mvp.md` (approved by the founder on 2026-11-09; social layer re-approved the same evening with: likes need sign-in, team-only unique views, ranked feed, auto-follow later) |
-| Status | Revised for plan review round 3 (10 Nov 2026). Changes are listed in §16 and §17 |
+| Status | **Approved by the CTO on 10 Nov 2026** (plan review round 3: technical pass; all CTO decision items accepted as recommended). Founder items still open, F-A1 and F-B1 first. Revised for plan review round 3. Changes are listed in §16 and §17 |
 | Build mode | Backend + Frontend split. Every screen starts now on sample data; backend follows spec A's and B's migrations |
 | Tracker IDs | C-01 … C-12 in `docs/specs/onquest-mvp-tasks.md` |
 | Review | `docs/reviews/2026-11-10-plan-review-onquest-mvp.md` (round 1) |
