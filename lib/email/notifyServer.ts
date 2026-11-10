@@ -69,3 +69,12 @@ export async function notifyQuestOwner(event: {
   const outcome = await notifyByEmail({ ...event, recipientKey: data.owner_key as string }, serverDeps());
   if (outcome === 'failed') console.error('Notification email failed'); // no user text, no address
 }
+
+/** Emails someone that a person followed them (first follow only; spec C §3.3, F-B2). */
+export async function notifyFollowed(event: { followeeKey: string; followerKey: string }) {
+  const outcome = await notifyByEmail(
+    { kind: 'follow', recipientKey: event.followeeKey, actorKey: event.followerKey },
+    serverDeps(),
+  );
+  if (outcome === 'failed') console.error('Notification email failed');
+}

@@ -6,5 +6,11 @@
       "review/**": false,
       "dependabot/**": false
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/finish-deletions",
+      "schedule": "0 2 * * *"
+    }
+  ]
 }

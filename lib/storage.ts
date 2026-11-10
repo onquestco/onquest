@@ -4,6 +4,7 @@ import { supabaseUrl } from './supabase/env';
 // Every bucket path lives in this file, so photos can move to another host later.
 //   photos  (public):  {userId}/{tripId}/{photoId}/thumb.webp | display.webp
 //   exports (private): {userId}/{tripId}/{photoId}/export.jpg
+//   photos  (public):  {userId}/avatar/{photoId}/thumb.webp (profile photos, spec C §3.8)
 // `folder` below is always "{userId}/{tripId}", as returned by get_trip.
 
 const ONE_YEAR_SECONDS = '31536000'; // files never change: a replaced photo gets a new id
@@ -104,4 +105,36 @@ export async function photoUploadedAt(
 /** Every file of a Quest, for deleting it. */
 export async function deleteQuestFiles(supabase: SupabaseClient, folder: string): Promise<void> {
   await deletePhotoFiles(supabase, folder, await listPhotoIds(supabase, folder));
+}
+
+/** A profile photo's public URL. Built on the server from its id, so no outside URL can be set. */
+export function avatarUrl(userId: string, photoId: string): string {
+  return photoUrls(`${userId}/avatar`, photoId).thumb;
+}
+
+/** Every file path under a folder, in every subfolder (Storage lists one level at a time). */
+async function listAllFiles(supabase: SupabaseClient, bucket: string, folder: string): Promise<string[]> {
+  const paths: string[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await supabase.storage.from(bucket).list(folder, { limit: 1000, offset });
+    if (error) throw new Error('Could not list files');
+    for (const entry of data ?? []) {
+      const path = `${folder}/${entry.name}`;
+      // Folders come back without an id.
+      if (entry.id) paths.push(path);
+      else paths.push(...(await listAllFiles(supabase, bucket, path)));
+    }
+    if (!data || data.length < 1000) return paths;
+  }
+}
+
+/** Account deletion: every file a person has, in both buckets (Quests, avatars, removed photos). */
+export async function deleteUserFiles(supabase: SupabaseClient, userId: string): Promise<void> {
+  for (const bucket of BUCKETS) {
+    const paths = await listAllFiles(supabase, bucket, userId);
+    for (let i = 0; i < paths.length; i += 100) {
+      const { error } = await supabase.storage.from(bucket).remove(paths.slice(i, i + 100));
+      if (error) throw new Error('Could not delete files');
+    }
+  }
 }

@@ -1,5 +1,11 @@
 const SUFFIX_ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789';
 
+/**
+ * Paths under /@handle that are pages, not Quests (spec C §4.4): a Quest titled "Followers" must
+ * not hide the followers list.
+ */
+export const RESERVED_SLUGS = new Set(['followers', 'following']);
+
 /** "My Goa Trip 2026!" → "my-goa-trip-2026". Falls back to "trip" if nothing is left. */
 export function slugify(text: string, maxLength = 60): string {
   const slug = text
@@ -10,7 +16,8 @@ export function slugify(text: string, maxLength = 60): string {
     .replace(/^-+|-+$/g, '')
     .slice(0, maxLength)
     .replace(/-+$/g, '');
-  return slug || 'trip';
+  if (!slug) return 'trip';
+  return RESERVED_SLUGS.has(slug) ? `${slug}-trip` : slug;
 }
 
 /** Random token used to make unlisted URLs unguessable (36^length combinations). */

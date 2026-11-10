@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { finishDeletionOnSignIn } from '@/features/account/finishDeletionOnSignIn';
 import { getMyProfile } from '@/features/account/getCurrentUser';
 import { confirmEmailLink } from '@/lib/auth/confirm';
 import { absoluteUrl } from '@/lib/site';
@@ -19,5 +20,6 @@ export async function GET(request: NextRequest) {
       return Boolean(user && (await getMyProfile(user.id)));
     },
   });
-  return NextResponse.redirect(absoluteUrl(to));
+  const deleted = await finishDeletionOnSignIn(supabase);
+  return NextResponse.redirect(absoluteUrl(deleted ?? to));
 }

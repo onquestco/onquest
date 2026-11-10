@@ -13,3 +13,11 @@ describe('unlisted slugs', () => {
   it('adds a 6-character suffix', () => expect(unlistedSlug('Goa 2026')).toMatch(/^goa-2026-[a-z0-9]{6}$/));
   it('uses only safe characters', () => expect(randomToken(50)).toMatch(/^[a-z0-9]{50}$/));
 });
+
+describe('reserved slugs', () => {
+  it("never makes a Quest slug that's a profile page", () => {
+    expect(slugify('Followers')).toBe('followers-trip');
+    expect(slugify('Following!')).toBe('following-trip');
+    expect(slugify('Followers of Goa')).toBe('followers-of-goa');
+  });
+});

@@ -13,3 +13,9 @@ export const tripSocialTag = (tripKey: string) => `trip-social:${tripKey}`;
 /** Explore's trending lists and the Quests shown on guide pages (spec C). */
 export const EXPLORE_TAG = 'explore';
 export const GUIDE_QUESTS_TAG = 'guide-quests';
+
+/**
+ * A profile page by URL. Like tripUrlTag: a cached "no such profile" must clear when someone takes
+ * that handle, and an old handle's page must start redirecting when it's changed.
+ */
+export const profileUrlTag = (handle: string) => `profile-url:${handle}`;

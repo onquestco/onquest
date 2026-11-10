@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
+import { getMovedHandle } from '@/features/trip-page/getMovedHandle';
 import { getQuestSocial } from '@/features/trip-page/getQuestSocial';
 import { getQuestStatus } from '@/features/trip-page/getQuestStatus';
 import { getTrip } from '@/features/trip-page/getTrip';
@@ -25,7 +26,12 @@ export default async function TripPage({ params }: Props) {
   const result = await getTrip(handle, slug);
   if (!result) {
     const status = await getQuestStatus(handle, slug);
-    if (!status) notFound();
+    if (!status) {
+      // An old handle: the same Quest under the person's current one (308).
+      const moved = await getMovedHandle(handle);
+      if (moved) permanentRedirect(`/@${moved}/${slug.toLowerCase()}`);
+      notFound();
+    }
     return (
       <QuestUnavailable reason={status} url={{ handle: handle.toLowerCase(), slug: slug.toLowerCase() }} />
     );
