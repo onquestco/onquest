@@ -396,7 +396,7 @@ begin
 
   first := trip.published_at is null;
   if first then
-    if p_slug is null or p_slug !~ '^[a-z0-9]+(-[a-z0-9]+)*$' or char_length(p_slug) > 76 then
+    if p_slug is null or p_slug !~ '^[a-z0-9]+(-[a-z0-9]+)*$' or char_length(p_slug) > 77 then
       raise exception 'invalid slug' using errcode = 'OQ422';
     end if;
     -- Unique among the owner's live Quests and every removed URL under any handle they've had,

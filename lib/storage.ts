@@ -65,3 +65,38 @@ export async function deletePhotoFiles(
   ]);
   if (photos.error || exports.error) throw new Error('Could not delete photo files');
 }
+
+const BUCKETS = ['photos', 'exports'] as const;
+const LIST_LIMIT = 1000;
+
+/** Photo ids that have files in a Quest's folder, in either bucket. */
+export async function listPhotoIds(supabase: SupabaseClient, folder: string): Promise<string[]> {
+  const ids = new Set<string>();
+  for (const bucket of BUCKETS) {
+    const { data, error } = await supabase.storage.from(bucket).list(folder, { limit: LIST_LIMIT });
+    if (error) throw new Error('Could not list photo files');
+    // Each photo is a sub-folder named by its id; folders come back without an object id.
+    for (const entry of data ?? []) if (!entry.id) ids.add(entry.name);
+  }
+  return [...ids];
+}
+
+/** When a photo's first file was uploaded, or null if it has none. */
+export async function photoUploadedAt(
+  supabase: SupabaseClient,
+  folder: string,
+  photoId: string,
+): Promise<string | null> {
+  const times: string[] = [];
+  for (const bucket of BUCKETS) {
+    const { data, error } = await supabase.storage.from(bucket).list(`${folder}/${photoId}`);
+    if (error) throw new Error('Could not list photo files');
+    for (const file of data ?? []) if (file.created_at) times.push(file.created_at);
+  }
+  return times.sort()[0] ?? null;
+}
+
+/** Every file of a Quest, for deleting it. */
+export async function deleteQuestFiles(supabase: SupabaseClient, folder: string): Promise<void> {
+  await deletePhotoFiles(supabase, folder, await listPhotoIds(supabase, folder));
+}
