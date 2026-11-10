@@ -1,6 +1,6 @@
 # OnQuest MVP: ordered build plan
 
-Revised for plan review round 2 (10 Nov 2026): 38 tasks (A-15 added).
+Revised for plan review round 3 (10 Nov 2026): 38 tasks.
 
 One row per future GitHub issue, in build order across the three specs. The full task blocks (files, ACs, done-when) are in each spec's §12; this file is the order, the dependencies and what can start today. Create the issues from it once GitHub access is back (labels: `spec:onquest-mvp-a|b|c` + `backend` or `frontend`; body = the task row from the spec + a link to the spec).
 
@@ -34,7 +34,7 @@ Phases overlap: the frontend works down its rows while the backend works down it
 |---|---|---|---|---|---|
 | 1 | A-01 | Backend | Contract files (schemas, limits, card and profile settings types, `draftToTripData`) | — | **Now** |
 | 2 | A-08 | Frontend | Design-system pieces for the create flow (Sheet, Toast with Undo, ProgressRing, Segmented) | — | **Now** |
-| 2b | A-07 | Backend | Analytics + Sentry plumbing (PostHog privacy config, `anon_id`, typed events from the CSVs) | — (CSVs exported 10 Nov) | **Now** |
+| 2b | A-07 | Backend | Analytics + Sentry plumbing (PostHog privacy config, `/ingest` route handler, `anon_id`, typed events from the CSVs) | — (CSVs exported 10 Nov) | **Now** |
 | 3 | B-02 | Frontend | Quest player + Beach as a paged Quest, on fixtures | A-01 | Sample |
 | 4 | A-05 | Backend | Arranging logic (pure part first), places, captions | A-01 for types; pure functions can start now | **Now** (pure part) |
 | 5 | A-10 | Frontend | Image worker + upload queue ported from the WIP | — | **Now** |
@@ -49,15 +49,15 @@ Phases overlap: the frontend works down its rows while the backend works down it
 
 | # | ID | Owner | Task | Depends on | Now? |
 |---|---|---|---|---|---|
-| 12 | A-02 | Backend | Profiles under 0001 (migrations 7–8, `save_profile`, `setHandle`) | A-01 | after A-01 |
+| 12 | A-02 | Backend | Profiles under 0001 (migrations 7–8 incl. the three `get_*` replacements, `seed.sql` profiles insert, `save_profile`, `setHandle`) | A-01 | after A-01 |
 | 13 | A-03 | Backend | Trips under 0001 (migration 9: document, drafts, archives, save functions, `get_*` rewritten) | A-02 | — |
 | 14 | A-04 | Backend | Quest write actions + loaders (create, save draft, publish, visibility, comments, delete) | A-03 | — |
-| 15 | A-06 | Backend | Sign-in return paths (`next`, `intent`, `ref`), redirect-URL runbook | A-02 | — |
+| 15 | A-06 | Backend | Sign-in return paths: Google `/auth/callback`, email `/auth/confirm` (`token_hash` + `verifyOtp`), email templates and redirect-URL runbook | A-02 | — |
 | 16 | A-15 | Frontend | In-app browser sign-in ("Open in your browser", copy per F-A9) | A-06, A-08 | — |
 
 **Release 1a** (preview project first): migrations 7, 8, 9 + A-02, A-03, A-04. The CTO applies the migrations (`supabase db push`) immediately before merging the code. Quest pages render in either order (spec A §8); only creation waits for both. Migration 8 makes the foreign keys safe before any profile save exists, so no order can delete data.
 
-**Shared files, in this order:** `proxy.ts` A-06 → C-01; `app/(app)/onboarding/page.tsx` A-06 → C-02; `features/account/LoginForm.tsx` A-06 → A-15; `features/editor/image.worker.ts` A-10 → C-10; `next.config.ts` A-07 → C-09; `lib/demo/sampleSocial.ts` B-03 → C-08; `features/trip-page/getTrip.ts` A-03 → B-05 → C-05; `lib/social/schema.ts` B-05 → C-04.
+**Shared files, in this order:** `supabase/seed.sql` A-02 → A-03; `tests/db/testDatabase.ts` A-02 → A-03; `features/account/actions.ts` A-02 → A-06 → C-05; `proxy.ts` A-06 → C-01; `app/(app)/onboarding/page.tsx` A-06 → C-02; `app/auth/callback/route.ts` and `app/auth/confirm/route.ts` A-06 → C-05; `features/account/LoginForm.tsx` A-06 → A-15; `features/editor/image.worker.ts` A-10 → C-10; `lib/supabase/admin.ts` A-05 (creates it) → B-06 → C-05; `.env.example` A-05 → B-06 → C-05; `lib/demo/sampleSocial.ts` B-03 → C-08; `features/trip-page/getTrip.ts` A-03 → B-05 → C-05; `lib/social/schema.ts` B-05 → C-04; `tests/db/tripSave.test.ts` A-03 → B-01; `tests/db/noUpdates.test.ts` A-03 → B-01 → C-03; `tests/db/access.test.ts` A-02 → A-03 → C-03. `next.config.ts` is edited only by C-09 (A-07's proxy is a route handler).
 
 ### Phase 2: create flow end to end (frontend continues on sample data until wired)
 
@@ -76,7 +76,7 @@ UX tasks 1–3 (PRD) can run on the preview build after #19.
 |---|---|---|---|---|---|
 | 21 | B-01 | Backend | Migration 10: likes, comments, notifications, reads, status + social functions | A-03 | — |
 | 22 | B-05 | Backend | Reaction actions, loaders, viewer-state route, export URLs, Quest states | B-01, A-04 | — |
-| 23 | B-06 | Backend | Notifications loaders + Resend email (70/day budget) + unsubscribe | B-01, A-02 | — |
+| 23 | B-06 | Backend | Notifications loaders + Resend email (70/day budget) + unsubscribe | B-01, A-02, A-05 (`lib/supabase/admin.ts`, `.env.example`) | — |
 | 24 | B-08 | Frontend | Notifications screen + bell badge | A-01, A-08; wiring B-06 | Sample |
 | 25 | B-09 | Frontend | Instagram export (frames for both templates, "Download all") | B-02, B-04; wiring B-05 | Sample |
 | 26 | B-07 | Frontend | Wire the Quest page (intents, likes, comments, states, OG image) | B-03, B-05, A-06 | — |
@@ -89,12 +89,12 @@ UX tasks 1–3 (PRD) can run on the preview build after #19.
 | # | ID | Owner | Task | Depends on | Now? |
 |---|---|---|---|---|---|
 | 28 | C-08 | Frontend | Home: Your Quests row, feed, suggestions (sample first) | C-01, B-03 (shared sample file); wiring C-04, B-05 | Sample |
-| 29 | C-09 | Frontend | Profile, Follow button, followers/following lists (sample first) | C-01, A-07 (`next.config.ts`); wiring C-05 | Sample |
+| 29 | C-09 | Frontend | Profile, Follow button, followers/following lists (sample first) | C-01; wiring C-05 | Sample |
 | 30 | C-10 | Frontend | Edit profile, Settings, sign out, delete account (sample first) | C-01, A-10 (`image.worker.ts`); wiring C-05 | Sample |
 | 31 | C-11 | Frontend | Explore, search, guide page (sample first) | C-01; wiring C-04, C-06 | Sample |
 | 32 | C-03 | Backend | Migration 11: follows, profile extensions, handle redirects, cards, counts, account data deletion | A-03, B-01 | — |
 | 33 | C-04 | Backend | Migration 12: feed, suggestions, trending, chips, travellers, search | C-03, B-05 (`lib/social/schema.ts`) | — |
-| 34 | C-05 | Backend | Profile, settings, follow and account actions; handle redirects; account-deletion cache refresh | C-03, B-05 (`getTrip.ts`), B-06 | — |
+| 34 | C-05 | Backend | Profile, settings, follow and account actions; handle redirects; account-deletion cache refresh and daily finish-deletions cron | C-03, A-06 (auth routes), B-05 (`getTrip.ts`), B-06 (`admin.ts`, `.env.example`) | — |
 | 35 | C-06 | Backend | Guides content + sitemap | C-03 | — |
 | 36 | C-12 | Frontend | Social-layer events | A-07, C-07 – C-11 | — |
 
@@ -111,10 +111,11 @@ Then the founder runs the PRD's five UX tasks (plus the two social tasks if F-C5
 ## Before any building starts
 
 1. Reviewer round 2, then the CTO approves the three specs (remaining CTO items in each §14; decisions taken on 10 Nov are recorded there).
-2. Founder answers the founder decisions (F-A1 … F-A11, F-B1 … F-B3, F-C1 … F-C6). **F-A1** and **F-B1** are the two PRD contradictions the Reviewer marked blocking; neither stops a backend start (the arranging rule is isolated in one function; the like-count copy is one component). F-A9 (in-app browser copy) blocks A-15.
+2. Founder answers the founder decisions (F-A1 … F-A12, F-B1 … F-B3, F-C1 … F-C6). **F-A1** and **F-B1** are the two PRD contradictions the Reviewer marked blocking; neither stops a backend start (the arranging rule is isolated in one function; the like-count copy is one component). F-A9 (in-app browser copy) blocks A-15.
 3. Done 10 Nov: the Taxonomy sheet is exported to `docs/analytics/` (re-export after every sheet change).
-4. Accounts and settings: Anthropic API key; Resend account + onquest.in DNS; PostHog project key with "Discard client IP data" on and session replay off; `GEOCODER_CONTACT_EMAIL` (CTO supplies); Sentry DSN; Supabase Auth redirect URLs for `/auth/callback?next=*`; Vercel stays on Hobby (C-A9, risk accepted); the Supabase preview project is on the Pro org (C-A11).
-5. A human updates CLAUDE.md after approval (C-A10).
+4. A human writes the decision 0001 amendment for retention deletes (C-A16) before A-03 schedules the weekly job.
+5. Accounts and settings: Anthropic API key; Resend account + onquest.in DNS; PostHog project key with "Discard client IP data" on and session replay off; `GEOCODER_CONTACT_EMAIL` (CTO supplies); Sentry DSN; Supabase Auth redirect URLs for `/auth/callback**` and `/auth/confirm**` and the two custom email templates (A-06 runbook); `CRON_SECRET` for the daily finish-deletions job; Vercel stays on Hobby (C-A9, risk accepted); the Supabase preview project is on the Pro org (C-A11).
+6. A human updates CLAUDE.md after approval (C-A10).
 
 ## Tracker rows to add after approval (stage `7. Ready to build`)
 

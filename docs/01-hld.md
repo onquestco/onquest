@@ -184,6 +184,7 @@ Private Quests keep their URL, which shows "This Quest is private." The owner se
 | Env | Database |
 |---|---|
 | Local | `supabase start`, seeded with the Goa demo trip |
+| Scheduled jobs | `pg_cron` weekly `run_retention_cleanup` (once decision 0001 is amended, spec A C-A16); Vercel cron daily `/api/cron/finish-deletions` (interrupted account deletions, spec C §3.9) |
 | Vercel Preview | Points at the Supabase **preview** project (on the Pro org, so no pausing; writes allowed, so the UX test can create Quests). Its own keys; never prod's secret key |
 | Production | Supabase Pro, spend cap on, daily backups |
 
