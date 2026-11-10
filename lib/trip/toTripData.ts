@@ -1,7 +1,7 @@
 import { countDays, formatDateRange } from '@/lib/dates';
 import { absoluteUrl } from '@/lib/site';
 import { photoUrls } from '@/lib/storage';
-import type { TripRows } from './schema';
+import type { QuestDocument, TripRows, Visibility } from './schema';
 import { formatStats } from './stats';
 import type { Day, Photo, Place, TripData } from './types';
 
@@ -38,6 +38,7 @@ export function toTripData(rows: TripRows, defaults: Defaults): TripData {
     return {
       number: index + 1,
       title: day.title || dayPlaces[0]?.name || `Day ${index + 1}`,
+      dateLabel: day.startDate ? formatDateRange(day.startDate, day.endDate) : undefined,
       quote: day.quote || undefined,
       story: day.story || undefined,
       places: dayPlaces,
@@ -50,7 +51,8 @@ export function toTripData(rows: TripRows, defaults: Defaults): TripData {
   const dayCount = days.length || (startDate && endDate ? countDays(startDate, endDate) : 0);
 
   return {
-    id: trip.id,
+    key: trip.key ?? trip.id,
+    id: trip.key ?? trip.id,
     templateId: trip.template_id,
     url: absoluteUrl(`/@${owner.handle}/${trip.slug}`),
     seed: trip.seed,
@@ -79,4 +81,60 @@ export function toTripData(rows: TripRows, defaults: Defaults): TripData {
     publishedAt: trip.published_at ?? undefined,
     updatedAt: trip.updated_at,
   };
+}
+
+type DraftForPreview = {
+  key: string;
+  /** The Quest's link once published; drafts preview under a placeholder. */
+  slug?: string;
+  photoFolder: string;
+  visibility: Visibility;
+  savedAt: string;
+  document: QuestDocument;
+};
+
+type Owner = TripRows['owner'];
+
+/**
+ * A draft as the viewer will see it once published. Goes through toTripData so the preview can't
+ * drift from the real Quest page (M7). Owner-only fields (takenAt, date) never reach TripData.
+ */
+export function draftToTripData(draft: DraftForPreview, owner: Owner, seed: number, defaults: Defaults): TripData {
+  const { document } = draft;
+  const rows: TripRows = {
+    trip: {
+      id: draft.key,
+      key: draft.key,
+      slug: draft.slug ?? 'preview',
+      template_id: document.templateId,
+      visibility: draft.visibility,
+      title: document.title ?? null,
+      short_title: document.shortTitle ?? null,
+      start_date: document.startDate ?? null,
+      end_date: document.endDate ?? null,
+      cover_photo_id: document.coverPhotoId ?? null,
+      seed,
+      content: document.content,
+      published_at: null,
+      updated_at: draft.savedAt,
+      saved_at: draft.savedAt,
+    },
+    owner,
+    photo_folder: draft.photoFolder,
+    photos: document.photos.map(({ id, width, height, caption }) => ({
+      id,
+      width,
+      height,
+      caption: caption ?? null,
+    })),
+    places: document.places.map(({ id, name, lat, lng, note, photoId }) => ({
+      id,
+      name,
+      lat,
+      lng,
+      note: note ?? null,
+      photo_id: photoId ?? null,
+    })),
+  };
+  return toTripData(rows, defaults);
 }
