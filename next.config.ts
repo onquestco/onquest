@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       { source: '/@:handle', destination: '/u/:handle' },
+      // Before /@:handle/:slug, so they aren't taken for Quests (slugs can't be these: lib/slug.ts).
+      { source: '/@:handle/followers', destination: '/u/:handle/followers' },
+      { source: '/@:handle/following', destination: '/u/:handle/following' },
       { source: '/@:handle/:slug', destination: '/u/:handle/:slug' },
     ];
   },
