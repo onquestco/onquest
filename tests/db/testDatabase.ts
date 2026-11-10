@@ -45,20 +45,25 @@ const STORAGE_GRANTS = `
 type Options = {
   /** Apply only the first N migrations (in file order), e.g. 8 to test migration 8 on its own. */
   upTo?: number;
-  /** Skip seed.sql (for databases that stop before the seed's columns exist). */
-  seed?: boolean;
+  /** Seed file under the repo root, or false for none. Defaults to supabase/seed.sql. */
+  seed?: string | false;
 };
 
-export async function createTestDatabase({ upTo, seed = true }: Options = {}) {
+export async function createTestDatabase({ upTo, seed = 'supabase/seed.sql' }: Options = {}) {
   const db = new PGlite();
   await db.exec(SUPABASE_STANDINS);
-  const migrations = readdirSync(join(SUPABASE_DIR, 'migrations'))
+  const allMigrations = readdirSync(join(SUPABASE_DIR, 'migrations'))
     .filter((f) => f.endsWith('.sql'))
-    .sort()
-    .slice(0, upTo);
-  for (const file of migrations) await db.exec(readFileSync(join(SUPABASE_DIR, 'migrations', file), 'utf8'));
+    .sort();
+  const runMigrations = async (files: string[]) => {
+    for (const file of files) await db.exec(readFileSync(join(SUPABASE_DIR, 'migrations', file), 'utf8'));
+  };
+  await runMigrations(allMigrations.slice(0, upTo));
   await db.exec(STORAGE_GRANTS);
-  if (seed) await db.exec(readFileSync(join(SUPABASE_DIR, 'seed.sql'), 'utf8'));
+  if (seed) await db.exec(readFileSync(join(process.cwd(), seed), 'utf8'));
+
+  /** Applies the migrations after `upTo`, e.g. to test a backfill on older data. */
+  const migrateRest = () => runMigrations(allMigrations.slice(upTo ?? allMigrations.length));
 
   /** Runs a query as a logged-out visitor (userId undefined) or as a signed-in user. */
   async function queryAs<T = Record<string, unknown>>(
@@ -81,7 +86,7 @@ export async function createTestDatabase({ upTo, seed = true }: Options = {}) {
     await db.query(`insert into auth.users (id, email, created_at) values ($1, $2, now())`, [userId, email]);
   }
 
-  return { db, queryAs, addUser };
+  return { db, queryAs, addUser, migrateRest };
 }
 
 export const ALEX = '00000000-0000-4000-8000-000000000001'; // seeded user

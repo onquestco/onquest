@@ -29,7 +29,7 @@ type Db = Awaited<ReturnType<typeof createTestDatabase>>;
 let queryAs: Db['queryAs'];
 
 beforeAll(async () => {
-  ({ queryAs } = await createTestDatabase({ upTo: 8 }));
+  ({ queryAs } = await createTestDatabase({ upTo: 8, seed: 'tests/db/fixtures/seed-v8.sql' }));
 }, 30_000);
 
 const one = async (sql: string, params: unknown[] = []) =>

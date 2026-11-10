@@ -98,14 +98,12 @@ describe('saving a profile', () => {
     );
   });
 
-  it('deletes nothing else: trips, photos and places stay', async () => {
+  it('deletes nothing else: trips, drafts and the legacy photos and places stay', async () => {
     const counts = async () => [
-      await count('select count(*) n from public.trips where owner_id = $1', [ALEX]),
+      await count('select count(*) n from public.trips where owner_key = $1', [ALEX]),
+      await count('select count(*) n from public.trip_drafts where owner_key = $1', [ALEX]),
       await count('select count(*) n from public.photos where owner_id = $1', [ALEX]),
-      await count(
-        'select count(*) n from public.places pl join public.trips t on t.id = pl.trip_id where t.owner_id = $1',
-        [ALEX],
-      ),
+      await count('select count(*) n from public.places'),
     ];
     const before = await counts();
     const live = await liveAs(ALEX);
