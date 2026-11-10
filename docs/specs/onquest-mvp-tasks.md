@@ -50,7 +50,7 @@ Phases overlap: frontend works top to bottom in the "Frontend" column while the 
 | 13 | A-03 | Backend | Trips under 0001 (migration 9: document, drafts, archives, save functions, `get_*` rewritten) | A-02 | — |
 | 14 | A-04 | Backend | Quest write actions + loaders (create, save draft, publish, visibility, comments, delete) | A-03 | — |
 | 15 | A-06 | Backend | Sign-in return paths (`next`, `intent`, `ref`) | A-02 | — |
-| 16 | A-07 | Backend | Analytics plumbing (PostHog proxy, `anon_id`, typed events) | CTO adds `docs/analytics/taxonomy.csv` | when the CSV lands |
+| 16 | A-07 | Backend | Analytics plumbing (PostHog proxy, `anon_id`, typed events) | Taxonomy exported to `docs/analytics/` (10 Nov) | now |
 
 **Release 1a** (deploy together, preview project first): migrations 7, 8, 9 + A-02, A-03, A-04. Migrations are applied by the CTO (`supabase db push`) right before the code deploy.
 
@@ -107,8 +107,8 @@ Then the founder runs the PRD's five UX tasks (plus the two social tasks if F-C5
 
 1. CTO approves the three specs (and answers the CTO decisions in each §14).
 2. Founder answers the founder decisions (F-A1 … F-A8, F-B1 … F-B3, F-C1 … F-C6). Only **F-A1** blocks a task (A-05's arranging rule; the rule is isolated in one function so the rest of A-05 proceeds).
-3. CTO exports the Taxonomy sheet to `docs/analytics/taxonomy.csv` (blocks A-07 and all event tasks).
-4. Accounts: Anthropic API key, Resend account + onquest.in DNS, PostHog project key, geocoder choice (C-A7), Vercel Pro (C-A9).
+3. Done 10 Nov: the Taxonomy sheet is exported to `docs/analytics/` (re-export after every sheet change).
+4. Accounts: Anthropic API key, Resend account + onquest.in DNS, PostHog project key, Nominatim needs no account (C-A7); Vercel stays on Hobby (C-A9).
 5. A human updates CLAUDE.md after approval (C-A10).
 
 ## Tracker rows to add after approval (stage `7. Ready to build`)

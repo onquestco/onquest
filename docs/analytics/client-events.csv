@@ -1,0 +1,92 @@
+name,user_id,type,ts,properties [JSON key],Data type,Allowed values,Property description,Required,Fires when,Tested (9 Nov)
+app_opened,user_id (empty when signed out; anon_id in common),client,client_ts,entry,STRING,direct / shared_link / email / notification,How the person arrived,yes,A page of the app or a shared Quest link loads,Pass · fired 3×
+app_opened,,,,referrer,STRING,whatsapp / instagram / other / none,Where a shared link was opened from,yes,,Pass · fired 3×
+app_opened,,,,signed_in,BOOL,true / false,,yes,,Pass · fired 3×
+sign_in_started,user_id (empty when signed out; anon_id in common),client,client_ts,method,STRING,google / magic_link,,yes,Continue with Google or Email me a sign-in link is tapped,Pass · fired 5×
+sign_in_started,,,,source,STRING,app_open / comment / like / make_your_own,"What started sign-in: opening the app, commenting, liking while signed out, or Make your own",yes,,Pass · fired 5×
+ftue_step_viewed,user_id,client,client_ts,step,INT64,1–3,Welcome screen number,yes,A welcome screen shows (first sign-in only),Pass · fired 6×
+ftue_completed,user_id,client,client_ts,action,STRING,skip / create / look_around,How they left,yes,The person leaves the welcome screens,Pass · fired 3×
+ftue_completed,,,,last_step,INT64,1–3,Step they were on,yes,,Pass · fired 3×
+whatis_viewed,user_id,client,client_ts,source,STRING,home_banner / settings,Where from,yes,"The ""What's a Quest?"" sheet opens",Pass · fired 3×
+tab_tapped,user_id,client,client_ts,tab,STRING,home / explore / create / quests / profile,,yes,A bottom-bar tab is tapped,Pass · fired 7×
+tab_tapped,,,,from_screen,STRING,,Screen the person was on,yes,,Pass · fired 7×
+create_menu_opened,user_id,client,client_ts,from_screen,STRING,,,yes,The + tab opens the Create page,Pass · fired 2×
+create_option_tapped,user_id,client,client_ts,option,STRING,quest / blog,,yes,An option on the Create page is tapped,Pass · fired 2×
+create_option_tapped,,,,available,BOOL,true / false,"false for blog while it is ""Releasing soon"" (measures demand)",yes,,Pass · fired 2×
+quest_create_started,user_id,client,client_ts,source,STRING,home_banner / home_empty / create_menu / quests_tab / quests_empty / make_your_own / ftue / whatis_sheet,Entry point,yes,Any way into the create flow is used,Pass · fired 10×
+draft_resumed,user_id,client,client_ts,quest_id,STRING,,,yes,"A draft is opened with ""Continue editing""",Pass · fired 2×
+draft_resumed,,,,source,STRING,home / quests_tab,,yes,,Pass · fired 2×
+photo_limit_hit,user_id,client,client_ts,quest_id,STRING,,,optional,Someone tries to go past 15 photos,Pass · fired 6×
+photo_limit_hit,,,,screen,STRING,pick / add_photos,,yes,,Pass · fired 6×
+photos_picked,user_id,client,client_ts,quest_id,STRING,,Draft Quest ID,yes,Next is tapped on Pick photos,Pass · fired 5×
+photos_picked,,,,count,INT64,3–15,,yes,,Pass · fired 5×
+photos_picked,,,,with_dates,INT64,0–15,Photos with a date,yes,,Pass · fired 5×
+photos_picked,,,,with_location,INT64,0–15,Photos with a location,yes,,Pass · fired 5×
+photos_picked,,,,no_metadata,INT64,0–15,Photos with neither (e.g. saved from WhatsApp),yes,,Pass · fired 5×
+review_edit,user_id,client,client_ts,quest_id,STRING,,,yes,"Any change on the review screen, or one that was blocked",Pass · fired 17×
+review_edit,,,,action,STRING,title / caption / date / place / move / swap / new_page / remove / replace / add / rename_page / undo,,yes,,Pass · fired 17×
+review_edit,,,,page,INT64,1–5,Page affected,optional,,Pass · fired 17×
+review_edit,,,,blocked,BOOL,true / false,true when the change was refused (e.g. removing below 3 photos),yes,,Pass · fired 17×
+review_edit,,,,caption_was_auto,BOOL,true / false,Caption edits only: the caption had been written automatically,optional,,Pass · fired 17×
+review_edit,,,,count,INT64,1–12,Add only: photos added,optional,,Pass · fired 17×
+template_selected,user_id,client,client_ts,quest_id,STRING,,,yes,A template is chosen,Pass · fired 3×
+template_selected,,,,template,STRING,beach / mountain,,yes,,Pass · fired 3×
+template_selected,,,,changed_from,STRING,beach / mountain,Template before the tap (Beach is preselected),yes,,Pass · fired 3×
+quest_previewed,user_id,client,client_ts,quest_id,STRING,,,yes,Preview opens,Pass · fired 6×
+quest_previewed,,,,pages,INT64,1–5,Photo pages,yes,,Pass · fired 6×
+quest_viewed,user_id (empty when signed out; anon_id in common),client,client_ts,quest_id,STRING,,,yes,A Quest page opens,Pass · fired 14×
+quest_viewed,,,,owner_id,STRING,,,yes,,Pass · fired 14×
+quest_viewed,,,,is_owner,BOOL,true / false,,yes,,Pass · fired 14×
+quest_viewed,,,,signed_in,BOOL,true / false,,yes,,Pass · fired 14×
+quest_viewed,,,,visibility,STRING,public / unlisted / private,,yes,,Pass · fired 14×
+quest_viewed,,,,source,STRING,shared_link / home_feed / suggested / explore / search / profile / guide / notification / quests_tab / whatis_example / own_home,Where it was opened from,yes,,Pass · fired 14×
+quest_page_turned,user_id (empty when signed out; anon_id in common),client,client_ts,quest_id,STRING,,,yes,A Quest page is turned,Pass · fired 20×
+quest_page_turned,,,,page,INT64,0–6,"Page landed on: 0 cover, 1–5 photo pages, last = route",yes,,Pass · fired 20×
+quest_page_turned,,,,total,INT64,3–7,Pages including cover and route,yes,,Pass · fired 20×
+quest_page_turned,,,,direction,STRING,next / prev,,yes,,Pass · fired 20×
+quest_page_turned,,,,looped,BOOL,true / false,Went from the route page back to the cover,yes,,Pass · fired 20×
+quest_page_turned,,,,fullscreen,BOOL,true / false,,yes,,Pass · fired 20×
+quest_fullscreen_toggled,user_id (empty when signed out; anon_id in common),client,client_ts,quest_id,STRING,,,yes,Full screen is turned on or off,Pass · fired 2×
+quest_fullscreen_toggled,,,,on,BOOL,true / false,,yes,,Pass · fired 2×
+quest_fullscreen_toggled,,,,via,STRING,button / escape,How it changed,yes,,Pass · fired 2×
+quest_view_ended,user_id (empty when signed out; anon_id in common),client,client_ts,quest_id,STRING,,,yes,A viewer leaves a Quest page,Pass · fired 14×
+quest_view_ended,,,,seconds,INT64,,Time on the Quest,yes,,Pass · fired 14×
+quest_view_ended,,,,pages_seen,INT64,1–7,Distinct pages seen,yes,,Pass · fired 14×
+quest_view_ended,,,,completed,BOOL,true / false,Reached the route page at least once,yes,,Pass · fired 14×
+quest_view_ended,,,,loops,INT64,,Times it looped back to the cover,yes,,Pass · fired 14×
+make_your_own_tapped,user_id (empty when signed out; anon_id in common),client,client_ts,quest_id,STRING,,,yes,Make your own Quest is tapped on someone else's Quest,Pass · fired 2×
+make_your_own_tapped,,,,signed_in,BOOL,true / false,,yes,,Pass · fired 2×
+quest_link_shared,user_id (empty when signed out; anon_id in common),client,client_ts,quest_id,STRING,,,yes,A Quest link is copied or shared,Pass · fired 3×
+quest_link_shared,,,,channel,STRING,copy / whatsapp / native_share,,yes,,Pass · fired 3×
+quest_link_shared,,,,source,STRING,publish_screen / feed,Where the share was started,yes,,Pass · fired 3×
+quest_link_shared,,,,is_owner,BOOL,true / false,,yes,,Pass · fired 3×
+instagram_export_downloaded,user_id,client,client_ts,quest_id,STRING,,,yes,Download on the Instagram screen is tapped,Pass · fired 1×
+instagram_export_downloaded,,,,format,STRING,all,"Only ""Download all"" exists today",yes,,Pass · fired 1×
+instagram_export_downloaded,,,,slides,INT64,2–6,Carousel images: cover + up to 5 pages,yes,,Pass · fired 1×
+feed_viewed,user_id,client,client_ts,follows_count,INT64,,People followed,yes,Home opens (the feed is under Your Quests),Pass · fired 7×
+feed_viewed,,,,items,INT64,,Cards from people followed,yes,,Pass · fired 7×
+feed_viewed,,,,suggested,INT64,,Suggested cards,yes,,Pass · fired 7×
+quests_tab_viewed,user_id,client,client_ts,filter,STRING,all / published / drafts,,yes,The Quests tab opens or its filter changes,Pass · fired 5×
+quests_tab_viewed,,,,items,INT64,,Quests shown,yes,,Pass · fired 5×
+notifications_viewed,user_id,client,client_ts,unread,INT64,,Unread before opening,yes,The bell is opened,Pass · fired 1×
+notification_opened,user_id,client,client_ts,kind,STRING,like / comment / follow,,yes,A bell item or email link is opened,Pass · fired 2×
+notification_opened,,,,channel,STRING,bell / email,,yes,,Pass · fired 2×
+search_performed,user_id,client,client_ts,query_length,INT64,1–100,Characters (never the text),yes,"Typing pauses for 500 ms on Explore, or a place chip is tapped",Pass · fired 5×
+search_performed,,,,trigger,STRING,typed / chip,,yes,,Pass · fired 5×
+search_performed,,,,results_quests,INT64,,,yes,,Pass · fired 5×
+search_performed,,,,results_people,INT64,,,yes,,Pass · fired 5×
+search_performed,,,,results_stories,INT64,,,yes,,Pass · fired 5×
+search_result_tapped,user_id,client,client_ts,kind,STRING,quest / person / story,,yes,A search result is tapped,Pass · fired 3×
+search_result_tapped,,,,position,INT64,1–50,Position in its section,yes,,Pass · fired 3×
+guide_opened,user_id,client,client_ts,guide_id,STRING,,,yes,A guide opens,Pass · fired 2×
+guide_opened,,,,source,STRING,explore / search,,yes,,Pass · fired 2×
+guide_shared,user_id,client,client_ts,guide_id,STRING,,,yes,Share is tapped on a guide,Pass · fired 1×
+guide_shared,,,,channel,STRING,native_share,,yes,,Pass · fired 1×
+profile_viewed,user_id,client,client_ts,profile_user_id,STRING,,,yes,A profile opens,Pass · fired 6×
+profile_viewed,,,,is_self,BOOL,true / false,,yes,,Pass · fired 6×
+profile_viewed,,,,source,STRING,tab / quest / feed / explore / search / followers_list,,yes,,Pass · fired 6×
+profile_link_shared,user_id,client,client_ts,channel,STRING,copy / native_share,,yes,Share profile is tapped,Pass · fired 1×
+followers_list_viewed,user_id,client,client_ts,profile_user_id,STRING,,,yes,A Followers or Following list opens,Pass · fired 2×
+followers_list_viewed,,,,list,STRING,followers / following,,yes,,Pass · fired 2×
+settings_viewed,user_id,client,client_ts,(common only),,,,,Settings opens,Pass · fired 1×
+account_delete_started,user_id,client,client_ts,(common only),,,,,Delete account is tapped (before confirming),Pass · fired 1×

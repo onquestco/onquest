@@ -1,0 +1,62 @@
+name,user_id,type,ts,properties [JSON key],Data type,Allowed values,Property description,Required,Fires when,Tested (9 Nov)
+user_signed_up,user_id,server,server_ts,method,STRING,google / magic_link,,yes,An account is created,Pass · fired 3×
+user_signed_up,,,,source,STRING,app_open / comment / like / make_your_own,,yes,,Pass · fired 3×
+user_signed_up,,,,referrer_quest_id,STRING,,Shared Quest that brought them in,optional,,Pass · fired 3×
+user_signed_in,user_id,server,server_ts,method,STRING,google / magic_link,,yes,A returning user signs in,Pass · fired 1×
+username_set,user_id,server,server_ts,changed,BOOL,true / false,true when replacing an existing username; old links redirect,yes,A username is saved,Pass · fired 3×
+username_set,,,,length,INT64,3–20,,yes,,Pass · fired 3×
+profile_updated,user_id,server,server_ts,fields,STRING,"name,username,photo,city,bio","Comma list of fields that changed, never their values",yes,Edit profile is saved with changes,Pass · fired 1×
+quest_draft_created,user_id,server,server_ts,quest_id,STRING,,,yes,A draft Quest is created (Next on Pick photos),Pass · fired 4×
+quest_draft_created,,,,source,STRING,home_banner / home_empty / create_menu / quests_tab / quests_empty / make_your_own / ftue / whatis_sheet,,yes,,Pass · fired 4×
+photos_uploaded,user_id,server,server_ts,quest_id,STRING,,,yes,Uploads for a Quest finish,Pass · fired 5×
+photos_uploaded,,,,count,INT64,1–15,,yes,,Pass · fired 5×
+photos_uploaded,,,,failed,INT64,0–15,Failed after retries,yes,,Pass · fired 5×
+photos_uploaded,,,,heic,INT64,0–15,HEIC files converted,yes,,Pass · fired 5×
+photos_uploaded,,,,bytes_total,INT64,,Bytes stored after shrinking,yes,,Pass · fired 5×
+quest_arranged,user_id,server,server_ts,quest_id,STRING,,,yes,Auto-arranging finishes or fails,Pass · fired 5×
+quest_arranged,,,,pages,INT64,1–5,,yes,,Pass · fired 5×
+quest_arranged,,,,photos,INT64,3–15,,yes,,Pass · fired 5×
+quest_arranged,,,,captions_written,INT64,0–15,Captions the small model wrote,yes,,Pass · fired 5×
+quest_arranged,,,,fallback_used,BOOL,true / false,"Some photos had no date, so pick order was used",yes,,Pass · fired 5×
+quest_arranged,,,,failed,BOOL,true / false,Arranging failed; photos left in pick order,yes,,Pass · fired 5×
+quest_arranged,,,,duration_ms,INT64,,,yes,,Pass · fired 5×
+quest_published,user_id,server,server_ts,quest_id,STRING,,,yes,A Quest is published for the first time,Pass · fired 4×
+quest_published,,,,visibility,STRING,public / unlisted / private,,yes,,Pass · fired 4×
+quest_published,,,,default_visibility,STRING,public / unlisted / private,What the sheet started on (from Settings),yes,,Pass · fired 4×
+quest_published,,,,template,STRING,beach / mountain,,yes,,Pass · fired 4×
+quest_published,,,,photos,INT64,3–15,,yes,,Pass · fired 4×
+quest_published,,,,pages,INT64,1–5,,yes,,Pass · fired 4×
+quest_published,,,,minutes_since_start,FLOAT64,,From the start of creating,yes,,Pass · fired 4×
+quest_published,,,,is_first_quest,BOOL,true / false,,yes,,Pass · fired 4×
+quest_updated,user_id,server,server_ts,quest_id,STRING,,,yes,A published Quest is published again after edits,Pass · fired 2×
+quest_updated,,,,visibility,STRING,public / unlisted / private,,yes,,Pass · fired 2×
+quest_visibility_changed,user_id,server,server_ts,quest_id,STRING,,,yes,Visibility changes after publishing (not when re-tapping the same option),Pass · fired 4×
+quest_visibility_changed,,,,from,STRING,public / unlisted / private,,yes,,Pass · fired 4×
+quest_visibility_changed,,,,to,STRING,public / unlisted / private,,yes,,Pass · fired 4×
+quest_visibility_changed,,,,source,STRING,quest_menu,,yes,,Pass · fired 4×
+quest_comments_toggled,user_id,server,server_ts,quest_id,STRING,,,yes,Comments are turned on or off,Pass · fired 2×
+quest_comments_toggled,,,,on,BOOL,true / false,,yes,,Pass · fired 2×
+quest_deleted,user_id,server,server_ts,quest_id,STRING,,,yes,A Quest is deleted (confirmed),Pass · fired 1×
+quest_deleted,,,,likes,INT64,,,yes,,Pass · fired 1×
+quest_deleted,,,,comments,INT64,,,yes,,Pass · fired 1×
+quest_unavailable,user_id (empty when signed out; anon_id in common),server,server_ts,quest_id,STRING,,,yes,A link opens a private or deleted Quest,Not in prototype: no screen for a private or deleted link yet
+quest_unavailable,,,,reason,STRING,private / deleted,,yes,,Not in prototype: no screen for a private or deleted link yet
+quest_liked,user_id,server,server_ts,quest_id,STRING,,,yes,A like or unlike is saved (sign-in required; a signed-out tap goes to Google sign-in first),Pass · fired 5×
+quest_liked,,,,owner_id,STRING,,,yes,,Pass · fired 5×
+quest_liked,,,,unlike,BOOL,true / false,,yes,,Pass · fired 5×
+quest_liked,,,,source,STRING,quest_page / fullscreen / feed / after_sign_in,after_sign_in = the like saved right after a signed-out viewer signed in to like,yes,,Pass · fired 5×
+comment_posted,user_id,server,server_ts,quest_id,STRING,,,yes,A comment is saved (blank comments are not),Pass · fired 1×
+comment_posted,,,,owner_id,STRING,,,yes,,Pass · fired 1×
+comment_posted,,,,length,INT64,1–300,"Characters, never the text",yes,,Pass · fired 1×
+comment_deleted,user_id,server,server_ts,quest_id,STRING,,,yes,A comment is deleted,Not in prototype: no delete-comment control yet
+comment_deleted,,,,deleted_by,STRING,owner / author,,yes,,Not in prototype: no delete-comment control yet
+user_followed,user_id,server,server_ts,target_user_id,STRING,,,yes,A follow or unfollow is saved,Pass · fired 6×
+user_followed,,,,source,STRING,profile / quest / explore / search / followers_list / auto,auto = followed the sharer on sign-up (pending founder decision),yes,,Pass · fired 6×
+user_followed,,,,unfollow,BOOL,true / false,,yes,,Pass · fired 6×
+notification_sent,user_id (the person notified),server,server_ts,kind,STRING,like / comment / follow,,yes,"A notification is created (not for unlikes or your own actions), and its email if that setting is on",Pass · fired 16×
+notification_sent,,,,channel,STRING,bell / email,,yes,,Pass · fired 16×
+notification_sent,,,,recipient_id,STRING,,,yes,,Pass · fired 16×
+setting_changed,user_id,server,server_ts,setting,STRING,email_likes / email_comments / email_follows / default_visibility / show_places,,yes,A setting is saved (not when re-tapping the current value),Pass · fired 10×
+setting_changed,,,,value,STRING,true / false / public / unlisted / private,,yes,,Pass · fired 10×
+user_signed_out,user_id,server,server_ts,(common only),,,,,Sign out is confirmed,Pass · fired 1×
+account_deleted,user_id,server,server_ts,quests_count,INT64,,,yes,Account deletion is confirmed (DELETE typed),Pass · fired 1×

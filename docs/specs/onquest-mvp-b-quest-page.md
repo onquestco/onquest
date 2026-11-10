@@ -285,7 +285,7 @@ App chrome uses `design-system/` only; templates never import it (decision 0002)
 - Quest page: cached HTML; cover image `priority` with `display` srcset, other pages' images lazy; MapLibre only near the route page; social section streamed. Target LCP < 2.5 s on mid Android 4G (HLD §8).
 - One extra no-store request per view (`/me`, ~1 KB); the cached social fetch revalidates only on writes.
 - Polling: one tiny request per signed-in open tab every 30 s.
-- **Resend:** the free plan allows 3,000 emails a month but only 100 a day; a busy friends test with an email per like can pass 100 in a day. Pro is $20/month (50,000). CTO decision C-B3.
+- **Resend:** the free plan allows 3,000 emails a month but only 100 a day; a busy friends test with an email per like can pass 100 in a day. Pro is $20/month (50,000). Decided: start free, upgrade only if needed (C-B3).
 - Export: on the phone; no server cost.
 
 ## 10. Analytics
@@ -341,7 +341,7 @@ Per the Taxonomy sheet: `quest_viewed`, `quest_view_ended`, `quest_page_turned`,
 
 - **C-B1.** Likes (and C's follows) are idempotent set-state functions with no `saved_at` check, an exception to 0001 rule 4; unlike/unfollow archive the row.
 - **C-B2.** Social data (likes, comments) is cached separately under `trip-social:{key}` so a like never rebuilds the Quest page.
-- **C-B3.** Resend plan: free (100 emails/day cap) for the founders' test, Pro ($20/month) before the friends test. DNS records on onquest.in; Resend also as Supabase Auth SMTP for magic links.
+- **C-B3. Decided 10 Nov (CTO):** Resend free plan (100 emails a day, 3,000 a month) for the founders' and friends tests; move to Pro ($20/month, 50,000 a month, no daily cap) only if emails pass 100 a day. DNS records (SPF, DKIM, DMARC) on onquest.in, added in Hostinger. Resend is also Supabase Auth's SMTP for magic links. Not a Hostinger mailbox: mailbox SMTP isn't meant for automated app email and risks sign-in links landing in spam.
 - **C-B4.** Email links use an HMAC token with no expiry that can only turn one email switch off. New secret `EMAIL_LINK_SECRET`.
 - **C-B5.** Private and removed Quest pages answer 200 with `noindex` and a message; unknown URLs stay 404.
 

@@ -1,0 +1,179 @@
+"Taxonomy test run, 9 Nov 2026",,,
+150 scenario steps · 248 events · 0 failed steps · 0 invalid events · 54 of 56 events fired,,,
+Each event is checked for: known name; client or server type; client_ts or server_ts (not both); user_id set when the event needs sign-in; all 7 common properties; every required property; no extra properties; data types; allowed values and ranges; unique event_id. Across events: every quest_view_ended matches an open quest_viewed; no page past the total; loops land on the cover; notification user_id is the recipient; signed_in matches user_id; one like notification per like.,,,
+#,Scenario step,Events fired (in order),Result
+1.0,Page loads,app_opened,Pass
+2.0,Email sign-in link,sign_in_started,Pass
+3.0,Continue with Google (new user),"sign_in_started, user_signed_up",Pass
+4.0,Username saved,"username_set, ftue_step_viewed",Pass
+5.0,Welcome step 2,ftue_step_viewed,Pass
+6.0,Welcome step 3,ftue_step_viewed,Pass
+7.0,Create your first Quest,"ftue_completed, quest_create_started",Pass
+8.0,Pick all 18 photos,"photo_limit_hit, photo_limit_hit, photo_limit_hit",Pass
+9.0,Deselect down to 12 and continue,"photos_picked, quest_draft_created, photos_uploaded",Pass
+10.0,Arranging finishes,quest_arranged,Pass
+11.0,"Open a photo, close it (no change)","(none, as expected)",Pass
+12.0,Move a photo to a page with room,review_edit,Pass
+13.0,Undo,review_edit,Pass
+14.0,Swap two photos,review_edit,Pass
+15.0,Move to a new page,review_edit,Pass
+16.0,Remove a photo,review_edit,Pass
+17.0,Replace a photo,review_edit,Pass
+18.0,"Add photos, then cancel (no event)","(none, as expected)",Pass
+19.0,Add photos up to 15 and past it,"photo_limit_hit, photo_limit_hit, photo_limit_hit, review_edit",Pass
+20.0,Edit caption (typing = one event),review_edit,Pass
+21.0,Edit place and date,"review_edit, review_edit",Pass
+22.0,Rename a page,review_edit,Pass
+23.0,Change the Quest title,review_edit,Pass
+24.0,Go to templates,"(none, as expected)",Pass
+25.0,Pick Mountain,template_selected,Pass
+26.0,Preview,quest_previewed,Pass
+27.0,Turn every preview page and loop,quest_page_turned ×7,Pass
+28.0,Previous page at the cover (no event),"(none, as expected)",Pass
+29.0,"Open publish sheet, choose Unlisted, close (no event)","(none, as expected)",Pass
+30.0,Publish,quest_published,Pass
+31.0,Copy link,quest_link_shared,Pass
+32.0,Share to WhatsApp,quest_link_shared,Pass
+33.0,Instagram screen and download,instagram_export_downloaded,Pass
+34.0,Back to share screen,"(none, as expected)",Pass
+35.0,Friend opens the Quest,"app_opened, quest_viewed",Pass
+36.0,Friend sessions differ from creator,"(none, as expected)",Pass
+37.0,Like signed out,"quest_liked, notification_sent, notification_sent",Pass
+38.0,Unlike (no notification),quest_liked,Pass
+39.0,Turn to the end and loop,quest_page_turned ×7,Pass
+40.0,Arrow keys turn pages,"quest_page_turned, quest_page_turned",Pass
+41.0,Rapid double tap next (two turns),"quest_page_turned, quest_page_turned",Pass
+42.0,Full screen on,quest_fullscreen_toggled,Pass
+43.0,Turn a page in full screen,quest_page_turned,Pass
+44.0,Like in full screen,"quest_liked, notification_sent, notification_sent",Pass
+45.0,Escape leaves full screen,quest_fullscreen_toggled,Pass
+46.0,Tap comment to sign in,"(none, as expected)",Pass
+47.0,Friend signs up with Google,"sign_in_started, user_signed_up",Pass
+48.0,Empty comment (no event),"(none, as expected)",Pass
+49.0,Post a comment,"comment_posted, notification_sent, notification_sent",Pass
+50.0,Leave the Quest through the demo menu,quest_view_ended,Pass
+51.0,Tab: Explore,tab_tapped,Pass
+52.0,Type a search (one event after pause),search_performed,Pass
+53.0,Spaces only (no event),"(none, as expected)",Pass
+54.0,Type then clear quickly (no event),"(none, as expected)",Pass
+55.0,Tap a place chip,search_performed,Pass
+56.0,Tap a Quest result,"quest_viewed, search_result_tapped",Pass
+57.0,Turn a page on their Quest,quest_page_turned,Pass
+58.0,Like their Quest,"quest_liked, notification_sent, notification_sent",Pass
+59.0,Open the creator from the Quest,"quest_view_ended, profile_viewed",Pass
+60.0,Follow or unfollow from profile,user_followed,Pass
+61.0,Toggle follow back,"user_followed, notification_sent, notification_sent",Pass
+62.0,"Back, clear search","(none, as expected)",Pass
+63.0,Open a guide from Explore,guide_opened,Pass
+64.0,Share the guide,guide_shared,Pass
+65.0,Open a Quest from the guide,quest_viewed,Pass
+66.0,Make your own (signed in),"quest_view_ended, make_your_own_tapped, quest_create_started",Pass
+67.0,"Jump to Home (demo menu, no events)","(none, as expected)",Pass
+68.0,"Quests tab, then Home tab","tab_tapped, quests_tab_viewed, tab_tapped, feed_viewed",Pass
+69.0,Feed like,"quest_liked, notification_sent, notification_sent",Pass
+70.0,Feed share,quest_link_shared,Pass
+71.0,Feed card opens Quest,quest_viewed,Pass
+72.0,Back to Home,"quest_view_ended, feed_viewed",Pass
+73.0,Open someone from the feed,profile_viewed,Pass
+74.0,Back,feed_viewed,Pass
+75.0,What's a Quest? sheet,whatis_viewed,Pass
+76.0,See an example,quest_viewed,Pass
+77.0,"Back, sheet, Create from sheet","quest_view_ended, feed_viewed, whatis_viewed, quest_create_started",Pass
+78.0,Home banner Create,quest_create_started,Pass
+79.0,Create tab opens chooser,"tab_tapped, create_menu_opened",Pass
+80.0,Tap blog (releasing soon),create_option_tapped,Pass
+81.0,"Close chooser (back to Home, no create)",feed_viewed,Pass
+82.0,Chooser: Create a Quest,"tab_tapped, create_menu_opened, create_option_tapped, quest_create_started",Pass
+83.0,Notifications,notifications_viewed,Pass
+84.0,Open a notification,"quest_viewed, notification_opened",Pass
+85.0,Quests tab,"quest_view_ended, tab_tapped, quests_tab_viewed",Pass
+86.0,Filter Drafts,quests_tab_viewed,Pass
+87.0,Same filter again (no event),"(none, as expected)",Pass
+88.0,Resume a draft,draft_resumed,Pass
+89.0,Quests tab: big Create tile,quest_create_started,Pass
+90.0,Quests tab: open own Quest,"quests_tab_viewed, quest_viewed",Pass
+91.0,Manage: change visibility,"quest_view_ended, quest_visibility_changed",Pass
+92.0,Manage: same visibility (no event),"(none, as expected)",Pass
+93.0,Manage: comments off,quest_comments_toggled,Pass
+94.0,"Manage: edit, then publish again","quest_previewed, quest_updated",Pass
+95.0,"Manage: delete, cancel (no event)","(none, as expected)",Pass
+96.0,Manage: delete,quest_deleted,Pass
+97.0,Home after delete: + Create tile,quest_create_started,Pass
+98.0,Quests tab empty Published: Create,"(not reachable, see notes)",Skipped
+99.0,Tab: Profile,"tab_tapped, profile_viewed",Pass
+100.0,Followers list,followers_list_viewed,Pass
+101.0,Follow from list,"user_followed, notification_sent, notification_sent",Pass
+102.0,"Back, Following list",followers_list_viewed,Pass
+103.0,Share profile,profile_link_shared,Pass
+104.0,"Edit profile, save without changes (no update)","(none, as expected)",Pass
+105.0,"Edit profile, bad username (blocked, no event)","(none, as expected)",Pass
+106.0,"Edit profile, change name + username","profile_updated, username_set",Pass
+107.0,"Edit profile, cancel (no event)","(none, as expected)",Pass
+108.0,Settings,settings_viewed,Pass
+109.0,Toggle an email setting,setting_changed,Pass
+110.0,Default visibility to Unlisted,setting_changed,Pass
+111.0,Same default visibility (no event),"(none, as expected)",Pass
+112.0,Settings: What's a Quest?,whatis_viewed,Pass
+113.0,"Sign out, cancel (no event)","(none, as expected)",Pass
+114.0,Sign out,user_signed_out,Pass
+115.0,Sign back in (returning),"sign_in_started, user_signed_in",Pass
+116.0,Username screen again (no username_set),ftue_step_viewed,Pass (see notes)
+117.0,Welcome: Skip on step 1,"ftue_completed, feed_viewed",Pass
+118.0,Welcome: Look around first on step 3,"ftue_step_viewed, ftue_step_viewed, ftue_completed, feed_viewed",Pass
+119.0,Home: your own Quest card,quest_viewed,Pass
+120.0,Home: a suggested Quest,"quest_view_ended, quest_viewed",Pass
+121.0,Explore grid (no search) opens a Quest,"quest_view_ended, quest_viewed",Pass
+122.0,Search a person and open them,"quest_view_ended, search_performed, search_result_tapped, profile_viewed",Pass
+123.0,Open a Quest from their profile,quest_viewed,Pass
+124.0,Follow from their Quest,user_followed,Pass
+125.0,Follow from search results,"quest_view_ended, search_performed, user_followed, notification_sent, notification_sent",Pass
+126.0,Search a guide and open it,"search_performed, search_result_tapped, guide_opened",Pass
+127.0,Followers list: open a person,profile_viewed,Pass
+128.0,Settings: show places off,setting_changed,Pass
+129.0,Home: continue a draft,draft_resumed,Pass
+130.0,Explore: follow from People (no search),user_followed,Pass
+131.0,Explore: open a person (no search),profile_viewed,Pass
+132.0,"Manage: private → public → unlisted, comments back on","quest_visibility_changed, quest_visibility_changed, quest_comments_toggled",Pass
+133.0,"Manage: make private, then open it from Quests","quest_visibility_changed, quests_tab_viewed, quest_viewed",Pass
+134.0,Settings: email toggles off and on,"quest_view_ended, setting_changed ×3",Pass
+135.0,"Settings: default visibility Private, then Public","setting_changed, setting_changed",Pass
+136.0,"Delete account: start, then confirm","account_delete_started, account_deleted",Pass
+137.0,Shared link when signed out,"app_opened, quest_viewed",Pass
+138.0,"Make your own, signed out","quest_view_ended, make_your_own_tapped",Pass
+139.0,Sign up from Make your own,"sign_in_started, user_signed_up, username_set, quest_create_started",Pass
+140.0,"Pick 3 photos, continue","photos_picked, quest_draft_created, photos_uploaded, quest_arranged",Pass
+141.0,Remove at 3 photos (blocked),review_edit (blocked=true),Pass
+142.0,"Back to Pick, add one, continue (same draft)","photos_picked, photos_uploaded, quest_arranged",Pass
+143.0,Move a photo to a page with room,review_edit,Pass
+144.0,Edit an automatic caption,review_edit,Pass
+145.0,Publish first Quest of new account,"quest_previewed, quest_published",Pass
+146.0,Notifications: open a like,"quest_viewed, notification_opened",Pass
+147.0,Settings: default Private,"quest_view_ended, setting_changed",Pass
+148.0,"New Quest published with the default (Private), template back to Beach","quest_create_started, photos_picked, quest_draft_created, photos_uploaded, quest_arranged, review_edit ×2, template_selected ×2, quest_previewed, quest_published",Pass
+149.0,"Settings: default Public, publish another","setting_changed, quest_create_started, photos_picked, quest_draft_created, photos_uploaded, quest_arranged, quest_previewed, quest_published",Pass
+150.0,Edit it and publish again as Unlisted,"quest_previewed, quest_updated",Pass
+Values not exercised in the run,,,
+Event,Property,Values,Why
+app_opened,entry,"email, notification",Email and bell links: real app only
+app_opened,referrer,"instagram, other",Read from the link in the real app
+app_opened,signed_in,True,The prototype always opens signed out
+quest_create_started,source,quests_empty,Published filter is never empty in the prototype (a sample Quest is always there)
+notification_opened,kind,follow,The prototype only creates like and comment notifications
+notification_opened,channel,email,Email links: real app only
+profile_link_shared,channel,native_share,Phone share sheet: real app on mobile; the prototype copies
+user_signed_up,method,magic_link,Magic link only sends an email in the prototype
+user_signed_in,method,magic_link,Magic link only sends an email in the prototype
+quest_draft_created,source,"home_empty, create_menu, quests_tab, quests_empty, whatis_sheet","Same values as quest_create_started, which covers them"
+quest_arranged,failed,True,Failure path is backend only
+quest_published,default_visibility,unlisted,"Same code path as private and public, which passed"
+quest_updated,visibility,public,"Same code path as unlisted, which passed"
+quest_unavailable,reason,"private, deleted",Event not in prototype
+comment_deleted,deleted_by,"owner, author",Event not in prototype
+user_followed,source,auto,"""auto"" waits on founder decision (auto-follow the person who shared the link)"
+Prototype limits and fixes found by the test,,,
+"Limit: the prototype keeps one own Quest. Starting a new Quest and leaving it blanks the published one, so the test re-arranges it before Manage.",,,
+Limit: the Published filter on the Quests tab is never empty in the prototype (a sample Quest is always there).,,,
+Limit: a returning user sees the username and welcome screens again on every sign-in. The real app shows them on first sign-in only; ftue_step_viewed must not fire for returning users.,,,
+Fixed: a new Quest now starts on the default visibility from Settings (it kept the last Quest's setting).,,,
+"Fixed: opening a shared link from the screen menu now starts signed out, and leaving the friend view resets it.",,,
+Fixed: two fast taps on Next both count as page turns.,,,

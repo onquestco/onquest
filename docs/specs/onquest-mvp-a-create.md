@@ -114,9 +114,9 @@ This is the prototype's rule (`arrange()` in the prototype). It does not satisfy
 
 ### 3.5 Captions model
 
-Recommendation: **Claude Haiku 4.5** through the Anthropic API, called from the `writeCaptions` server action, one request per Quest with all eligible photos (≤ 15 items, each `{ date?, place }`), asking for JSON `{ photoId, caption }[]`, each ≤ 60 characters.
+Recommendation (decided, C-A6): **Claude Haiku 5.5** through the Anthropic API, called from the `writeCaptions` server action, one request per Quest with all eligible photos (≤ 15 items, each `{ date?, place }`), asking for JSON `{ photoId, caption }[]`, each ≤ 60 characters.
 
-| | Haiku 4.5 (recommended) | Gemini Flash-class | No model (templates like "Sunset in Panjim") |
+| | Haiku 5.5 (chosen) | Gemini Flash-class | No model (templates like "Sunset in Panjim") |
 |---|---|---|---|
 | Cost per Quest (~600 input + ~400 output tokens) | ≈ $0.003 | ≈ $0.001 | $0 |
 | Added time | 2–4 s, capped at 8 s | 1–3 s | 0 |
@@ -146,7 +146,7 @@ The input contains only dates and town names: no user text, no photos, no handle
 
 ### 3.9 Analytics plumbing (`lib/analytics/`)
 
-- **Source of truth for names and properties:** the OnQuest Taxonomy sheet. The PRD's table and the prototype already differ (`signed_up` vs `user_signed_up`, `followed` vs `user_followed`, `quest_managed` vs `quest_visibility_changed`, `quest_edited` vs `review_edit`, `profile_edited` vs `profile_updated`); the sheet wins. Before A-07 starts, the CTO exports the sheet's events tab to `docs/analytics/taxonomy.csv` (the builders can't open Google Sheets). A-07 turns it into zod schemas in `lib/analytics/events.ts`; a test fails if code sends an event or property not in the file.
+- **Source of truth for names and properties:** the OnQuest Taxonomy sheet. The PRD's table and the prototype already differ (`signed_up` vs `user_signed_up`, `followed` vs `user_followed`, `quest_managed` vs `quest_visibility_changed`, `quest_edited` vs `review_edit`, `profile_edited` vs `profile_updated`); the sheet wins. Before A-07 starts, the CTO exports the sheet's events tab to `docs/analytics/` (client-events.csv, server-events.csv, common-properties.csv) (the builders can't open Google Sheets). A-07 turns it into zod schemas in `lib/analytics/events.ts`; a test fails if code sends an event or property not in the file.
 - **Client:** PostHog JS through a first-party proxy (`/ingest/*` rewrite in `next.config.ts`) so ad blockers don't hide viewers. Common properties per the sheet: `event_id`, `session_id`, `anon_id`, `platform`, `app_version`, `screen`. `anon_id` = a random uuid kept in `localStorage` (`oq_anon_id`), sent as PostHog's distinct id before sign-in and kept after it (`posthog.identify(userKey)` merges the two).
 - **Server:** `posthog-node` from `lib/analytics/server.ts` (`import 'server-only'`), `type: 'server'`, `server_ts`, distinct id = the user key. Called after a successful write, inside `after()` so it never slows or fails the action.
 - **Never** in any property: user text (titles, captions, comments, search text), emails, photo URLs, coordinates.
@@ -396,14 +396,14 @@ Templates are untouched by this spec (B owns them); the preview uses `getTemplat
 
 - Upload: thumb (~40 KB) + display (~300 KB) first, export (~700 KB) last; 3 in parallel; one image decode at a time (phone memory).
 - Arranging: < 10 s typical, 60 s budget. Model call capped at 8 s, geocoding at 5 s.
-- Captions: ≈ $0.003 per Quest (Haiku 4.5). 1,000 Quests ≈ $3.
-- Geocoding: ≤ 5 reverse lookups + a few searches per Quest; see C-A7 for the provider.
+- Captions: ≈ $0.0005 per Quest (Haiku 5.5). 1,000 Quests ≈ $0.50.
+- Geocoding: ≤ 5 reverse lookups + a few searches per Quest, free on Nominatim (C-A7), at most 1 request a second.
 - Storage: ~17 MB per 15-photo Quest with `export.jpg`. 1,000 Quests ≈ 17 GB, inside Supabase Pro's 100 GB.
 - PostHog: well inside the 1M events/month free tier for a friends test.
 
 ## 10. Analytics
 
-Names and properties per the Taxonomy sheet (via `docs/analytics/taxonomy.csv`). This spec fires: `app_opened`, `sign_in_started` (source: `app_open`, `comment`, `like`, `make_your_own`), `user_signed_in`, `user_signed_up` (server, with `referrer_quest_id` from the `ref` carried through sign-in), `username_set`, `quest_create_started`, `quest_draft_created` (server), `photos_picked`, `photo_limit_hit`, `photos_uploaded` (server), `quest_arranged` (`pages`, `seconds`, `captions_written`, `fallback_used`), `review_edit`, `template_selected`, `quest_previewed`, `quest_published` (server; `minutes_since_start` from `quest_create_started`), `quest_updated` (server, republish), `quest_link_shared` (`copy`, `whatsapp`), `quest_visibility_changed`, `quest_comments_toggled`, `quest_deleted` (server).
+Names and properties per the Taxonomy sheet (via `docs/analytics/` (client-events.csv, server-events.csv, common-properties.csv)). This spec fires: `app_opened`, `sign_in_started` (source: `app_open`, `comment`, `like`, `make_your_own`), `user_signed_in`, `user_signed_up` (server, with `referrer_quest_id` from the `ref` carried through sign-in), `username_set`, `quest_create_started`, `quest_draft_created` (server), `photos_picked`, `photo_limit_hit`, `photos_uploaded` (server), `quest_arranged` (`pages`, `seconds`, `captions_written`, `fallback_used`), `review_edit`, `template_selected`, `quest_previewed`, `quest_published` (server; `minutes_since_start` from `quest_create_started`), `quest_updated` (server, republish), `quest_link_shared` (`copy`, `whatsapp`), `quest_visibility_changed`, `quest_comments_toggled`, `quest_deleted` (server).
 
 **Viewer → creator attribution (PRD question):** "Make your own Quest" links carry `?ref={tripKey}`; the login and onboarding steps carry it through; `user_signed_up` gets `referrer_quest_id`. Because `anon_id` survives sign-in and PostHog merges it with the user, "opened a shared Quest then published within 14 days" is a PostHog funnel on one person (`quest_viewed` with `is_owner=false` → `quest_published`). No database column needed.
 
@@ -427,7 +427,7 @@ Names and properties per the Taxonomy sheet (via `docs/analytics/taxonomy.csv`).
 | A-04 | Backend | Quest write actions + loaders | `features/editor/actions.ts`, `features/editor/publishActions.ts`, `features/editor/publishSlug.ts` (+ test), `features/editor/refreshTrip.ts`, `features/editor/getQuestDraft.ts`, `features/editor/getMyQuests.ts`, `lib/storage.ts`, `lib/cacheTags.ts`, `lib/trip/countWords.ts`, `lib/supabase/browser.ts` | M8, M16, M28 (backend), edge cases | A-03 | Every action in §4.2 except arranging ones; conflict path tested; file sweep on publish; delete removes files then rows |
 | A-05 | Backend | Arranging logic + places + captions | `features/editor/arrange.ts`, `features/editor/pageTitle.ts`, `features/editor/groupDays.ts` (tripDateKey only), `features/editor/suggestPlaces.ts`, `features/editor/arrangeActions.ts` (`nameLocations`, `searchPlaces`, `writeCaptions`), `lib/geo.ts`, `lib/captions.ts` (+ tests), `.env.example` | M3, M4 | A-01 (**pure parts now**) | `arrange.test.ts` covers every M3/M4/edge row (F-A1 rule pending, isolated in one function); captions mocked in tests |
 | A-06 | Backend | Sign-in return paths | `lib/auth/next.ts` (+ test), `app/auth/callback/route.ts`, `app/(auth)/login/page.tsx` (params only), `app/(app)/onboarding/page.tsx` (redirect only), `features/account/LoginForm.tsx` (pass `next`), `proxy.ts` | M1, M10/M11 (return) | A-02 | `next` survives Google + onboarding; unsafe `next` → `/home` |
-| A-07 | Backend | Analytics plumbing | `lib/analytics/events.ts`, `lib/analytics/client.ts`, `lib/analytics/server.ts`, `lib/analytics/anonId.ts` (+ tests), `next.config.ts` (`/ingest` rewrite only), `app/layout.tsx` (provider only), `docs/analytics/taxonomy.csv` (provided by CTO) | analytics, attribution | CTO exports sheet | Typed `track()`/`trackServer()`; schema test; no PII fields possible |
+| A-07 | Backend | Analytics plumbing | `lib/analytics/events.ts`, `lib/analytics/client.ts`, `lib/analytics/server.ts`, `lib/analytics/anonId.ts` (+ tests), `next.config.ts` (`/ingest` rewrite only), `app/layout.tsx` (provider only), `docs/analytics/` (client-events.csv, server-events.csv, common-properties.csv) (provided by CTO) | analytics, attribution | CTO exports sheet | Typed `track()`/`trackServer()`; schema test; no PII fields possible |
 | A-08 | Frontend | Create-flow design-system pieces | `design-system/components/Sheet.tsx`, `Toast.tsx`, `ProgressRing.tsx`, `Segmented.tsx` (+ any token change agreed with the founder) | M2, M5, M8 | — (**now**) | Components typed, tokens only, `noRawStyles` passes |
 | A-09 | Frontend | Pick photos screen on sample data | `features/editor/PickPhotos.tsx`, `PhotoTile.tsx`, `app/(app)/(create)/quests/new/page.tsx`, `lib/demo/samplePhotos.ts` | M2 | A-08 (**now** with a fake uploader) | Limits, counter, copy and states as screen 3; tests for 16th photo and Next |
 | A-10 | Frontend | Image worker + upload queue (port from WIP) | `features/editor/image.worker.ts`, `imageSize.ts`, `upload.ts`, `pendingUploads.ts` (+ tests), `package.json` (`exifr`, `zustand`, lazy `heic2any`) | M2, edge cases | — (**now**; real uploads need A-03) | Thumb/display first, export last; offline pause/resume; IndexedDB resume; HEIC fallback; GPS never leaves the page |
@@ -447,7 +447,7 @@ Names and properties per the Taxonomy sheet (via `docs/analytics/taxonomy.csv`).
 | `get_trip` field names | Rename `id` → `key` in output; keep both | Keep `id` and `updated_at` as aliases, add `key` and `saved_at` | CLAUDE.md: never remove returned fields | Yes (C-A3) |
 | Slug after visibility changes | New suffixed URL on Public → Unlisted (docs/03); never change | Never change; suffix only on first unlisted publish | PRD M28 "its link still works" | Founder confirm (F-A4) |
 | Removed photo files | Delete immediately; at next publish; at Quest delete only | At next publish (folder sweep) | Keeps Undo and draft history working; bounded exposure | Yes (C-A4) |
-| Caption model | Haiku 4.5; Gemini Flash; templates | Haiku 4.5 | Reliable JSON/length, ≈ $0.003/Quest | Yes (C-A6) |
+| Caption model | Haiku 5.5; GPT-5.4 nano/mini; Gemini Flash; templates | Haiku 5.5 | Cheapest, reliable JSON/length, ≈ $0.0005/Quest | Decided (C-A6) |
 | Export variant | Keep `export.jpg`; drop it and export from display | Keep, uploaded last | Stories need > 1600 px for full-bleed landscape crops | No |
 | What to keep from the editor WIP | — | Table in §16 | — | No |
 
@@ -473,10 +473,10 @@ Names and properties per the Taxonomy sheet (via `docs/analytics/taxonomy.csv`).
 - **C-A3.** `get_trip` keeps returning `trip.id` and `trip.updated_at` as aliases of `key` and `saved_at` (compatibility, not a second id).
 - **C-A4.** Removed or replaced photos' files are deleted at the next publish (or Quest delete), not at once.
 - **C-A5.** Feature flag for rollout: recommended none in code. Friends test runs on production with no links posted publicly and the PRD's "v1 replaced" rule; add a sign-up allowlist only if strangers appear. (Founder to agree.)
-- **C-A6.** Captions by Claude Haiku 4.5 via the Anthropic API (≈ $0.003 per Quest, 8 s cap). New vendor for the privacy policy; new secret `ANTHROPIC_API_KEY`.
-- **C-A7.** Geocoder: `lib/geo.ts` keeps one provider behind it. Mapbox needs `permanent=true` (paid per request) to store results; MapTiler's geocoding fits the map key we already plan. Pick one after checking its terms allow storing names and centre points.
-- **C-A8.** PostHog with a persistent `anon_id` (localStorage) and a first-party `/ingest` proxy replaces "cookieless mode" in `docs/03` §B.4; the privacy policy must say so. Export the Taxonomy sheet to `docs/analytics/taxonomy.csv` so builders can use it.
-- **C-A9.** Hosting: Vercel Hobby is for non-commercial use and can't run the friends test long-term; move to Pro (≈ $20/month) before inviting testers. Preview deployments now write to the Supabase preview project (the UX test creates Quests), replacing the read-only-preview rule in HLD §7.
+- **C-A6. Decided 10 Nov (CTO):** captions by Claude Haiku 5.5 (`claude-haiku-5-5`) via the Anthropic API: $0.10 / $0.50 per million input/output tokens, so ≈ $0.0005 per Quest (≈ 1,500 tokens in, 600 out), 8 s cap. Cheaper than GPT-5.4 nano ($0.20 / $1.25) and mini ($0.75 / $4.50); captions use only date + town, so a text model is enough. New vendor for the privacy policy; new secret `ANTHROPIC_API_KEY`.
+- **C-A7. Decided 10 Nov (CTO):** geocoder is OpenStreetMap Nominatim (free, no key). Stored names and centre points are OSM data under ODbL: show "© OpenStreetMap contributors" on the route page and map. Its usage policy allows at most 1 request a second and asks for caching and an identifying User-Agent: `lib/geo.ts` calls it server-side only, queues calls to 1/s, caches results by rounded coordinates, and sets `User-Agent: OnQuest (onquest.in)`. A Quest needs ≤ 5 reverse lookups. Fallback behind the same file: Geoapify free (3,000 requests/day) after checking its storage terms. Not Mapbox (storing needs paid permanent geocoding) or MapTiler free (non-commercial only). Builders confirm the current Nominatim usage policy before building A-05.
+- **C-A8.** PostHog with a persistent `anon_id` (localStorage) and a first-party `/ingest` proxy replaces "cookieless mode" in `docs/03` §B.4; the privacy policy must say so. Export the Taxonomy sheet to `docs/analytics/` (client-events.csv, server-events.csv, common-properties.csv) so builders can use it.
+- **C-A9. Decided 10 Nov (CTO):** stay on Vercel Hobby for the MVP and the friends test: nothing earns money yet. Move to Pro (≈ $20/month) when something earns money or if Vercel asks. Preview deployments now write to the Supabase preview project (the UX test creates Quests), replacing the read-only-preview rule in HLD §7.
 - **C-A10.** CLAUDE.md needs a human edit after approval: public read functions list (B and C add some), the `trip-social:{key}` tag, new feature folders, `/quests/*` routes. Agents may not edit it.
 
 ### Technical risks
@@ -500,7 +500,7 @@ Builders copy kept files with `git show editor-wip-ref:<path>` into their task b
 | `features/editor/upload.ts` | **Keep** the queue (3 parallel, 3 retries, one worker). Change: export last, offline pause, IndexedDB pending store, Retry/Remove | A-10 |
 | `lib/storage.ts` (`uploadPhotoFiles`, `deletePhotoFiles`), `lib/supabase/browser.ts`, `lib/cacheTags.ts` (`profileTag`) | **Keep**; add folder listing for the sweep and avatar paths (C) | A-04 |
 | `features/editor/groupDays.ts` | **Keep** `tripDateKey`, `groupPhotosIntoDays`, `tripDateRange`. **Drop** `addPhotosToDays` (open-ended days) | A-05 |
-| `features/editor/suggestPlaces.ts`, `lib/geo.ts` | **Keep**; cap clusters at 5; town-level types; rounding before the call; provider per C-A7 | A-05 |
+| `features/editor/suggestPlaces.ts`, `lib/geo.ts` | **Keep**; cap clusters at 5; town-level types; rounding before the call; Nominatim per C-A7 (1/s queue, cache, OSM credit) | A-05 |
 | `features/editor/publishSlug.ts` (+ test) | **Change**: slug fixed at first publish; visibility never changes it | A-04 |
 | `lib/trip/countWords.ts` | **Keep** | A-04 |
 | `features/editor/refreshTrip.ts` | **Keep** `refreshTripPages`; **drop** `recountWordsAndRefresh` (`.update`) | A-04 |

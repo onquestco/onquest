@@ -12,7 +12,7 @@ Design goal: **the simplest system that is safe, fast on a phone, and makes addi
 |---|---|
 | Team | 2 people, ~4 weeks to friends test |
 | Scale (v1) | Hundreds of users, a few thousand trips. 100x should need tuning, not a rewrite |
-| Budget | Vercel (Pro before the friends test), Supabase Pro (prod + preview projects), Resend, Anthropic pay-as-you-go (≈ $0.003 per Quest), free tiers for maps/analytics |
+| Budget | Vercel Hobby (Pro once something earns money), Supabase Pro (prod + preview projects), Resend, Anthropic pay-as-you-go (Haiku 5.5, ≈ $0.0005 per Quest), Resend free, free tiers for maps/analytics |
 | Must be great at | Mobile trip page, smooth upload, pretty WhatsApp link previews |
 | Must not do | Leak unlisted/private trips, leak photo GPS, lose a draft |
 
@@ -52,7 +52,7 @@ flowchart LR
   C -->|uploads files directly| E
   V -->|images via CDN| P
   C & V --> MT[MapTiler tiles]
-  N --> GEO[Geocoder<br/>Mapbox or Google]
+  N --> GEO[Geocoder<br/>OSM Nominatim]
   C & V --> PH[PostHog<br/>via /ingest proxy]
   N --> PH
   N --> S[Sentry]
@@ -91,11 +91,11 @@ One codebase, two kinds of pages:
 | Service | Use | If it's down |
 |---|---|---|
 | MapTiler + MapLibre GL | Trip + profile map | Page shows the place list instead |
-| Mapbox or Google Places | Place search + reverse geocode (behind `lib/geo.ts`) | User types place name, drops pin |
+| OpenStreetMap Nominatim (free; Geoapify as fallback) | Place search + reverse geocode (behind `lib/geo.ts`, 1 request/s, cached) | User types place name, drops pin |
 | PostHog | Analytics + feedback | No-op |
 | Sentry | Errors | Vercel logs |
 | Resend | Magic-link email (as Supabase SMTP) and notification emails | Google login still works; bell still shows notifications |
-| Anthropic (Claude Haiku) | Short captions from date + town name while arranging | Quest is arranged without captions |
+| Anthropic (Claude Haiku 5.5) | Short captions from date + town name while arranging | Quest is arranged without captions |
 
 ---
 
