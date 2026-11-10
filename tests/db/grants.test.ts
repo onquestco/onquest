@@ -17,6 +17,9 @@ const EXPECTED: Record<string, string[]> = {
   resolve_handle: PUBLIC_PAGES,
   list_quest_cards: PUBLIC_PAGES,
   list_sitemap_profiles: PUBLIC_PAGES,
+  list_trending_quests: PUBLIC_PAGES,
+  list_place_chips: PUBLIC_PAGES,
+  search_public: PUBLIC_PAGES,
 
   is_handle_available: SIGNED_IN,
   save_profile: SIGNED_IN,
@@ -39,6 +42,9 @@ const EXPECTED: Record<string, string[]> = {
   get_my_quest_counts: SIGNED_IN,
   list_my_comment_trip_keys: SIGNED_IN,
   save_profile_settings: SIGNED_IN,
+  list_feed: SIGNED_IN,
+  list_suggested_quests: SIGNED_IN,
+  list_travellers_to_follow: SIGNED_IN,
 
   geocode_cache_get: SERVER,
   geocode_cache_put: SERVER,
@@ -61,6 +67,8 @@ const EXPECTED: Record<string, string[]> = {
   can_see_trip: NOBODY,
   person_json: NOBODY,
   quest_card_json: NOBODY,
+  quest_score: NOBODY,
+  public_quests_scored: NOBODY,
 };
 
 type GrantRow = { name: string; anon: boolean; authenticated: boolean; service_role: boolean };
