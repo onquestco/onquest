@@ -1,24 +1,22 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import type { ChangeEvent } from 'react';
 import { Button } from '@/design-system/components/Button';
 import { Toast } from '@/design-system/components/Toast';
 import { MAX_PHOTOS, MIN_PHOTOS_TO_PUBLISH } from '@/lib/trip/limits';
 import { PhotoTile } from './PhotoTile';
 import type { UploadDeps } from './upload';
-import { usePickPhotos } from './usePickPhotos';
+import { usePickPhotos, type Tile } from './usePickPhotos';
 
 type Props = {
   tripKey: string;
   deps: () => UploadDeps;
-  /** Where Next goes: the arranging screen for this Quest. */
-  nextHref: string;
+  /** Called with the picked photos, in pick order, when Next is tapped. */
+  onNext: (tiles: Tile[]) => void;
 };
 
 /** Screen 3: pick 3 to 15 photos. Uploading starts the moment a photo is picked. */
-export function PickPhotos({ tripKey, deps, nextHref }: Props) {
-  const router = useRouter();
+export function PickPhotos({ tripKey, deps, onNext }: Props) {
   const { tiles, add, retry, remove, online, message, clearMessage } = usePickPhotos(tripKey, deps);
   const enough = tiles.length >= MIN_PHOTOS_TO_PUBLISH;
   const waiting = tiles.some((tile) => tile.status === 'processing');
@@ -69,7 +67,7 @@ export function PickPhotos({ tripKey, deps, nextHref }: Props) {
 
       <div className="fixed inset-x-0 bottom-0 border-t border-line bg-surface px-4 py-4">
         <div className="mx-auto max-w-lg">
-          <Button block disabled={!enough || waiting} onClick={() => router.push(nextHref)}>
+          <Button block disabled={!enough || waiting} onClick={() => onNext(tiles)}>
             {enough ? 'Next' : `Pick at least ${MIN_PHOTOS_TO_PUBLISH} photos`}
           </Button>
         </div>
