@@ -1,0 +1,77 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { Button } from '@/design-system/components/Button';
+import { Sheet } from '@/design-system/components/Sheet';
+import { TextField } from '@/design-system/components/TextField';
+import { slugify } from '@/lib/slug';
+import type { Visibility } from '@/lib/trip/schema';
+import { useDraft } from './draftStore';
+import type { Creator } from './getCreator';
+
+const OPTIONS: { value: Visibility; label: string; help: string }[] = [
+  { value: 'public', label: 'Public', help: 'Anyone can find it on your profile.' },
+  { value: 'unlisted', label: 'Unlisted', help: 'Only people with the link.' },
+  { value: 'private', label: 'Private', help: 'Only you. To remove photos completely, delete the Quest.' },
+];
+
+type Props = { tripKey: string; creator: Creator; onClose: () => void };
+
+/**
+ * Screen 8, first half. Visibility starts on Public (the Settings default, C) for a first publish
+ * and on the Quest's current visibility when it's published again. Publishing itself is the
+ * publish action (A-04); until it lands, the link is made here and nothing is saved.
+ */
+export function PublishSheet({ tripKey, creator, onClose }: Props) {
+  const router = useRouter();
+  const { document, published, setDocument, setPublished } = useDraft();
+  const [visibility, setVisibility] = useState<Visibility>(published?.visibility ?? 'public');
+  if (!document) return null;
+  const title = document.title ?? '';
+
+  function publish() {
+    const slug = published?.slug ?? (slugify(title) || 'my-quest');
+    setPublished({ slug, visibility, path: `/@${creator.handle}/${slug}` });
+    router.push(`/quests/${tripKey}/share`);
+  }
+
+  return (
+    <Sheet open title="Publish your Quest" onClose={onClose}>
+      <TextField
+        label="Title"
+        maxLength={60}
+        showCount
+        value={title}
+        onChange={(event) => setDocument({ ...document, title: event.target.value })}
+      />
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-1 text-label text-ink-muted">Who can see it</legend>
+        {OPTIONS.map((option) => (
+          <label
+            key={option.value}
+            className={`flex cursor-pointer gap-3 rounded-md border p-3 has-focus-visible:outline-2 has-focus-visible:outline-brand-strong ${
+              visibility === option.value ? 'border-brand-strong bg-brand-wash' : 'border-line'
+            }`}
+          >
+            <input
+              type="radio"
+              name="visibility"
+              value={option.value}
+              checked={visibility === option.value}
+              onChange={() => setVisibility(option.value)}
+              className="mt-1 accent-brand-strong"
+            />
+            <span>
+              <span className="block text-body font-semibold text-ink">{option.label}</span>
+              <span className="text-label font-normal text-ink-muted">{option.help}</span>
+            </span>
+          </label>
+        ))}
+      </fieldset>
+      <Button block onClick={publish}>
+        Publish
+      </Button>
+    </Sheet>
+  );
+}

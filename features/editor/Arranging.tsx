@@ -1,12 +1,11 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { buttonClassName } from '@/design-system/components/Button';
 import { arrangePages } from './arrange';
 import { buildDocument } from './buildDocument';
 import { useDraft } from './draftStore';
+import { LostDraft } from './LostDraft';
 
 // Screen 4. One line changes as work happens; never a bare spinner. Place names and captions join
 // once the geocoder and caption actions exist (A-05 server part); until then only sorting runs.
@@ -35,14 +34,7 @@ export function Arranging({ tripKey }: { tripKey: string }) {
   }, [known, picked, startedAt, setDocument, router, tripKey]);
 
   if (!known) {
-    return (
-      <main className="mx-auto flex min-h-svh max-w-lg flex-col items-center justify-center gap-6 px-4 text-center">
-        <p className="text-body text-ink">This Quest isn&apos;t on this device any more. Start again from your photos.</p>
-        <Link href="/quests/new" className={buttonClassName()}>
-          Pick photos
-        </Link>
-      </main>
-    );
+    return <LostDraft />;
   }
 
   return (

@@ -7,6 +7,7 @@ import { Toast } from '@/design-system/components/Toast';
 import { MAX_PHOTOS } from '@/lib/trip/limits';
 import type { QuestDocument } from '@/lib/trip/schema';
 import { useDraft } from './draftStore';
+import { LostDraft } from './LostDraft';
 import { MoveSheet } from './MoveSheet';
 import { PageCard } from './PageCard';
 import {
@@ -34,14 +35,7 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
   const [notice, setNotice] = useState<Notice>();
 
   if (key !== tripKey || !document) {
-    return (
-      <main className="mx-auto flex min-h-svh max-w-lg flex-col items-center justify-center gap-6 px-4 text-center">
-        <p className="text-body text-ink">This Quest isn&apos;t on this device any more. Start again from your photos.</p>
-        <Link href="/quests/new" className={buttonClassName()}>
-          Pick photos
-        </Link>
-      </main>
-    );
+    return <LostDraft />;
   }
   const current = document;
 
