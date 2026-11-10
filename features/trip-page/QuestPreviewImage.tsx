@@ -31,7 +31,6 @@ export function QuestPreviewImage({ title, handle, coverUrl, subtitle }: Props) 
             boxShadow: `0 12px 32px ${color('line')}`,
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element -- next/og draws plain img tags */}
           <img src={coverUrl} alt="" width={400} height={440} style={{ objectFit: 'cover' }} />
         </div>
       )}

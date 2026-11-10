@@ -7,6 +7,7 @@ import { Toast } from '@/design-system/components/Toast';
 import { MAX_PHOTOS } from '@/lib/trip/limits';
 import type { QuestDocument } from '@/lib/trip/schema';
 import { useDraft } from './draftStore';
+import { SaveStatusLine } from './EditorDraft';
 import { LostDraft } from './LostDraft';
 import { MoveSheet } from './MoveSheet';
 import { PageCard } from './PageCard';
@@ -29,15 +30,16 @@ type Notice = { message: string; undo?: boolean };
 
 /** Screen 5. The draft is ready to publish as is; every edit here is optional and undoable. */
 export function ReviewPages({ tripKey }: { tripKey: string }) {
-  const { key, document, previews, apply, undo, addPreviews, setDocument } = useDraft();
+  const { key, photoFolder, document, previews, apply, undo, addPreviews, setDocument } = useDraft();
   const [openPhoto, setOpenPhoto] = useState<string>();
   const [moving, setMoving] = useState<string>();
   const [notice, setNotice] = useState<Notice>();
 
-  if (key !== tripKey || !document) {
+  if (key !== tripKey || !document || !photoFolder) {
     return <LostDraft />;
   }
   const current = document;
+  const folder = photoFolder;
 
   function change(result: EditResult | QuestDocument, message: string) {
     if ('ok' in result && !result.ok) return setNotice({ message: result.reason });
@@ -46,11 +48,16 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
   }
 
   async function add(event: ChangeEvent<HTMLInputElement>) {
-    const read = await readPhotos(Array.from(event.target.files ?? []));
+    const files = Array.from(event.target.files ?? []);
     event.target.value = '';
+    setNotice({ message: files.length === 1 ? 'Adding your photo…' : 'Adding your photos…' });
+    const read = await readPhotos(files, folder);
+    if (read.length < files.length) setNotice({ message: "Some photos couldn't be added. Try again." });
     addPreviews(read);
     const photos = read.map(({ id, width, height }) => ({ id, width, height }));
-    const result = addPhotos(current, photos, () => crypto.randomUUID(), MAX_PHOTOS);
+    // Uploading takes a while: add to the document as it is now, not as it was on tap.
+    const latest = useDraft.getState().document ?? current;
+    const result = addPhotos(latest, photos, () => crypto.randomUUID(), MAX_PHOTOS);
     if (result.added < read.length)
       setNotice({ message: `A Quest holds ${MAX_PHOTOS} photos. Remove one to add another.` });
     if (result.added > 0)
@@ -58,12 +65,16 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
   }
 
   async function replace(oldId: string, files: File[]) {
-    const [photo] = await readPhotos(files.slice(0, 1));
+    const [photo] = await readPhotos(files.slice(0, 1), folder);
     if (!photo) return setNotice({ message: "That photo couldn't be read." });
     addPreviews([photo]);
     setOpenPhoto(undefined);
     change(
-      replacePhoto(current, oldId, { id: photo.id, width: photo.width, height: photo.height }),
+      replacePhoto(useDraft.getState().document ?? current, oldId, {
+        id: photo.id,
+        width: photo.width,
+        height: photo.height,
+      }),
       'Photo replaced.',
     );
   }
@@ -83,6 +94,7 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
           className="min-h-12 rounded-sm border border-line-control bg-surface px-3 text-title text-ink"
         />
       </label>
+      <SaveStatusLine />
 
       {current.content.days.map((page, index) => (
         <PageCard

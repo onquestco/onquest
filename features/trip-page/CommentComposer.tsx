@@ -16,8 +16,15 @@ const ERRORS: Record<string, string> = {
 
 /** "Add a comment". Signed out it signs in first and comes back with the box open (M11). */
 export function CommentComposer() {
-  const { viewer, path, tripKey, actions, addComment, composerOpen: open, setComposerOpen: setOpen } =
-    useQuestSocial();
+  const {
+    viewer,
+    path,
+    tripKey,
+    actions,
+    addComment,
+    composerOpen: open,
+    setComposerOpen: setOpen,
+  } = useQuestSocial();
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);

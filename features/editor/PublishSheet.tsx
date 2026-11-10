@@ -5,10 +5,11 @@ import { useState } from 'react';
 import { Button } from '@/design-system/components/Button';
 import { Sheet } from '@/design-system/components/Sheet';
 import { TextField } from '@/design-system/components/TextField';
-import { slugify } from '@/lib/slug';
 import type { Visibility } from '@/lib/trip/schema';
+import { saveDraftNow } from './draftSaver';
 import { useDraft } from './draftStore';
 import type { Creator } from './getCreator';
+import { publishQuest } from './publishActions';
 
 const OPTIONS: { value: Visibility; label: string; help: string }[] = [
   { value: 'public', label: 'Public', help: 'Anyone can find it on your profile.' },
@@ -16,24 +17,57 @@ const OPTIONS: { value: Visibility; label: string; help: string }[] = [
   { value: 'private', label: 'Private', help: 'Only you. To remove photos completely, delete the Quest.' },
 ];
 
+const CONFLICT = 'This Quest changed on another device. Reload to see the latest, then publish.';
+const ERRORS: Record<string, string> = {
+  conflict: CONFLICT,
+  too_few_photos: 'A Quest needs at least 3 photos.',
+  too_many_photos: 'A Quest holds 15 photos. Remove some first.',
+  not_found: "This Quest isn't there any more.",
+};
+const FAILED = "Couldn't publish. Check your connection and try again.";
+
 type Props = { tripKey: string; creator: Creator; onClose: () => void };
 
 /**
- * Screen 8, first half. Visibility starts on Public (the Settings default, C) for a first publish
- * and on the Quest's current visibility when it's published again. Publishing itself is the
- * publish action (A-04); until it lands, the link is made here and nothing is saved.
+ * Screen 8, first half. Visibility starts on the Settings default for a first publish (the
+ * draft's visibility) and on the current visibility when it's published again. The draft is saved
+ * first, so what's published is exactly what's on screen.
  */
-export function PublishSheet({ tripKey, creator, onClose }: Props) {
+export function PublishSheet({ tripKey, onClose }: Props) {
   const router = useRouter();
-  const { document, published, setDocument, setPublished } = useDraft();
-  const [visibility, setVisibility] = useState<Visibility>(published?.visibility ?? 'public');
+  const { document, published, visibility: current, setDocument, setPublished } = useDraft();
+  const [visibility, setVisibility] = useState<Visibility>(published?.visibility ?? current);
+  const [publishing, setPublishing] = useState(false);
+  const [error, setError] = useState<string>();
   if (!document) return null;
   const title = document.title ?? '';
 
-  function publish() {
-    const slug = published?.slug ?? (slugify(title) || 'my-quest');
-    setPublished({ slug, visibility, path: `/@${creator.handle}/${slug}` });
+  async function publish() {
+    setPublishing(true);
+    setError(undefined);
+    const saved = await saveDraftNow();
+    const { savedAt, tripSavedAt } = useDraft.getState();
+    if (saved === 'conflict') return finish(CONFLICT);
+    if (saved === 'failed' || !savedAt || !tripSavedAt) return finish(FAILED);
+
+    const result = await publishQuest({
+      key: tripKey,
+      basedOnDraft: savedAt,
+      basedOnTrip: tripSavedAt,
+      visibility,
+      title: title.trim(),
+    }).catch(() => null);
+    if (!result?.ok) return finish(FAILED);
+    if (!result.data.published) return finish(ERRORS[result.data.error] ?? FAILED);
+
+    const slug = result.data.path.split('/').at(-1) ?? '';
+    setPublished({ slug, visibility, path: result.data.path }, result.data.savedAt);
     router.push(`/quests/${tripKey}/share`);
+  }
+
+  function finish(message: string) {
+    setPublishing(false);
+    setError(message);
   }
 
   return (
@@ -69,8 +103,13 @@ export function PublishSheet({ tripKey, creator, onClose }: Props) {
           </label>
         ))}
       </fieldset>
-      <Button block onClick={publish}>
-        Publish
+      {error && (
+        <p role="alert" className="text-label text-danger">
+          {error}
+        </p>
+      )}
+      <Button block disabled={publishing || !title.trim()} onClick={() => void publish()}>
+        {publishing ? 'Publishing…' : 'Publish'}
       </Button>
     </Sheet>
   );
