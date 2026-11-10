@@ -57,3 +57,11 @@ export function tripMetadata(trip: TripData, { unlisted = false }: Options = {})
     twitter: { card: 'summary_large_image', title: trip.title },
   };
 }
+
+/** "This Quest is private." / "This Quest was removed.": never indexed, no preview of anything. */
+export function unavailableMetadata(reason: 'private' | 'removed'): Metadata {
+  return {
+    title: `${reason === 'private' ? 'This Quest is private' : 'This Quest was removed'} | ${SITE_NAME}`,
+    robots: { index: false, follow: false },
+  };
+}

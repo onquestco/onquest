@@ -50,6 +50,9 @@ export default async function DemoPage({ searchParams }: Props) {
   const social = sampleSocial[pick<SampleSocialName>(sampleSocial, params.social, 'many')];
   const viewer = sampleViewers[pick<SampleViewerName>(sampleViewers, params.viewer, 'friend')];
   return (
-    <TripView trip={trip} social={{ initial: social, viewer, openComposer: params.comment === 'open' }} />
+    <TripView
+      trip={trip}
+      social={{ mode: 'demo', initial: social, viewer, openComposer: params.comment === 'open' }}
+    />
   );
 }

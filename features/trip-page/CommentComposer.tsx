@@ -9,14 +9,15 @@ import { signInPath } from './socialActions';
 import { useQuestSocial } from './useQuestSocial';
 
 const ERRORS: Record<string, string> = {
-  rate_limited: 'Too many comments in a minute. Wait a moment and try again.',
+  too_fast: 'Too many comments in a minute. Wait a moment and try again.',
   comments_off: 'Comments are off for this Quest.',
+  not_visible: "This Quest isn't available any more.",
 };
 
 /** "Add a comment". Signed out it signs in first and comes back with the box open (M11). */
-export function CommentComposer({ startOpen = false }: { startOpen?: boolean }) {
-  const { viewer, path, tripKey, actions, addComment } = useQuestSocial();
-  const [open, setOpen] = useState(startOpen);
+export function CommentComposer() {
+  const { viewer, path, tripKey, actions, addComment, composerOpen: open, setComposerOpen: setOpen } =
+    useQuestSocial();
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -5,7 +5,7 @@ import { supabaseUrl } from './env';
 /**
  * Supabase with the secret key: bypasses RLS. The only place the key is used (CLAUDE.md security
  * rules). For server-only jobs that users must not reach directly: the geocoder cache and limiter,
- * email budgets, account deletion.
+ * email budgets, the link preview's cover, account deletion.
  */
 export function createAdminSupabase() {
   const secret = process.env.SUPABASE_SECRET_KEY;

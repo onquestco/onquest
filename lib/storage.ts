@@ -15,6 +15,11 @@ export function photoUrls(folder: string, photoId: string) {
   return { thumb: `${base}/thumb.webp`, display: `${base}/display.webp` };
 }
 
+/** The private export JPEG's path in the `exports` bucket (signed URLs only). */
+export function exportPath(folder: string, photoId: string) {
+  return `${folder}/${photoId}/export.jpg`;
+}
+
 type Upload = { bucket: 'photos' | 'exports'; name: string; file: Blob };
 
 async function uploadAll(supabase: SupabaseClient, folder: string, photoId: string, uploads: Upload[]) {

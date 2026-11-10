@@ -6,7 +6,7 @@ import { LikeButton } from './LikeButton';
 import { useQuestSocial } from './useQuestSocial';
 
 /** Like and comments under the Quest (screen 9). Comments off hides every comment (M14). */
-export function QuestSocial({ openComposer = false }: { openComposer?: boolean }) {
+export function QuestSocial() {
   const { commentsOn } = useQuestSocial();
   return (
     <section aria-label="Likes and comments" className="flex flex-col gap-6">
@@ -18,7 +18,7 @@ export function QuestSocial({ openComposer = false }: { openComposer?: boolean }
         {commentsOn ? (
           <>
             <CommentList />
-            <CommentComposer startOpen={openComposer} />
+            <CommentComposer />
           </>
         ) : (
           <p className="text-body text-ink-muted">Comments are off for this Quest.</p>

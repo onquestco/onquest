@@ -10,10 +10,11 @@ type Props = {
   path: string;
   initial: QuestSocial;
   viewer: ViewerState;
+  startComposerOpen?: boolean;
   children: ReactNode;
 };
 
-/** Sample likes and comments that behave like the real thing. B-07 replaces it with the server actions. */
+/** /demo only: sample likes and comments that behave like the real thing. */
 export function DemoSocialProvider({ initial, viewer, ...rest }: Props) {
   const [actions] = useState(() => sampleSocialActions(initial.likeCount, { name: 'You', handle: 'you' }));
   return <QuestSocialProvider initial={initial} viewer={viewer} actions={actions} {...rest} />;
