@@ -4,7 +4,10 @@ type Props = { name: string; src?: string; size?: number };
 
 export function Avatar({ name, src, size = 32 }: Props) {
   const style = { width: size, height: size };
-  if (src) return <img src={src} alt="" width={size} height={size} style={style} className="rounded-pill object-cover" />;
+  if (src)
+    return (
+      <img src={src} alt="" width={size} height={size} style={style} className="rounded-pill object-cover" />
+    );
   return (
     <span
       aria-hidden

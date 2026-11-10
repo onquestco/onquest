@@ -10,7 +10,11 @@ export function CreateChooser({ onClose }: { onClose: () => void }) {
   const [blogNote, setBlogNote] = useState(false);
   return (
     <Sheet open title="Create" onClose={onClose}>
-      <Link href="/quests/new" onClick={onClose} className="flex flex-col gap-1 rounded-lg border-2 border-brand-strong bg-brand-wash p-4">
+      <Link
+        href="/quests/new"
+        onClick={onClose}
+        className="flex flex-col gap-1 rounded-lg border-2 border-brand-strong bg-brand-wash p-4"
+      >
         <span className="text-lead font-semibold text-ink">Create a Quest</span>
         <span className="text-label font-normal text-ink-muted">Pick 3 to 15 photos from a trip</span>
       </Link>
@@ -21,9 +25,13 @@ export function CreateChooser({ onClose }: { onClose: () => void }) {
       >
         <span className="flex flex-col gap-1">
           <span className="text-body font-semibold text-ink-muted">Write a blog</span>
-          <span className="text-label font-normal text-ink-muted">Tips, guides and longer stories from your travels.</span>
+          <span className="text-label font-normal text-ink-muted">
+            Tips, guides and longer stories from your travels.
+          </span>
         </span>
-        <span className="shrink-0 rounded-pill bg-surface-page px-3 py-1 text-caption text-ink-muted">Releasing soon</span>
+        <span className="shrink-0 rounded-pill bg-surface-page px-3 py-1 text-caption text-ink-muted">
+          Releasing soon
+        </span>
       </button>
       {blogNote && (
         <p role="status" className="text-label font-normal text-ink">

@@ -4,7 +4,13 @@ import { placeholderImage } from './placeholderImages';
 // Likes, comments and viewer states for /demo?social=… until the reactions backend (B-05) exists.
 // C-08 adds feed samples here.
 
-const comment = (index: number, name: string, handle: string, body: string, minutesBefore: number): Comment => ({
+const comment = (
+  index: number,
+  name: string,
+  handle: string,
+  body: string,
+  minutesBefore: number,
+): Comment => ({
   key: `00000000-0000-4000-8000-0000000000${String(index).padStart(2, '0')}`,
   body,
   savedAt: new Date(Date.UTC(2026, 10, 9, 18, 0) - minutesBefore * 60_000).toISOString(),
@@ -41,8 +47,13 @@ export const sampleViewers = {
 
 export type SampleViewerName = keyof typeof sampleViewers;
 
-const minutesAgo = (minutes: number) => new Date(Date.UTC(2026, 10, 10, 6, 0) - minutes * 60_000).toISOString();
-const goa = { key: '00000000-0000-4000-8000-0000000000aa', title: 'Salt in the Air, Sand in My Hair', path: '/demo' };
+const minutesAgo = (minutes: number) =>
+  new Date(Date.UTC(2026, 10, 10, 6, 0) - minutes * 60_000).toISOString();
+const goa = {
+  key: '00000000-0000-4000-8000-0000000000aa',
+  title: 'Salt in the Air, Sand in My Hair',
+  path: '/demo',
+};
 
 /** The bell list for /notifications until B-06 loads the real one. Newest first. */
 export const sampleNotifications: NotificationItem[] = [
@@ -55,7 +66,14 @@ export const sampleNotifications: NotificationItem[] = [
     quest: goa,
     commentExcerpt: 'The route page is so cool 😍',
   },
-  { key: '00000000-0000-4000-a000-000000000002', kind: 'like', savedAt: minutesAgo(35), unread: true, likeCount: 3, quest: goa },
+  {
+    key: '00000000-0000-4000-a000-000000000002',
+    kind: 'like',
+    savedAt: minutesAgo(35),
+    unread: true,
+    likeCount: 3,
+    quest: goa,
+  },
   {
     key: '00000000-0000-4000-a000-000000000003',
     kind: 'follow',
@@ -71,5 +89,12 @@ export const sampleNotifications: NotificationItem[] = [
     actor: { handle: 'riya', name: 'Riya Shah', avatarUrl: placeholderImage('face', 1) },
     quest: goa,
   },
-  { key: '00000000-0000-4000-a000-000000000005', kind: 'like', savedAt: minutesAgo(60 * 50), unread: false, likeCount: 1, quest: goa },
+  {
+    key: '00000000-0000-4000-a000-000000000005',
+    kind: 'like',
+    savedAt: minutesAgo(60 * 50),
+    unread: false,
+    likeCount: 1,
+    quest: goa,
+  },
 ];

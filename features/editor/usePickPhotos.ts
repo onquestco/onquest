@@ -25,7 +25,9 @@ export function usePickPhotos(tripKey: string, deps: () => UploadDeps) {
 
   const patch = useCallback(
     (uploadId: string, change: Partial<Tile>) =>
-      setTiles((current) => current.map((tile) => (tile.uploadId === uploadId ? { ...tile, ...change } : tile))),
+      setTiles((current) =>
+        current.map((tile) => (tile.uploadId === uploadId ? { ...tile, ...change } : tile)),
+      ),
     [],
   );
 

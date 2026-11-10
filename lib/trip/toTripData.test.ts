@@ -173,7 +173,14 @@ describe('get_trip output before and after migration 9', () => {
   it('parses the new output and prefers key', () => {
     const rows = TripRowsSchema.parse({
       ...emptyTrip,
-      trip: { ...emptyTrip.trip, key: KEY, status: 'published', saved_at: '2026-02-20 00:00:00.123456+00', comments_on: false, word_count: 12 },
+      trip: {
+        ...emptyTrip.trip,
+        key: KEY,
+        status: 'published',
+        saved_at: '2026-02-20 00:00:00.123456+00',
+        comments_on: false,
+        word_count: 12,
+      },
     });
     const trip = toTripData(rows, defaults);
     expect({ key: trip.key, id: trip.id }).toEqual({ key: KEY, id: KEY });
@@ -217,7 +224,13 @@ describe('draftToTripData', () => {
     ],
     places: [{ id: PLACE_1, name: 'Panjim', lat: 15.49, lng: 73.82, photoId: PHOTO_1 }],
   };
-  const draft = { key: TRIP, photoFolder: 'user/trip', visibility: 'public' as const, savedAt: 'x', document };
+  const draft = {
+    key: TRIP,
+    photoFolder: 'user/trip',
+    visibility: 'public' as const,
+    savedAt: 'x',
+    document,
+  };
 
   it('renders a draft the way the published Quest will look', () => {
     const preview = draftToTripData(draft, emptyTrip.owner, 42, defaults);

@@ -83,7 +83,9 @@ export function PhotoPage({ trip, page, pageNumber }: Props) {
       )}
 
       {lastPlace && <Stamp x={70} y={17.5} width={26} big={number} small={lastPlace} />}
-      {page.part === 1 && (day?.quote || day?.story) && <OpenButton opens={dayKey(index)}>read the day ➜</OpenButton>}
+      {page.part === 1 && (day?.quote || day?.story) && (
+        <OpenButton opens={dayKey(index)}>read the day ➜</OpenButton>
+      )}
 
       {/* Full text of the day for screen readers and search engines. */}
       <div className={shared.visuallyHidden}>

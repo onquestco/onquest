@@ -4,7 +4,10 @@ import type { SocialActions } from './socialActions';
 const pause = () => new Promise((resolve) => setTimeout(resolve, 400));
 
 /** Fake server for /demo: keeps a like count per page visit and echoes comments back. */
-export function sampleSocialActions(startCount: number, viewer: { name: string; handle: string }): SocialActions {
+export function sampleSocialActions(
+  startCount: number,
+  viewer: { name: string; handle: string },
+): SocialActions {
   let likeCount = startCount;
   let liked = false;
   return {

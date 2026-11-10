@@ -28,7 +28,10 @@ function TabLink({ tab }: { tab: Tab }) {
 
 export function BottomBar({ left, right, action }: Props) {
   return (
-    <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)]">
+    <nav
+      aria-label="Main"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)]"
+    >
       <div className="mx-auto flex max-w-lg items-center px-2 py-1">
         {left.map((tab) => (
           <TabLink key={tab.href} tab={tab} />

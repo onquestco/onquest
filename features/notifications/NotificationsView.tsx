@@ -19,7 +19,9 @@ export function NotificationsView({ items, now }: Props) {
       </header>
       {items.length === 0 ? (
         <div className="flex flex-col items-center gap-4 px-4 py-12 text-center">
-          <p className="text-body text-ink-muted">No notifications yet. Share your Quest to get likes and comments.</p>
+          <p className="text-body text-ink-muted">
+            No notifications yet. Share your Quest to get likes and comments.
+          </p>
           <Link href="/quests" className={buttonClassName({ variant: 'secondary' })}>
             Your Quests
           </Link>

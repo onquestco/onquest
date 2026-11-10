@@ -21,7 +21,11 @@ export function LikeButton({ source }: { source: LikeSource }) {
 
   if (!viewer.signedIn) {
     return (
-      <Link href={signInPath('like', path, tripKey)} className={look} aria-label={`Like this Quest. ${label}`}>
+      <Link
+        href={signInPath('like', path, tripKey)}
+        className={look}
+        aria-label={`Like this Quest. ${label}`}
+      >
         {heart}
         {label}
       </Link>

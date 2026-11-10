@@ -31,7 +31,10 @@ export function PhotoTile({ tile, number, total, onRetry, onRemove }: Props) {
         aria-label={`Remove photo ${number}`}
         className="absolute top-1 right-1 flex size-11 items-center justify-center"
       >
-        <span aria-hidden className="flex size-6 items-center justify-center rounded-pill bg-brand-strong text-caption font-semibold text-on-brand">
+        <span
+          aria-hidden
+          className="flex size-6 items-center justify-center rounded-pill bg-brand-strong text-caption font-semibold text-on-brand"
+        >
           {number}
         </span>
       </button>
@@ -48,7 +51,11 @@ export function PhotoTile({ tile, number, total, onRetry, onRemove }: Props) {
             {FAILURE_TEXT[tile.failure ?? 'upload_failed']}
           </p>
           {tile.failure === 'upload_failed' && (
-            <button type="button" onClick={onRetry} className="min-h-11 rounded-pill px-3 text-label font-semibold text-brand-strong">
+            <button
+              type="button"
+              onClick={onRetry}
+              className="min-h-11 rounded-pill px-3 text-label font-semibold text-brand-strong"
+            >
               Retry
             </button>
           )}

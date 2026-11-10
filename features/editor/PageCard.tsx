@@ -23,7 +23,10 @@ export function PageCard({ page, number, previews, undated, onRename, onOpenPhot
   const empty = PHOTOS_PER_PAGE - page.photoIds.length;
 
   return (
-    <section aria-label={`Page ${number}`} className="flex flex-col gap-3 rounded-md border border-line bg-surface p-3">
+    <section
+      aria-label={`Page ${number}`}
+      className="flex flex-col gap-3 rounded-md border border-line bg-surface p-3"
+    >
       <header className="flex items-start justify-between gap-2">
         {editing ? (
           <form
@@ -42,7 +45,10 @@ export function PageCard({ page, number, previews, undated, onRename, onOpenPhot
               onChange={(event) => setTitle(event.target.value)}
               className="min-h-11 min-w-0 flex-1 rounded-sm border border-line-control px-3 text-body text-ink"
             />
-            <button type="submit" className="min-h-11 rounded-pill px-3 text-label font-semibold text-brand-strong">
+            <button
+              type="submit"
+              className="min-h-11 rounded-pill px-3 text-label font-semibold text-brand-strong"
+            >
               Done
             </button>
           </form>
@@ -81,7 +87,10 @@ export function PageCard({ page, number, previews, undated, onRename, onOpenPhot
               <img src={previews[photoId]} alt="" className="h-full w-full object-cover" />
             </button>
             {undated.has(photoId) && (
-              <span aria-hidden className="absolute top-1 left-1 size-3 rounded-pill border border-line-control bg-surface" />
+              <span
+                aria-hidden
+                className="absolute top-1 left-1 size-3 rounded-pill border border-line-control bg-surface"
+              />
             )}
           </li>
         ))}

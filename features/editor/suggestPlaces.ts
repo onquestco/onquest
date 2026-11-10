@@ -30,5 +30,7 @@ export function suggestPlaces(photos: GpsPhoto[]): PlaceSuggestion[] {
     else suggestions.push({ lat: photo.lat, lng: photo.lng, photoIds: [photo.photoId] });
   }
   // sort is stable, so equal-sized groups stay in the order they were visited
-  return suggestions.sort((first, second) => second.photoIds.length - first.photoIds.length).slice(0, MAX_SUGGESTIONS);
+  return suggestions
+    .sort((first, second) => second.photoIds.length - first.photoIds.length)
+    .slice(0, MAX_SUGGESTIONS);
 }

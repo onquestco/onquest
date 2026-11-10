@@ -25,8 +25,11 @@ type Props = {
   }>;
 };
 
-const pick = <Name extends string>(options: Record<Name, unknown>, value: string | undefined, fallback: Name) =>
-  value && value in options ? (value as Name) : fallback;
+const pick = <Name extends string>(
+  options: Record<Name, unknown>,
+  value: string | undefined,
+  fallback: Name,
+) => (value && value in options ? (value as Name) : fallback);
 
 // /demo plays the Goa sample with sample likes and comments. Every Quest page state is one URL away:
 //   ?quest=small|full|old             the edge-case trips
@@ -37,11 +40,16 @@ const pick = <Name extends string>(options: Record<Name, unknown>, value: string
 //   ?state=private|removed            the unavailable link pages
 export default async function DemoPage({ searchParams }: Props) {
   const params = await searchParams;
-  if (params.state === 'private' || params.state === 'removed') return <QuestUnavailable reason={params.state} />;
+  if (params.state === 'private' || params.state === 'removed')
+    return <QuestUnavailable reason={params.state} />;
 
-  const sample = params.quest && params.quest in sampleQuests ? sampleQuests[params.quest as SampleQuestName] : goaTrip;
-  const trip = params.template && isTemplateId(params.template) ? { ...sample, templateId: params.template } : sample;
+  const sample =
+    params.quest && params.quest in sampleQuests ? sampleQuests[params.quest as SampleQuestName] : goaTrip;
+  const trip =
+    params.template && isTemplateId(params.template) ? { ...sample, templateId: params.template } : sample;
   const social = sampleSocial[pick<SampleSocialName>(sampleSocial, params.social, 'many')];
   const viewer = sampleViewers[pick<SampleViewerName>(sampleViewers, params.viewer, 'friend')];
-  return <TripView trip={trip} social={{ initial: social, viewer, openComposer: params.comment === 'open' }} />;
+  return (
+    <TripView trip={trip} social={{ initial: social, viewer, openComposer: params.comment === 'open' }} />
+  );
 }

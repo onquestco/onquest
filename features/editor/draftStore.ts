@@ -58,7 +58,10 @@ export const useDraft = create<DraftState>()((set) => ({
     }),
   addPreviews: (photos) =>
     set((state) => ({
-      previews: { ...state.previews, ...Object.fromEntries(photos.map((photo) => [photo.id, photo.previewUrl])) },
+      previews: {
+        ...state.previews,
+        ...Object.fromEntries(photos.map((photo) => [photo.id, photo.previewUrl])),
+      },
     })),
   setPublished: (published) => set({ published }),
 }));

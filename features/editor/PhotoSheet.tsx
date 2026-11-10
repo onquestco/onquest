@@ -21,7 +21,17 @@ type Props = {
 };
 
 /** Tap a photo on Review pages: caption, a quiet date-and-place row, then three actions. */
-export function PhotoSheet({ photo, previewUrl, placeName, onClose, onCaption, onDate, onMove, onReplace, onRemove }: Props) {
+export function PhotoSheet({
+  photo,
+  previewUrl,
+  placeName,
+  onClose,
+  onCaption,
+  onDate,
+  onMove,
+  onReplace,
+  onRemove,
+}: Props) {
   const [caption, setCaption] = useState(photo.caption ?? '');
   const [editingDate, setEditingDate] = useState(false);
   const when = photo.date ? formatDateRange(photo.date) : undefined;
@@ -56,7 +66,11 @@ export function PhotoSheet({ photo, previewUrl, placeName, onClose, onCaption, o
           />
         </label>
       ) : (
-        <button type="button" onClick={() => setEditingDate(true)} className="flex min-h-11 items-center justify-between text-left text-label text-ink-muted">
+        <button
+          type="button"
+          onClick={() => setEditingDate(true)}
+          className="flex min-h-11 items-center justify-between text-left text-label text-ink-muted"
+        >
           <span>{row || 'No date or place'}</span>
           <span className="font-semibold text-brand-strong">{row ? 'Change' : 'Add'}</span>
         </button>
@@ -68,7 +82,12 @@ export function PhotoSheet({ photo, previewUrl, placeName, onClose, onCaption, o
         </Button>
         <label className="flex min-h-11 cursor-pointer items-center justify-center rounded-pill border border-line-control px-6 py-3 text-body font-semibold text-ink has-focus-visible:outline-2 has-focus-visible:outline-brand-strong">
           Replace with another photo
-          <input type="file" accept="image/*" onChange={(event) => onReplace(Array.from(event.target.files ?? []))} className="sr-only" />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(event) => onReplace(Array.from(event.target.files ?? []))}
+            className="sr-only"
+          />
         </label>
         <Button variant="danger" block onClick={onRemove}>
           Remove from Quest

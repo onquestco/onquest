@@ -11,7 +11,9 @@ export function notificationText(item: NotificationItem): string {
   }
   if (item.kind === 'follow') return `${name} started following you`;
   // A deleted comment has no excerpt left: say what happened, not what was said.
-  return item.commentExcerpt ? `${name} commented on ${title}: "${item.commentExcerpt}"` : `${name} commented on your Quest`;
+  return item.commentExcerpt
+    ? `${name} commented on ${title}: "${item.commentExcerpt}"`
+    : `${name} commented on your Quest`;
 }
 
 export function notificationHref(item: NotificationItem): string {
@@ -27,7 +29,9 @@ export function timeAgo(savedAt: string, now: Date): string {
   if (minutes < 60) return `${minutes}m`;
   if (minutes < 60 * 24) return `${Math.floor(minutes / 60)}h`;
   if (minutes < 60 * 24 * 7) return `${Math.floor(minutes / (60 * 24))}d`;
-  return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }).format(
-    new Date(savedAt),
-  );
+  return new Intl.DateTimeFormat('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'Asia/Kolkata',
+  }).format(new Date(savedAt));
 }

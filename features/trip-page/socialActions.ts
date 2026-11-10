@@ -7,7 +7,10 @@ import type { Comment } from '@/lib/social/schema';
 export type LikeSource = 'quest_page' | 'fullscreen' | 'feed' | 'after_sign_in';
 
 export type SocialActions = {
-  setLike: (liked: boolean, source: LikeSource) => Promise<ActionResult<{ liked: boolean; likeCount: number }>>;
+  setLike: (
+    liked: boolean,
+    source: LikeSource,
+  ) => Promise<ActionResult<{ liked: boolean; likeCount: number }>>;
   postComment: (body: string) => Promise<ActionResult<Comment>>;
   deleteComment: (commentKey: string) => Promise<ActionResult<null>>;
 };

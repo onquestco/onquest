@@ -30,7 +30,10 @@ export function PickPhotos({ tripKey, deps, onNext }: Props) {
     <main className="mx-auto flex min-h-svh max-w-lg flex-col gap-6 bg-surface px-4 pt-6 pb-28">
       <header className="flex items-center justify-between gap-3">
         <h1 className="text-title text-ink">Pick up to {MAX_PHOTOS} photos</h1>
-        <span className="shrink-0 rounded-pill bg-brand-wash px-3 py-1 text-label text-ink" aria-live="polite">
+        <span
+          className="shrink-0 rounded-pill bg-brand-wash px-3 py-1 text-label text-ink"
+          aria-live="polite"
+        >
           {tiles.length} of {MAX_PHOTOS}
         </span>
       </header>

@@ -3,7 +3,11 @@ import type { NotificationItem } from '@/lib/social/schema';
 import { notificationHref, notificationText, timeAgo } from './notificationText';
 
 const quest = { key: '00000000-0000-4000-8000-0000000000aa', title: 'Goa trip', path: '/@riya/goa-trip' };
-const base = { key: '00000000-0000-4000-a000-000000000001', savedAt: '2026-11-10T06:00:00.000Z', unread: true };
+const base = {
+  key: '00000000-0000-4000-a000-000000000001',
+  savedAt: '2026-11-10T06:00:00.000Z',
+  unread: true,
+};
 
 describe('notificationText', () => {
   it('never names who liked', () => {
@@ -15,7 +19,9 @@ describe('notificationText', () => {
     expect(notificationText({ ...base, kind: 'comment', actor, quest, commentExcerpt: 'So cool' })).toBe(
       'Meera commented on Goa trip: "So cool"',
     );
-    expect(notificationText({ ...base, kind: 'comment', actor, quest })).toBe('Meera commented on your Quest');
+    expect(notificationText({ ...base, kind: 'comment', actor, quest })).toBe(
+      'Meera commented on your Quest',
+    );
   });
   it('names the new follower', () => {
     expect(notificationText({ ...base, kind: 'follow', actor: { handle: 'kabir', name: 'Kabir' } })).toBe(
@@ -29,7 +35,9 @@ describe('notificationHref', () => {
     const comment: NotificationItem = { ...base, kind: 'comment', quest };
     expect(notificationHref(comment)).toBe('/@riya/goa-trip#comments');
     expect(notificationHref({ ...base, kind: 'like', quest })).toBe('/@riya/goa-trip');
-    expect(notificationHref({ ...base, kind: 'follow', actor: { handle: 'kabir', name: 'Kabir' } })).toBe('/@kabir');
+    expect(notificationHref({ ...base, kind: 'follow', actor: { handle: 'kabir', name: 'Kabir' } })).toBe(
+      '/@kabir',
+    );
   });
 });
 

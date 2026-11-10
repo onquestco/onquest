@@ -23,10 +23,18 @@ export function QuestFullscreen({ withLike }: { withLike: boolean }) {
   return (
     <>
       <div className="fixed inset-x-0 top-0 flex items-center justify-between px-4 pt-3">
-        <span className="rounded-pill bg-surface px-3 py-1 text-label text-ink border border-line" aria-live="polite">
+        <span
+          className="rounded-pill bg-surface px-3 py-1 text-label text-ink border border-line"
+          aria-live="polite"
+        >
           {page + 1} / {count}
         </span>
-        <button type="button" className={round} aria-label="Close full screen" onClick={() => setFullscreen(false)}>
+        <button
+          type="button"
+          className={round}
+          aria-label="Close full screen"
+          onClick={() => setFullscreen(false)}
+        >
           <CloseIcon size={20} />
         </button>
       </div>

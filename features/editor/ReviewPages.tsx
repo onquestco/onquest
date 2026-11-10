@@ -51,8 +51,10 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
     addPreviews(read);
     const photos = read.map(({ id, width, height }) => ({ id, width, height }));
     const result = addPhotos(current, photos, () => crypto.randomUUID(), MAX_PHOTOS);
-    if (result.added < read.length) setNotice({ message: `A Quest holds ${MAX_PHOTOS} photos. Remove one to add another.` });
-    if (result.added > 0) change(result.document, result.added === 1 ? 'Photo added.' : `${result.added} photos added.`);
+    if (result.added < read.length)
+      setNotice({ message: `A Quest holds ${MAX_PHOTOS} photos. Remove one to add another.` });
+    if (result.added > 0)
+      change(result.document, result.added === 1 ? 'Photo added.' : `${result.added} photos added.`);
   }
 
   async function replace(oldId: string, files: File[]) {
@@ -60,7 +62,10 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
     if (!photo) return setNotice({ message: "That photo couldn't be read." });
     addPreviews([photo]);
     setOpenPhoto(undefined);
-    change(replacePhoto(current, oldId, { id: photo.id, width: photo.width, height: photo.height }), 'Photo replaced.');
+    change(
+      replacePhoto(current, oldId, { id: photo.id, width: photo.width, height: photo.height }),
+      'Photo replaced.',
+    );
   }
 
   const total = current.photos.length;
@@ -94,7 +99,15 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
 
       <label className="flex min-h-11 cursor-pointer items-center justify-center rounded-pill border border-dashed border-line-control px-6 py-3 text-body font-semibold text-brand-strong has-focus-visible:outline-2 has-focus-visible:outline-brand-strong">
         + Add photos · {total} of {MAX_PHOTOS}
-        <input id="add-photos" type="file" accept="image/*" multiple onChange={add} disabled={total >= MAX_PHOTOS} className="sr-only" />
+        <input
+          id="add-photos"
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={add}
+          disabled={total >= MAX_PHOTOS}
+          className="sr-only"
+        />
       </label>
 
       <div className="fixed inset-x-0 bottom-0 border-t border-line bg-surface px-4 py-4">

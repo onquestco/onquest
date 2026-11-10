@@ -12,10 +12,18 @@ export function AppHeader({ handle, name }: { handle: string; name: string | nul
           <Logo />
         </Link>
         <div className="flex items-center gap-1">
-          <Link href="/notifications" aria-label="Notifications" className="flex size-11 items-center justify-center text-ink">
+          <Link
+            href="/notifications"
+            aria-label="Notifications"
+            className="flex size-11 items-center justify-center text-ink"
+          >
             <BellIcon />
           </Link>
-          <Link href={`/@${handle}`} aria-label="Your profile" className="flex size-11 items-center justify-center">
+          <Link
+            href={`/@${handle}`}
+            aria-label="Your profile"
+            className="flex size-11 items-center justify-center"
+          >
             <Avatar name={name || handle} />
           </Link>
         </div>

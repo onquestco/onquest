@@ -72,7 +72,13 @@ export function createUploadQueue(tripKey: string, deps: UploadDeps, callbacks: 
         photoId = deps.createId();
         const { gps, ...stored } = processed;
         image = stored;
-        callbacks.onProcessed(job.uploadId, { id: photoId, width: image.width, height: image.height, takenAt: image.takenAt, gps });
+        callbacks.onProcessed(job.uploadId, {
+          id: photoId,
+          width: image.width,
+          height: image.height,
+          takenAt: image.takenAt,
+          gps,
+        });
         await deps.store.save({ tripKey, photoId, image, viewsUploaded: false }).catch(() => undefined);
       } catch (error) {
         callbacks.onFailed(job.uploadId, isWorkerFailure(error) ? error : 'unreadable');

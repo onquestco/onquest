@@ -17,7 +17,12 @@ const withDays = (photosPerDay: number[], places = goaTrip.places): TripData => 
 
 describe('toQuestPages', () => {
   it('reads cover, one page per day, then the route', () => {
-    expect(toQuestPages(withDays([3, 2])).map((page) => page.kind)).toEqual(['cover', 'photos', 'photos', 'route']);
+    expect(toQuestPages(withDays([3, 2])).map((page) => page.kind)).toEqual([
+      'cover',
+      'photos',
+      'photos',
+      'route',
+    ]);
   });
 
   it('splits an old long day into continuation pages of 3', () => {

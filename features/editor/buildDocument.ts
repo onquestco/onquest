@@ -22,10 +22,12 @@ export function buildDocument(
   const dates = photos.flatMap((photo) => (photo.takenAt ? [tripDateKey(photo.takenAt)] : [])).sort();
   return {
     templateId,
-    title: defaultQuestTitle(photos.map((photo) => ({
-      date: photo.takenAt ? tripDateKey(photo.takenAt) : undefined,
-      placeName: photo.placeName,
-    }))),
+    title: defaultQuestTitle(
+      photos.map((photo) => ({
+        date: photo.takenAt ? tripDateKey(photo.takenAt) : undefined,
+        placeName: photo.placeName,
+      })),
+    ),
     startDate: dates[0],
     endDate: dates.at(-1),
     coverPhotoId: arrangement.pages[0]?.photoIds[0],

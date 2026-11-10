@@ -5,7 +5,9 @@ import { buttonClassName } from '@/design-system/components/Button';
 export function LostDraft() {
   return (
     <main className="mx-auto flex min-h-svh max-w-lg flex-col items-center justify-center gap-6 px-4 text-center">
-      <p className="text-body text-ink">This Quest isn&apos;t on this device any more. Start again from your photos.</p>
+      <p className="text-body text-ink">
+        This Quest isn&apos;t on this device any more. Start again from your photos.
+      </p>
       <Link href="/quests/new" className={buttonClassName()}>
         Pick photos
       </Link>

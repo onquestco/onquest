@@ -11,8 +11,10 @@ import { theme } from './theme';
 /** Beach as a paged Quest: cover, photo pages, route, then back to the cover. */
 export function TripPage({ trip, controls }: { trip: TripData; controls?: ReactNode }) {
   const pages = toQuestPages(trip).map((page, index) => {
-    if (page.kind === 'cover') return { key: 'cover', label: trip.shortTitle, content: <CoverCard trip={trip} /> };
-    if (page.kind === 'route') return { key: 'route', label: 'Where I went', content: <MapSection trip={trip} /> };
+    if (page.kind === 'cover')
+      return { key: 'cover', label: trip.shortTitle, content: <CoverCard trip={trip} /> };
+    if (page.kind === 'route')
+      return { key: 'route', label: 'Where I went', content: <MapSection trip={trip} /> };
     return {
       key: `page-${page.dayIndex}-${page.part}`,
       label: page.title,

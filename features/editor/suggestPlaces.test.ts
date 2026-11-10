@@ -39,7 +39,11 @@ describe('suggestPlaces', () => {
   });
 
   it('puts the biggest group first', () => {
-    const suggestions = suggestPlaces([photo('a', PANJIM, 9), photo('b', PALOLEM, 10), photo('c', PALOLEM, 11)]);
+    const suggestions = suggestPlaces([
+      photo('a', PANJIM, 9),
+      photo('b', PALOLEM, 10),
+      photo('c', PALOLEM, 11),
+    ]);
     expect(suggestions.map((suggestion) => suggestion.photoIds)).toEqual([['b', 'c'], ['a']]);
   });
 });

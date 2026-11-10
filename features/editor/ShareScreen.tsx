@@ -42,12 +42,17 @@ export function ShareScreen({ tripKey, siteUrl }: { tripKey: string; siteUrl: st
         >
           Share to WhatsApp
         </a>
-        <Link href={`/quests/${tripKey}/export`} className={buttonClassName({ variant: 'secondary', block: true })}>
+        <Link
+          href={`/quests/${tripKey}/export`}
+          className={buttonClassName({ variant: 'secondary', block: true })}
+        >
           Download for Instagram
         </Link>
       </div>
       {published.visibility === 'private' && (
-        <p className="text-center text-label font-normal text-ink-muted">This Quest is private: only you can open the link.</p>
+        <p className="text-center text-label font-normal text-ink-muted">
+          This Quest is private: only you can open the link.
+        </p>
       )}
     </main>
   );

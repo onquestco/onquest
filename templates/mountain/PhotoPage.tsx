@@ -50,7 +50,9 @@ export function PhotoPage({ trip, page, pageNumber }: Props) {
       <Text x={6} y={10} width={64} as="h2" style={{ margin: 0 }}>
         <span className={styles.pageTitle}>{page.title}</span>
       </Text>
-      {lastPlace && <Stamp x={72} y={4} width={22} big={String(pageNumber).padStart(2, '0')} small={lastPlace} />}
+      {lastPlace && (
+        <Stamp x={72} y={4} width={22} big={String(pageNumber).padStart(2, '0')} small={lastPlace} />
+      )}
 
       {page.photos.slice(0, 3).map((photo, photoIndex) => {
         const slot = slots[photoIndex];
@@ -71,7 +73,9 @@ export function PhotoPage({ trip, page, pageNumber }: Props) {
       })}
 
       <PageSticker pageNumber={pageNumber} />
-      {page.part === 1 && (day?.quote || day?.story) && <OpenButton opens={dayKey(index)}>read the day ➜</OpenButton>}
+      {page.part === 1 && (day?.quote || day?.story) && (
+        <OpenButton opens={dayKey(index)}>read the day ➜</OpenButton>
+      )}
       <Text x={84} y={93} width={12}>
         <span className={styles.pageNumber}>{pageNumber}</span>
       </Text>

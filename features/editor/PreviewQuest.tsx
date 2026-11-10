@@ -21,7 +21,10 @@ export function PreviewQuest({ tripKey, creator }: { tripKey: string; creator: C
       <TripPage trip={trip} />
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface px-4 py-4">
         <div className="mx-auto flex max-w-lg gap-3">
-          <Link href={`/quests/${tripKey}/review`} className={`${buttonClassName({ variant: 'secondary' })} flex-1`}>
+          <Link
+            href={`/quests/${tripKey}/review`}
+            className={`${buttonClassName({ variant: 'secondary' })} flex-1`}
+          >
             Back to edit
           </Link>
           <Button className="flex-1" onClick={() => setPublishing(true)}>
@@ -29,7 +32,9 @@ export function PreviewQuest({ tripKey, creator }: { tripKey: string; creator: C
           </Button>
         </div>
       </div>
-      {publishing && <PublishSheet tripKey={tripKey} creator={creator} onClose={() => setPublishing(false)} />}
+      {publishing && (
+        <PublishSheet tripKey={tripKey} creator={creator} onClose={() => setPublishing(false)} />
+      )}
     </div>
   );
 }

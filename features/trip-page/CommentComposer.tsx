@@ -24,7 +24,10 @@ export function CommentComposer({ startOpen = false }: { startOpen?: boolean }) 
 
   if (!viewer.signedIn) {
     return (
-      <Link href={signInPath('comment', path, tripKey)} className={buttonClassName({ variant: 'secondary', block: true })}>
+      <Link
+        href={signInPath('comment', path, tripKey)}
+        className={buttonClassName({ variant: 'secondary', block: true })}
+      >
         Add a comment
       </Link>
     );

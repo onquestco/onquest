@@ -73,7 +73,15 @@ export function QuestPlayer({ pages, children }: Props) {
   }, []);
 
   const player = useMemo(
-    () => ({ page, count, goTo, next: () => goTo(page + 1), previous: () => goTo(page - 1), fullscreen, setFullscreen }),
+    () => ({
+      page,
+      count,
+      goTo,
+      next: () => goTo(page + 1),
+      previous: () => goTo(page - 1),
+      fullscreen,
+      setFullscreen,
+    }),
     [page, count, goTo, fullscreen, setFullscreen],
   );
 

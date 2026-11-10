@@ -12,9 +12,13 @@ export const NEED_THREE = `A Quest needs at least ${MIN_PHOTOS_TO_PUBLISH} photo
 type Page = QuestDocument['content']['days'][number];
 
 const withPages = (document: QuestDocument, days: Page[]): QuestDocument =>
-  retitle({ ...document, content: { ...document.content, days: days.filter((page) => page.photoIds.length > 0) } });
+  retitle({
+    ...document,
+    content: { ...document.content, days: days.filter((page) => page.photoIds.length > 0) },
+  });
 
-const photoCount = (document: QuestDocument) => document.content.days.reduce((sum, page) => sum + page.photoIds.length, 0);
+const photoCount = (document: QuestDocument) =>
+  document.content.days.reduce((sum, page) => sum + page.photoIds.length, 0);
 
 /** Page titles and dates follow their photos until the traveller renames the page. */
 export function retitle(document: QuestDocument): QuestDocument {
@@ -48,7 +52,8 @@ export function renamePage(document: QuestDocument, pageIndex: number, title: st
 export function movePhoto(document: QuestDocument, photoId: string, toPageIndex: number): EditResult {
   const target = document.content.days[toPageIndex];
   if (!target) return { ok: false, reason: 'That page is gone.' };
-  if (target.photoIds.length >= PHOTOS_PER_PAGE) return { ok: false, reason: 'That page is full. Tap one of its photos to swap.' };
+  if (target.photoIds.length >= PHOTOS_PER_PAGE)
+    return { ok: false, reason: 'That page is full. Tap one of its photos to swap.' };
   const days = document.content.days.map((page, index) => {
     const without = page.photoIds.filter((id) => id !== photoId);
     return { ...page, photoIds: index === toPageIndex ? [...without, photoId] : without };
@@ -65,9 +70,13 @@ export function swapPhotos(document: QuestDocument, firstId: string, secondId: s
 }
 
 export function startNewPage(document: QuestDocument, photoId: string, newPageId: string): EditResult {
-  if (document.content.days.length >= MAX_PAGES) return { ok: false, reason: `A Quest has at most ${MAX_PAGES} pages.` };
+  if (document.content.days.length >= MAX_PAGES)
+    return { ok: false, reason: `A Quest has at most ${MAX_PAGES} pages.` };
   const days = [
-    ...document.content.days.map((page) => ({ ...page, photoIds: page.photoIds.filter((id) => id !== photoId) })),
+    ...document.content.days.map((page) => ({
+      ...page,
+      photoIds: page.photoIds.filter((id) => id !== photoId),
+    })),
     { id: newPageId, titleSource: 'auto' as const, placeIds: [], photoIds: [photoId] },
   ];
   return { ok: true, document: withPages(document, days) };
@@ -75,7 +84,10 @@ export function startNewPage(document: QuestDocument, photoId: string, newPageId
 
 export function removePhoto(document: QuestDocument, photoId: string): EditResult {
   if (photoCount(document) <= MIN_PHOTOS_TO_PUBLISH) return { ok: false, reason: NEED_THREE };
-  const days = document.content.days.map((page) => ({ ...page, photoIds: page.photoIds.filter((id) => id !== photoId) }));
+  const days = document.content.days.map((page) => ({
+    ...page,
+    photoIds: page.photoIds.filter((id) => id !== photoId),
+  }));
   const photos = document.photos.filter((photo) => photo.id !== photoId);
   const coverPhotoId = document.coverPhotoId === photoId ? undefined : document.coverPhotoId;
   return { ok: true, document: withPages({ ...document, photos, coverPhotoId }, days) };
@@ -103,7 +115,12 @@ export function replacePhoto(document: QuestDocument, oldId: string, photo: NewP
 }
 
 /** New photos fill free slots from the last page, then new pages. Returns how many fitted. */
-export function addPhotos(document: QuestDocument, added: NewPhoto[], createId: () => string, maxPhotos: number) {
+export function addPhotos(
+  document: QuestDocument,
+  added: NewPhoto[],
+  createId: () => string,
+  maxPhotos: number,
+) {
   const room = Math.max(0, maxPhotos - photoCount(document));
   const fitting = added.slice(0, room);
   const days = document.content.days.map((page) => ({ ...page, photoIds: [...page.photoIds] }));
@@ -112,18 +129,27 @@ export function addPhotos(document: QuestDocument, added: NewPhoto[], createId: 
     if (last && last.photoIds.length < PHOTOS_PER_PAGE) last.photoIds.push(photo.id);
     else days.push({ id: createId(), titleSource: 'auto', placeIds: [], photoIds: [photo.id] });
   }
-  return { document: withPages({ ...document, photos: [...document.photos, ...fitting] }, days), added: fitting.length };
+  return {
+    document: withPages({ ...document, photos: [...document.photos, ...fitting] }, days),
+    added: fitting.length,
+  };
 }
 
 export function setCaption(document: QuestDocument, photoId: string, caption: string): QuestDocument {
   const photos = document.photos.map((photo) =>
-    photo.id === photoId ? { ...photo, caption: caption.trim() || undefined, captionSource: 'user' as const } : photo,
+    photo.id === photoId
+      ? { ...photo, caption: caption.trim() || undefined, captionSource: 'user' as const }
+      : photo,
   );
   return { ...document, photos };
 }
 
 /** Changing a photo's date never moves it; its page's dates and auto title follow. */
-export function setPhotoDate(document: QuestDocument, photoId: string, date: string | undefined): QuestDocument {
+export function setPhotoDate(
+  document: QuestDocument,
+  photoId: string,
+  date: string | undefined,
+): QuestDocument {
   const photos = document.photos.map((photo) => (photo.id === photoId ? { ...photo, date } : photo));
   return retitle({ ...document, photos });
 }

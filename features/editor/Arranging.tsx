@@ -23,7 +23,9 @@ export function Arranging({ tripKey }: { tripKey: string }) {
     const timer = setTimeout(() => {
       try {
         const photos = picked.map(({ id, width, height, takenAt }) => ({ id, width, height, takenAt }));
-        const arrangement = arrangePages(photos.map(({ id, takenAt }) => ({ id, takenAt: takenAt ?? undefined })));
+        const arrangement = arrangePages(
+          photos.map(({ id, takenAt }) => ({ id, takenAt: takenAt ?? undefined })),
+        );
         setDocument(buildDocument('beach', photos, arrangement, () => crypto.randomUUID(), startedAt));
         router.replace(`/quests/${tripKey}/review`);
       } catch {

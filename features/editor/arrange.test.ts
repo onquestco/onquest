@@ -14,7 +14,13 @@ const sizes = (photos: ArrangePhoto[]) => arrangePages(photos).pages.map((page) 
 
 describe('arrangePages', () => {
   it('gives each day its own page when it fits in 5 pages', () => {
-    const photos = [dated('a', 12, 9), dated('b', 12, 10), dated('c', 13, 9), dated('d', 14, 9), dated('e', 14, 10)];
+    const photos = [
+      dated('a', 12, 9),
+      dated('b', 12, 10),
+      dated('c', 13, 9),
+      dated('d', 14, 9),
+      dated('e', 14, 10),
+    ];
     const { pages } = arrangePages(photos);
     expect(pages.map((page) => page.photoIds)).toEqual([['a', 'b'], ['c'], ['d', 'e']]);
     expect(pages.map((page) => page.title)).toEqual(['Day 1', 'Day 2', 'Day 3']);
@@ -22,7 +28,9 @@ describe('arrangePages', () => {
 
   // M3 under F-A1 (recommended): 3 photos a page, so 12 photos over 3 days make 4 pages in date order.
   it('puts 12 photos over 3 days on 4 pages in date order', () => {
-    const photos = [12, 13, 14].flatMap((day) => [9, 10, 11, 12].map((hour) => dated(`${day}-${hour}`, day, hour)));
+    const photos = [12, 13, 14].flatMap((day) =>
+      [9, 10, 11, 12].map((hour) => dated(`${day}-${hour}`, day, hour)),
+    );
     const { pages } = arrangePages(photos.reverse());
     expect(pages).toHaveLength(4);
     expect(pages[0]?.photoIds).toEqual(['12-9', '12-10', '12-11']);
@@ -55,7 +63,11 @@ describe('arrangePages', () => {
   });
 
   it('counts a 1 a.m. photo as the night before', () => {
-    const { pages } = arrangePages([dated('dinner', 12, 21), dated('late', 13, 1), dated('breakfast', 13, 9)]);
+    const { pages } = arrangePages([
+      dated('dinner', 12, 21),
+      dated('late', 13, 1),
+      dated('breakfast', 13, 9),
+    ]);
     expect(pages.map((page) => page.photoIds)).toEqual([['dinner', 'late'], ['breakfast']]);
   });
 
@@ -67,7 +79,10 @@ describe('arrangePages', () => {
 
   it('names pages after their most common place', () => {
     const photos = [dated('a', 12, 9, 'Panjim'), dated('b', 12, 10, 'Panjim'), dated('c', 13, 9, 'Palolem')];
-    expect(arrangePages(photos).pages.map((page) => page.title)).toEqual(['Day 1 · Panjim', 'Day 2 · Palolem']);
+    expect(arrangePages(photos).pages.map((page) => page.title)).toEqual([
+      'Day 1 · Panjim',
+      'Day 2 · Palolem',
+    ]);
   });
 
   it('sets page dates from its photos', () => {
@@ -86,17 +101,20 @@ describe('pageTitle', () => {
   });
 
   it('counts days from the first trip day', () => {
-    expect(pageTitle([{ date: '2026-02-15' }, { date: '2026-02-17', placeName: 'Gokarna' }], 3, '2026-02-12')).toBe(
-      'Days 4–6 · Gokarna',
-    );
+    expect(
+      pageTitle([{ date: '2026-02-15' }, { date: '2026-02-17', placeName: 'Gokarna' }], 3, '2026-02-12'),
+    ).toBe('Days 4–6 · Gokarna');
   });
 });
 
 describe('defaultQuestTitle', () => {
   it('uses place and days', () => {
-    expect(defaultQuestTitle([{ date: '2026-02-12', placeName: 'Goa' }, { date: '2026-02-15', placeName: 'Goa' }])).toBe(
-      '4 days in Goa',
-    );
+    expect(
+      defaultQuestTitle([
+        { date: '2026-02-12', placeName: 'Goa' },
+        { date: '2026-02-15', placeName: 'Goa' },
+      ]),
+    ).toBe('4 days in Goa');
     expect(defaultQuestTitle([{ date: '2026-02-12', placeName: 'Panjim' }])).toBe('A day in Panjim');
   });
 

@@ -42,8 +42,20 @@ export const oldLongDayQuest: TripData = {
   ...goaTrip,
   key: 'demo-old',
   id: 'demo-old',
-  days: [{ number: 1, title: 'Arrival and Colorful Streets', places: goaTrip.places.slice(0, 2), photos: all.slice(0, 7) }],
+  days: [
+    {
+      number: 1,
+      title: 'Arrival and Colorful Streets',
+      places: goaTrip.places.slice(0, 2),
+      photos: all.slice(0, 7),
+    },
+  ],
 };
 
-export const sampleQuests = { goa: goaTrip, small: smallQuest, full: fullQuest, old: oldLongDayQuest } as const;
+export const sampleQuests = {
+  goa: goaTrip,
+  small: smallQuest,
+  full: fullQuest,
+  old: oldLongDayQuest,
+} as const;
 export type SampleQuestName = keyof typeof sampleQuests;

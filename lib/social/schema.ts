@@ -28,7 +28,9 @@ export const NotificationItemSchema = z.object({
   unread: z.boolean(),
   likeCount: z.number().int().optional(), // grouped likes
   actor: z.object({ handle: z.string(), name: z.string(), avatarUrl: z.string().optional() }).optional(), // never for likes
-  quest: z.object({ key: z.uuid(), title: z.string(), path: z.string(), coverThumb: z.string().optional() }).optional(),
+  quest: z
+    .object({ key: z.uuid(), title: z.string(), path: z.string(), coverThumb: z.string().optional() })
+    .optional(),
   commentExcerpt: z.string().max(80).optional(),
 });
 export const COMMENT_MAX = 300;

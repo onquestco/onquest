@@ -27,7 +27,14 @@ export function ProgressRing({ progress, label, size = 24 }: Props) {
       aria-valuenow={Math.round(filled * 100)}
       className="-rotate-90"
     >
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" strokeWidth={STROKE} className="stroke-surface" />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        strokeWidth={STROKE}
+        className="stroke-surface"
+      />
       <circle
         cx={size / 2}
         cy={size / 2}

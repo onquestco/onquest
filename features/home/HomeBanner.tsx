@@ -16,7 +16,9 @@ export function HomeBanner({ firstName }: { firstName?: string }) {
       <h1 className="text-title text-ink">
         Turn your last trip into a <span className="text-brand">Quest</span>
       </h1>
-      <p className="text-body text-ink-muted">Pick 3 to 15 photos. We&apos;ll make the scrapbook in under a minute.</p>
+      <p className="text-body text-ink-muted">
+        Pick 3 to 15 photos. We&apos;ll make the scrapbook in under a minute.
+      </p>
       <div className="flex flex-col gap-2">
         <Link href="/quests/new" className={buttonClassName({ block: true })}>
           Create a Quest

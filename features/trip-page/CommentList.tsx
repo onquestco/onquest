@@ -71,7 +71,9 @@ export function CommentList() {
           onDismiss={finish}
         />
       )}
-      {failed && <Toast message="Couldn't delete the comment. Try again." onDismiss={() => setFailed(false)} />}
+      {failed && (
+        <Toast message="Couldn't delete the comment. Try again." onDismiss={() => setFailed(false)} />
+      )}
     </>
   );
 }

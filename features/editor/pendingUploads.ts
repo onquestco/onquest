@@ -51,7 +51,8 @@ export const indexedDbStore: PendingStore = {
     run<PendingPhoto[]>('readonly', (store) =>
       store.getAll(IDBKeyRange.bound([tripKey, ''], [tripKey, '￿'])),
     ),
-  remove: (tripKey, photoId) => run('readwrite', (store) => store.delete([tripKey, photoId])).then(() => undefined),
+  remove: (tripKey, photoId) =>
+    run('readwrite', (store) => store.delete([tripKey, photoId])).then(() => undefined),
 };
 
 /** Keeps nothing. Used when IndexedDB isn't available, and in tests. */

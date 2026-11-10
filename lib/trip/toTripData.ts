@@ -99,7 +99,12 @@ type Owner = TripRows['owner'];
  * A draft as the viewer will see it once published. Goes through toTripData so the preview can't
  * drift from the real Quest page (M7). Owner-only fields (takenAt, date) never reach TripData.
  */
-export function draftToTripData(draft: DraftForPreview, owner: Owner, seed: number, defaults: Defaults): TripData {
+export function draftToTripData(
+  draft: DraftForPreview,
+  owner: Owner,
+  seed: number,
+  defaults: Defaults,
+): TripData {
   const { document } = draft;
   const rows: TripRows = {
     trip: {

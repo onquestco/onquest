@@ -15,7 +15,8 @@ function mostCommon(names: (string | undefined)[]): string | undefined {
   return best;
 }
 
-const trim = (text: string) => (text.length <= TITLE_MAX ? text : `${text.slice(0, TITLE_MAX - 1).trimEnd()}…`);
+const trim = (text: string) =>
+  text.length <= TITLE_MAX ? text : `${text.slice(0, TITLE_MAX - 1).trimEnd()}…`;
 
 /** "Day 2 · Panjim", "Days 4–6 · Gokarna", or "Page 3" when the page has no dates. */
 export function pageTitle(photos: PagePhoto[], pageNumber: number, firstTripDay: string | undefined): string {
@@ -37,7 +38,20 @@ export function pageDates(photos: PagePhoto[]): { startDate?: string; endDate?: 
   return { startDate: dates[0], endDate: dates.at(-1) };
 }
 
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
 
 /** "4 days in Goa", "A day in Panjim", "Panjim", "October 2026", or undefined (template default). */
 export function defaultQuestTitle(photos: PagePhoto[]): string | undefined {
@@ -47,7 +61,8 @@ export function defaultQuestTitle(photos: PagePhoto[]): string | undefined {
   const last = dates.at(-1);
   const dayCount = first && last ? daysBetween(first, last) + 1 : 0;
 
-  if (place && dayCount > 0) return trim(dayCount === 1 ? `A day in ${place}` : `${dayCount} days in ${place}`);
+  if (place && dayCount > 0)
+    return trim(dayCount === 1 ? `A day in ${place}` : `${dayCount} days in ${place}`);
   if (place) return trim(place);
   if (first) return `${MONTHS[Number(first.slice(5, 7)) - 1]} ${first.slice(0, 4)}`;
   return undefined;

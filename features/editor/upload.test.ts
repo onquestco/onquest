@@ -124,7 +124,12 @@ describe('upload queue', () => {
         isOnline: () => true,
         onOnline: () => () => undefined,
       },
-      { onStart: () => undefined, onProcessed: () => undefined, onUploaded: () => undefined, onFailed: () => undefined },
+      {
+        onStart: () => undefined,
+        onProcessed: () => undefined,
+        onUploaded: () => undefined,
+        onFailed: () => undefined,
+      },
     );
     expect(await again.resume()).toBe(1);
     for (let i = 0; i < 10; i++) await settle();

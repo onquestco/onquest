@@ -82,9 +82,7 @@ export function CoverPage({ trip }: { trip: TripData }) {
         />
       )}
 
-      {trip.destination && (
-        <Stamp x={70} y={80} width={24} big="▲" small={trip.destination} />
-      )}
+      {trip.destination && <Stamp x={70} y={80} width={24} big="▲" small={trip.destination} />}
       <Compass x={78} y={2} size={16} rotate={12} />
       <Ridge />
     </Stage>

@@ -26,7 +26,10 @@ export function Welcome() {
         <p className="text-body text-ink-muted">{current.text}</p>
         <div aria-hidden className="flex gap-2">
           {WELCOME_STEPS.map((item, index) => (
-            <i key={item.headline} className={`h-1 w-6 rounded-pill ${index === step ? 'bg-brand-strong' : 'bg-line'}`} />
+            <i
+              key={item.headline}
+              className={`h-1 w-6 rounded-pill ${index === step ? 'bg-brand-strong' : 'bg-line'}`}
+            />
           ))}
         </div>
       </div>

@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { QuestDocument } from '@/lib/trip/schema';
-import { addPhotos, movePhoto, NEED_THREE, removePhoto, renamePage, replacePhoto, setCaption, setPhotoDate, startNewPage, swapPhotos } from './pageEdits';
+import {
+  addPhotos,
+  movePhoto,
+  NEED_THREE,
+  removePhoto,
+  renamePage,
+  replacePhoto,
+  setCaption,
+  setPhotoDate,
+  startNewPage,
+  swapPhotos,
+} from './pageEdits';
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 let next = 100;
@@ -24,18 +35,35 @@ function documentWith(pages: number[][], dates: Record<number, string> = {}): Qu
     places: [],
   };
 }
-const shape = (document: QuestDocument) => document.content.days.map((page) => page.photoIds.map((photoId) => Number(photoId.slice(-3))));
+const shape = (document: QuestDocument) =>
+  document.content.days.map((page) => page.photoIds.map((photoId) => Number(photoId.slice(-3))));
 
 describe('Review pages edits', () => {
   it('moves a photo to a page with room (M5)', () => {
-    const result = movePhoto(documentWith([[1, 2, 3], [4, 5]]), id(3), 1);
-    expect(result.ok && shape(result.document)).toEqual([[1, 2], [4, 5, 3]]);
+    const result = movePhoto(
+      documentWith([
+        [1, 2, 3],
+        [4, 5],
+      ]),
+      id(3),
+      1,
+    );
+    expect(result.ok && shape(result.document)).toEqual([
+      [1, 2],
+      [4, 5, 3],
+    ]);
   });
 
-  it("refuses to move onto a full page, and swaps instead (M5)", () => {
-    const document = documentWith([[1, 2, 3], [4, 5, 6]]);
+  it('refuses to move onto a full page, and swaps instead (M5)', () => {
+    const document = documentWith([
+      [1, 2, 3],
+      [4, 5, 6],
+    ]);
     expect(movePhoto(document, id(3), 1).ok).toBe(false);
-    expect(shape(swapPhotos(document, id(3), id(4)))).toEqual([[1, 2, 4], [3, 5, 6]]);
+    expect(shape(swapPhotos(document, id(3), id(4)))).toEqual([
+      [1, 2, 4],
+      [3, 5, 6],
+    ]);
   });
 
   it('keeps at least 3 photos (M5)', () => {
@@ -62,7 +90,12 @@ describe('Review pages edits', () => {
   });
 
   it('adds photos to free slots, then new pages, up to the limit', () => {
-    const { document, added } = addPhotos(documentWith([[1, 2]]), [9, 10, 11].map((n) => ({ id: id(n), width: 4, height: 3 })), createId, 4);
+    const { document, added } = addPhotos(
+      documentWith([[1, 2]]),
+      [9, 10, 11].map((n) => ({ id: id(n), width: 4, height: 3 })),
+      createId,
+      4,
+    );
     expect(added).toBe(2);
     expect(shape(document)).toEqual([[1, 2, 9], [10]]);
   });
@@ -76,6 +109,10 @@ describe('Review pages edits', () => {
   it("doesn't move a photo when its date changes, but its page's dates follow (M5)", () => {
     const document = setPhotoDate(documentWith([[1, 2, 3]], { 1: '2026-10-17' }), id(2), '2026-10-18');
     expect(shape(document)).toEqual([[1, 2, 3]]);
-    expect(document.content.days[0]).toMatchObject({ startDate: '2026-10-17', endDate: '2026-10-18', title: 'Days 1–2' });
+    expect(document.content.days[0]).toMatchObject({
+      startDate: '2026-10-17',
+      endDate: '2026-10-18',
+      title: 'Days 1–2',
+    });
   });
 });
