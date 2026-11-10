@@ -81,3 +81,15 @@ export async function loadOwnTrips(db: SupabaseClient, keys?: string[]) {
 export async function loadOwnTrip(db: SupabaseClient, key: string) {
   return (await loadOwnTrips(db, [key]))[0] ?? null;
 }
+
+/** The owner's published Quest as a document (the same columns as a draft), or null. */
+export async function loadPublishedDocument(db: SupabaseClient, key: string): Promise<QuestDocument | null> {
+  const { data, error } = await db
+    .from('trips')
+    .select(DRAFT_COLUMNS)
+    .eq('key', key)
+    .eq('status', 'published')
+    .maybeSingle();
+  if (error) throw new Error('Could not load Quest');
+  return data ? toDocument(DraftRowSchema.parse(data)) : null;
+}

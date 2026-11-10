@@ -35,5 +35,8 @@ export type Template = {
   /** The full interactive trip page. Pure: TripData in, markup out. */
   /** `controls` is app chrome (full screen, like) placed inside the player; templates only pass it through. */
   TripPage: (props: { trip: TripData; controls?: ReactNode }) => ReactNode;
-  // Instagram StoryFrames / CarouselFrames are added in week 3 (see docs/02-lld.md §7).
+  /** Instagram story, 1080 × 1920 px, with the Quest's link as text (spec B §3.7). */
+  StoryFrame: (props: { trip: TripData }) => ReactNode;
+  /** Instagram carousel: the cover, then up to 5 pages, 1080 × 1350 px each. */
+  CarouselFrames: (props: { trip: TripData }) => ReactNode[];
 };
