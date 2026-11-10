@@ -762,3 +762,36 @@ button.scrap:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Quest player: one page at a time, tap or swipe to turn. */
+.player {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 16px 0 24px;
+  touch-action: pan-y;
+  user-select: none;
+  outline: none;
+}
+.player:focus-visible .playerPage {
+  outline: 3px solid var(--accent2);
+  outline-offset: 4px;
+}
+.playerPage[hidden] {
+  display: none;
+}
+.playerDots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+.playerDots i {
+  width: 22px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--ink);
+  opacity: 0.25;
+}
+.playerDots i[data-on] {
+  opacity: 1;
+}

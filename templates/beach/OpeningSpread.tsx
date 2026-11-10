@@ -11,7 +11,7 @@ import styles from './beach.module.css';
 import { tapes } from './theme';
 
 /** Cover card: title, short name, dates and a collage of the trip's best photos. */
-function CoverCard({ trip }: { trip: TripData }) {
+export function CoverCard({ trip }: { trip: TripData }) {
   // Cover first, then one photo per place, then everything else.
   const pool = uniquePhotos([trip.cover, ...trip.places.map((place) => place.photo), ...trip.photos]);
   const used = new Set<string>();
