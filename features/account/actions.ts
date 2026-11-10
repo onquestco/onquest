@@ -2,35 +2,42 @@
 
 import { z } from 'zod';
 import { action, type ActionResult } from '@/lib/action';
+import { readSignInReturn, withSignInReturn } from '@/lib/auth/next';
 import { HandleSchema, isReservedHandle } from '@/lib/handles';
 import { absoluteUrl } from '@/lib/site';
 import { createServerSupabase } from '@/lib/supabase/server';
 
-const AUTH_CALLBACK = absoluteUrl('/auth/callback');
 // Error codes raised by public.save_profile (migration 8).
 const HANDLE_TAKEN = 'OQ423';
 const PROFILE_EXISTS = 'OQ409';
 
+/** next, intent and ref from the sign-in page, checked again here: they come from the browser. */
+const signInReturn = (raw: unknown) =>
+  readSignInReturn(
+    typeof raw === 'object' && raw !== null ? (raw as Record<string, string | undefined>) : {},
+  );
+
 // Sign-in can't use action(): it's the one step where nobody is signed in yet.
-export async function signInWithEmail(rawEmail: unknown): Promise<ActionResult<null>> {
+export async function signInWithEmail(rawEmail: unknown, rawReturn?: unknown): Promise<ActionResult<null>> {
   const email = z.email().safeParse(rawEmail);
   if (!email.success) return { ok: false, error: 'Please enter a valid email' };
 
   const supabase = await createServerSupabase();
   const { error } = await supabase.auth.signInWithOtp({
     email: email.data,
-    options: { emailRedirectTo: AUTH_CALLBACK },
+    // The email template links to {{ .RedirectTo }}&token_hash=…&type=email (docs/runbooks/auth.md).
+    options: { emailRedirectTo: absoluteUrl(withSignInReturn('/auth/confirm', signInReturn(rawReturn))) },
   });
   return error
     ? { ok: false, error: 'Could not send the email. Please try again.' }
     : { ok: true, data: null };
 }
 
-export async function signInWithGoogle(): Promise<ActionResult<string>> {
+export async function signInWithGoogle(rawReturn?: unknown): Promise<ActionResult<string>> {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: AUTH_CALLBACK },
+    options: { redirectTo: absoluteUrl(withSignInReturn('/auth/callback', signInReturn(rawReturn))) },
   });
   return error || !data.url
     ? { ok: false, error: 'Could not start Google sign-in. Please try again.' }

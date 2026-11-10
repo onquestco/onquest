@@ -3,9 +3,17 @@
 import { useState, useTransition, type FormEvent } from 'react';
 import { Button } from '@/design-system/components/Button';
 import { TextField } from '@/design-system/components/TextField';
+import type { SignInReturn } from '@/lib/auth/next';
 import { signInWithEmail, signInWithGoogle } from './actions';
 
-export function LoginForm({ initialError }: { initialError?: string }) {
+/** `signInReturn` rides along through Google or the email link, so sign-in lands back where it started. */
+export function LoginForm({
+  initialError,
+  signInReturn,
+}: {
+  initialError?: string;
+  signInReturn: SignInReturn;
+}) {
   const [email, setEmail] = useState('');
   const [error, setError] = useState(initialError);
   const [emailSent, setEmailSent] = useState(false);
@@ -14,7 +22,7 @@ export function LoginForm({ initialError }: { initialError?: string }) {
   function sendEmail(event: FormEvent) {
     event.preventDefault();
     startTransition(async () => {
-      const result = await signInWithEmail(email);
+      const result = await signInWithEmail(email, signInReturn);
       setError(result.ok ? undefined : result.error);
       setEmailSent(result.ok);
     });
@@ -22,7 +30,7 @@ export function LoginForm({ initialError }: { initialError?: string }) {
 
   function continueWithGoogle() {
     startTransition(async () => {
-      const result = await signInWithGoogle();
+      const result = await signInWithGoogle(signInReturn);
       if (result.ok) window.location.assign(result.data);
       else setError(result.error);
     });

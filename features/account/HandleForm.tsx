@@ -6,7 +6,8 @@ import { Button } from '@/design-system/components/Button';
 import { TextField } from '@/design-system/components/TextField';
 import { setHandle } from './actions';
 
-export function HandleForm({ initialName }: { initialName: string }) {
+/** `done`: where to go once the username is saved (the welcome screens, or back to a Quest). */
+export function HandleForm({ initialName, done }: { initialName: string; done: string }) {
   const router = useRouter();
   const [handle, setHandleValue] = useState('');
   const [name, setName] = useState(initialName);
@@ -24,7 +25,7 @@ export function HandleForm({ initialName }: { initialName: string }) {
       } else if (!result.data.saved) {
         setError(result.data.reason);
       } else {
-        router.replace('/welcome');
+        router.replace(done);
       }
     });
   }
