@@ -23,7 +23,61 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "geocode_cache": {
+            "comments": {
+                  Row: {
+                    "author_key": string,"body": string,"key": string,"save_reason": string,"saved_at": string,"saved_by": string | null,"trip_key": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "author_key": string,"body": string,"key": string,"save_reason": string,"saved_at": string,"saved_by"?: string | null,"trip_key": string
+                  }
+                  Update: {
+                    "author_key"?: string,"body"?: string,"key"?: string,"save_reason"?: string,"saved_at"?: string,"saved_by"?: string | null,"trip_key"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "comments_author_key_fkey"
+      columns: ["author_key"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["key"]
+    },{
+      foreignKeyName: "comments_trip_key_fkey"
+      columns: ["trip_key"]
+isOneToOne: false
+      referencedRelation: "trips"
+      referencedColumns: ["key"]
+    }
+                  ]
+                },"comments_archive": {
+                  Row: {
+                    "archived_at": string,"author_key": string,"body": string,"key": string,"save_reason": string,"saved_at": string,"saved_by": string | null,"trip_key": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at": string,"author_key": string,"body": string,"key": string,"save_reason": string,"saved_at": string,"saved_by"?: string | null,"trip_key": string
+                  }
+                  Update: {
+                    "archived_at"?: string,"author_key"?: string,"body"?: string,"key"?: string,"save_reason"?: string,"saved_at"?: string,"saved_by"?: string | null,"trip_key"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"email_send_log": {
+                  Row: {
+                    "key": string,"kind": string,"save_reason": string,"saved_at": string,"saved_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "key": string,"kind": string,"save_reason": string,"saved_at": string,"saved_by"?: string | null
+                  }
+                  Update: {
+                    "key"?: string,"kind"?: string,"save_reason"?: string,"saved_at"?: string,"saved_by"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"geocode_cache": {
                   Row: {
                     "cache_key": string,"result": NonNullable<Json>,"save_reason": string,"saved_at": string,"saved_by": string | null
                   }
@@ -64,6 +118,112 @@ export type Database = {
                   }
                   Relationships: [
                     
+                  ]
+                },"likes": {
+                  Row: {
+                    "key": string,"save_reason": string,"saved_at": string,"saved_by": string | null,"trip_key": string,"user_key": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "key": string,"save_reason": string,"saved_at": string,"saved_by"?: string | null,"trip_key": string,"user_key": string
+                  }
+                  Update: {
+                    "key"?: string,"save_reason"?: string,"saved_at"?: string,"saved_by"?: string | null,"trip_key"?: string,"user_key"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "likes_trip_key_fkey"
+      columns: ["trip_key"]
+isOneToOne: false
+      referencedRelation: "trips"
+      referencedColumns: ["key"]
+    },{
+      foreignKeyName: "likes_user_key_fkey"
+      columns: ["user_key"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["key"]
+    }
+                  ]
+                },"likes_archive": {
+                  Row: {
+                    "archived_at": string,"key": string,"save_reason": string,"saved_at": string,"saved_by": string | null,"trip_key": string,"user_key": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at": string,"key": string,"save_reason": string,"saved_at": string,"saved_by"?: string | null,"trip_key": string,"user_key": string
+                  }
+                  Update: {
+                    "archived_at"?: string,"key"?: string,"save_reason"?: string,"saved_at"?: string,"saved_by"?: string | null,"trip_key"?: string,"user_key"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"notification_reads": {
+                  Row: {
+                    "key": string,"save_reason": string,"saved_at": string,"saved_by": string | null,"seen_until": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "key": string,"save_reason": string,"saved_at": string,"saved_by"?: string | null,"seen_until": string
+                  }
+                  Update: {
+                    "key"?: string,"save_reason"?: string,"saved_at"?: string,"saved_by"?: string | null,"seen_until"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "notification_reads_key_fkey"
+      columns: ["key"]
+isOneToOne: true
+      referencedRelation: "profiles"
+      referencedColumns: ["key"]
+    }
+                  ]
+                },"notification_reads_archive": {
+                  Row: {
+                    "archived_at": string,"key": string,"save_reason": string,"saved_at": string,"saved_by": string | null,"seen_until": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at": string,"key": string,"save_reason": string,"saved_at": string,"saved_by"?: string | null,"seen_until": string
+                  }
+                  Update: {
+                    "archived_at"?: string,"key"?: string,"save_reason"?: string,"saved_at"?: string,"saved_by"?: string | null,"seen_until"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"notifications": {
+                  Row: {
+                    "actor_key": string | null,"comment_key": string | null,"key": string,"kind": string,"recipient_key": string,"save_reason": string,"saved_at": string,"saved_by": string | null,"trip_key": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "actor_key"?: string | null,"comment_key"?: string | null,"key": string,"kind": string,"recipient_key": string,"save_reason": string,"saved_at": string,"saved_by"?: string | null,"trip_key"?: string | null
+                  }
+                  Update: {
+                    "actor_key"?: string | null,"comment_key"?: string | null,"key"?: string,"kind"?: string,"recipient_key"?: string,"save_reason"?: string,"saved_at"?: string,"saved_by"?: string | null,"trip_key"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "notifications_actor_key_fkey"
+      columns: ["actor_key"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["key"]
+    },{
+      foreignKeyName: "notifications_recipient_key_fkey"
+      columns: ["recipient_key"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["key"]
+    },{
+      foreignKeyName: "notifications_trip_key_fkey"
+      columns: ["trip_key"]
+isOneToOne: false
+      referencedRelation: "trips"
+      referencedColumns: ["key"]
+    }
                   ]
                 },"photos": {
                   Row: {
@@ -221,11 +381,23 @@ isOneToOne: false
 "archive_trip":
 { Args: { "p_now": string,"p_row": Omit<Database["public"]['Tables']["trips"]['Row'], Database["public"]['Tables']["trips"]['ComputedFields']> }; Returns: undefined
                            },
+"can_see_trip":
+{ Args: { "p_trip_key": string,"p_user_key": string }; Returns: boolean
+                           },
+"claim_email_budget":
+{ Args: { "p_kind": string,"p_limit": number }; Returns: boolean
+                           },
 "claim_geocoder_slot":
 { Args: { "p_kind": string,"p_user_key": string }; Returns: number
                            },
+"count_unread_notifications":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "create_trip":
 { Args: { "p_key": string,"p_template_id"?: string }; Returns: string
+                           },
+"delete_comment":
+{ Args: { "p_comment_key": string }; Returns: string
                            },
 "delete_trip":
 { Args: { "p_key": string }; Returns: Json
@@ -238,11 +410,23 @@ isOneToOne: false
 "geocode_cache_put":
 { Args: { "p_key": string,"p_result": Json }; Returns: undefined
                            },
+"get_my_quest_state":
+{ Args: { "p_trip_key": string }; Returns: Json
+                           },
 "get_profile":
 { Args: { "p_handle": string }; Returns: Json
                            },
 "get_trip":
 { Args: { "p_handle": string,"p_slug": string }; Returns: Json
+                           },
+"get_trip_social":
+{ Args: { "p_trip_key": string }; Returns: Json
+                           },
+"get_trip_status":
+{ Args: { "p_handle": string,"p_slug": string }; Returns: string
+                           },
+"get_unavailable_trip_key":
+{ Args: { "p_handle": string,"p_slug": string }; Returns: string
                            },
 "insert_trip":
 { Args: { "p_by": string,"p_now": string,"p_reason": string,"p_row": Omit<Database["public"]['Tables']["trips"]['Row'], Database["public"]['Tables']["trips"]['ComputedFields']> }; Returns: undefined
@@ -253,10 +437,19 @@ isOneToOne: false
 "is_reserved_handle":
 { Args: { "p_handle": string }; Returns: boolean
                            },
+"list_my_notifications":
+{ Args: { "p_before"?: string,"p_limit"?: number }; Returns: Json
+                           },
 "list_sitemap_trips":
 { Args: Record<PropertyKey, never>; Returns: {
               "handle": string,"slug": string,"updated_at": string
             }[]
+                           },
+"mark_notifications_seen":
+{ Args: { "p_until": string }; Returns: string
+                           },
+"post_comment":
+{ Args: { "p_body": string,"p_trip_key": string }; Returns: Json
                            },
 "publish_trip":
 { Args: { "p_based_on_draft": string,"p_based_on_trip": string,"p_key": string,"p_slug": string,"p_title": string,"p_visibility": string,"p_word_count": number }; Returns: Json
@@ -273,8 +466,14 @@ isOneToOne: false
 "save_profile":
 { Args: { "p_based_on": string,"p_profile": Json }; Returns: string
                            },
+"save_profile_settings_as_admin":
+{ Args: { "p_key": string,"p_settings": Json }; Returns: string
+                           },
 "save_trip_draft":
 { Args: { "p_based_on": string,"p_document": Json,"p_key": string }; Returns: string
+                           },
+"set_like":
+{ Args: { "p_liked": boolean,"p_trip_key": string }; Returns: Json
                            },
 "set_trip_comments":
 { Args: { "p_based_on": string,"p_key": string,"p_on": boolean }; Returns: string
