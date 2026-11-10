@@ -7,7 +7,9 @@ import { absoluteUrl } from '@/lib/site';
 import { createServerSupabase } from '@/lib/supabase/server';
 
 const AUTH_CALLBACK = absoluteUrl('/auth/callback');
-const UNIQUE_VIOLATION = '23505'; // Postgres error code
+// Error codes raised by public.save_profile (migration 8).
+const HANDLE_TAKEN = 'OQ423';
+const PROFILE_EXISTS = 'OQ409';
 
 // Sign-in can't use action(): it's the one step where nobody is signed in yet.
 export async function signInWithEmail(rawEmail: unknown): Promise<ActionResult<null>> {
@@ -40,12 +42,14 @@ const ProfileInputSchema = z.object({
   name: z.string().trim().min(1).max(60),
 });
 
-export const setHandle = action(ProfileInputSchema, async ({ handle, name }, { user, db }) => {
+export const setHandle = action(ProfileInputSchema, async ({ handle, name }, { db }) => {
   if (isReservedHandle(handle)) return { saved: false as const, reason: 'That handle is reserved' };
 
-  // Other people's profiles are hidden by RLS, so the unique constraint is what detects a taken handle.
-  const { error } = await db.from('profiles').upsert({ id: user.id, handle, name });
-  if (error?.code === UNIQUE_VIOLATION) return { saved: false as const, reason: 'That handle is taken' };
+  // Creates the profile and claims the handle for good (handles are never reused).
+  const { error } = await db.rpc('save_profile', { p_based_on: null, p_profile: { handle, name } });
+  if (error?.code === HANDLE_TAKEN) return { saved: false as const, reason: 'That handle is taken' };
+  // Already has a profile (onboarding finished in another tab): nothing left to do.
+  if (error?.code === PROFILE_EXISTS) return { saved: true as const };
   if (error) throw new Error('Could not save profile');
   return { saved: true as const };
 });

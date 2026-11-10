@@ -42,15 +42,23 @@ const STORAGE_GRANTS = `
   grant select, insert, delete on storage.objects to anon, authenticated;
 `;
 
-export async function createTestDatabase() {
+type Options = {
+  /** Apply only the first N migrations (in file order), e.g. 8 to test migration 8 on its own. */
+  upTo?: number;
+  /** Skip seed.sql (for databases that stop before the seed's columns exist). */
+  seed?: boolean;
+};
+
+export async function createTestDatabase({ upTo, seed = true }: Options = {}) {
   const db = new PGlite();
   await db.exec(SUPABASE_STANDINS);
   const migrations = readdirSync(join(SUPABASE_DIR, 'migrations'))
     .filter((f) => f.endsWith('.sql'))
-    .sort();
+    .sort()
+    .slice(0, upTo);
   for (const file of migrations) await db.exec(readFileSync(join(SUPABASE_DIR, 'migrations', file), 'utf8'));
   await db.exec(STORAGE_GRANTS);
-  await db.exec(readFileSync(join(SUPABASE_DIR, 'seed.sql'), 'utf8'));
+  if (seed) await db.exec(readFileSync(join(SUPABASE_DIR, 'seed.sql'), 'utf8'));
 
   /** Runs a query as a logged-out visitor (userId undefined) or as a signed-in user. */
   async function queryAs<T = Record<string, unknown>>(
@@ -68,9 +76,15 @@ export async function createTestDatabase() {
     }
   }
 
-  return { db, queryAs };
+  /** Signs in as a user (with a matching auth.users row, as Supabase would have). */
+  async function addUser(userId: string, email = `${userId.slice(-4)}@example.com`) {
+    await db.query(`insert into auth.users (id, email, created_at) values ($1, $2, now())`, [userId, email]);
+  }
+
+  return { db, queryAs, addUser };
 }
 
 export const ALEX = '00000000-0000-4000-8000-000000000001'; // seeded user
 export const STRANGER = '00000000-0000-4000-8000-000000000002';
+export const NEWCOMER = '00000000-0000-4000-8000-000000000003';
 export const ALEX_PUBLIC_TRIP = '00000000-0000-4000-8000-0000000000a1';

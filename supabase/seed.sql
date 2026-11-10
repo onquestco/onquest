@@ -10,8 +10,11 @@ values (
   '{"provider": "email", "providers": ["email"]}', '{}', now(), now()
 );
 
-insert into public.profiles (id, handle, name, bio, home_city)
+insert into public.profiles (key, handle, name, bio, home_city)
 values ('00000000-0000-4000-8000-000000000001', 'alex', 'Alex Morgan', 'Made of memories, miles, and moments', 'Bengaluru');
+-- Every live handle has a claim (migration 8), so nobody else can take it.
+insert into public.handle_claims (handle, profile_key, saved_at, saved_by, save_reason)
+values ('alex', '00000000-0000-4000-8000-000000000001', now(), '00000000-0000-4000-8000-000000000001', 'create');
 
 insert into public.trips (id, owner_id, slug, template_id, visibility, status, title, short_title,
   start_date, end_date, content, word_count, published_at)
