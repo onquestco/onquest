@@ -107,11 +107,18 @@ $$;
 -- 3. Search (spec C §3.5): public published Quests and people. Contains-match always; trigram
 --    similarity as well where pg_trgm is installed (Supabase), ordered by it. Unlisted, private
 --    and draft Quests are never searched.
+-- What people search matches: handle, name and home city. Immutable (|| and coalesce, not
+-- concat_ws), so it can back an index.
+create function public.person_search_text(p_handle text, p_name text, p_city text) returns text
+language sql immutable set search_path = '' as $$
+  select lower(p_handle || ' ' || coalesce(p_name, '') || ' ' || coalesce(p_city, ''));
+$$;
+
 do $$
 begin
   if exists (select 1 from pg_extension where extname = 'pg_trgm') then
     execute 'create index profiles_search on public.profiles
-      using gin (lower(concat_ws('' '', handle, name, home_city)) extensions.gin_trgm_ops)';
+      using gin (public.person_search_text(handle, name, home_city) extensions.gin_trgm_ops)';
   end if;
 end $$;
 
@@ -143,10 +150,10 @@ begin
     execute $q$
       select coalesce(jsonb_agg(public.person_json(s.p) order by s.rank desc, (s.p).handle), '[]'::jsonb)
       from (
-        select p, extensions.similarity(lower(concat_ws(' ', p.handle, p.name, p.home_city)), $1) as rank
+        select p, extensions.similarity(public.person_search_text(p.handle, p.name, p.home_city), $1) as rank
         from public.profiles p
-        where lower(concat_ws(' ', p.handle, p.name, p.home_city)) ilike $2
-           or extensions.similarity(lower(concat_ws(' ', p.handle, p.name, p.home_city)), $1) > 0.3
+        where public.person_search_text(p.handle, p.name, p.home_city) ilike $2
+           or extensions.similarity(public.person_search_text(p.handle, p.name, p.home_city), $1) > 0.3
         order by rank desc, p.handle limit $3) s
     $q$ into people using query, pattern, max_rows;
   else
@@ -155,7 +162,7 @@ begin
           where (q.trip).search_text ilike pattern order by q.score desc limit max_rows) s;
     select coalesce(jsonb_agg(public.person_json(s.p) order by (s.p).handle), '[]'::jsonb) into people
     from (select p from public.profiles p
-          where lower(concat_ws(' ', p.handle, p.name, p.home_city)) ilike pattern
+          where public.person_search_text(p.handle, p.name, p.home_city) ilike pattern
           order by p.handle limit max_rows) s;
   end if;
   return jsonb_build_object('quests', quests, 'people', people);

@@ -69,6 +69,7 @@ const EXPECTED: Record<string, string[]> = {
   quest_card_json: NOBODY,
   quest_score: NOBODY,
   public_quests_scored: NOBODY,
+  person_search_text: NOBODY,
 };
 
 type GrantRow = { name: string; anon: boolean; authenticated: boolean; service_role: boolean };
