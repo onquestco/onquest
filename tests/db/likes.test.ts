@@ -13,20 +13,20 @@ describe('set_like', () => {
   it('counts one like per person however many times they tap', async () => {
     await db.like(STRANGER, GOA);
     const result = await db.like(STRANGER, GOA);
-    expect(result).toEqual({ liked: true, like_count: 1 });
+    expect(result).toEqual({ liked: true, notified: false, like_count: 1 });
     expect((await db.social(GOA))?.like_count).toBe(1);
   });
 
   it('archives the like on unlike, and a second unlike changes nothing', async () => {
-    expect(await db.like(STRANGER, GOA, false)).toEqual({ liked: false, like_count: 0 });
-    expect(await db.like(STRANGER, GOA, false)).toEqual({ liked: false, like_count: 0 });
+    expect(await db.like(STRANGER, GOA, false)).toMatchObject({ liked: false, like_count: 0 });
+    expect(await db.like(STRANGER, GOA, false)).toMatchObject({ liked: false, like_count: 0 });
     expect(await db.count('select count(*) n from public.likes_archive where trip_key = $1', [GOA])).toBe(1);
   });
 
   it('notifies the owner on the first like only, never again after unlike and re-like', async () => {
-    await db.like(NEWCOMER, GOA);
+    expect((await db.like(NEWCOMER, GOA)).notified).toBe(true);
     await db.like(NEWCOMER, GOA, false);
-    await db.like(NEWCOMER, GOA);
+    expect((await db.like(NEWCOMER, GOA)).notified).toBe(false);
     expect(
       await db.count(`select count(*) n from public.notifications where kind = 'like' and saved_by = $1`, [
         NEWCOMER,

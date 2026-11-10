@@ -147,6 +147,7 @@ declare
   now_ts   timestamptz := clock_timestamp();
   trip_owner uuid;
   live     public.likes;
+  notified boolean := false;
 begin
   if not public.can_see_trip(p_trip_key, liker) then
     raise exception 'not visible' using errcode = 'OQ404';
@@ -163,6 +164,7 @@ begin
       insert into public.notifications (key, recipient_key, kind, actor_key, trip_key, comment_key,
         saved_at, saved_by, save_reason)
       values (gen_random_uuid(), trip_owner, 'like', null, p_trip_key, null, now_ts, liker, 'create');
+      notified := true;
     end if;
     insert into public.likes (key, trip_key, user_key, saved_at, saved_by, save_reason)
     values (gen_random_uuid(), p_trip_key, liker, now_ts, liker, 'create');
@@ -174,6 +176,8 @@ begin
 
   return jsonb_build_object(
     'liked', p_liked,
+    -- The owner was told (bell): the server sends the matching email.
+    'notified', notified,
     'like_count', (select count(*) from public.likes where trip_key = p_trip_key));
 end $$;
 

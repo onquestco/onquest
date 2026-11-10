@@ -1,10 +1,12 @@
 'use server';
 
 import { updateTag } from 'next/cache';
+import { after } from 'next/server';
 import { z } from 'zod';
 import { getMyProfile } from '@/features/account/getCurrentUser';
 import { action } from '@/lib/action';
 import { tripSocialTag } from '@/lib/cacheTags';
+import { notifyQuestOwner } from '@/lib/email/notifyServer';
 import type { Comment } from '@/lib/social/schema';
 import { reactionError } from './socialRows';
 
@@ -17,12 +19,14 @@ const LikeSchema = z.object({
   source: z.enum(['quest_page', 'fullscreen', 'feed', 'after_sign_in']), // quest_liked.source (B-10)
 });
 
-export const setLike = action(LikeSchema, async ({ tripKey, liked }, { db }) => {
+export const setLike = action(LikeSchema, async ({ tripKey, liked }, { user, db }) => {
   const { data, error } = await db.rpc('set_like', { p_trip_key: tripKey, p_liked: liked });
   if (reactionError(error) === 'not_visible') return { saved: false as const, error: 'not_visible' as const };
   if (error) throw new Error('Could not save like');
-  const result = z.object({ liked: z.boolean(), like_count: z.number() }).parse(data);
+  const result = z.object({ liked: z.boolean(), notified: z.boolean(), like_count: z.number() }).parse(data);
   updateTag(tripSocialTag(tripKey));
+  // Only a person's first like ever on this Quest notifies (the bell did, so the email does too).
+  if (result.notified) after(() => notifyQuestOwner({ kind: 'like', tripKey, actorKey: user.id }));
   return { saved: true as const, liked: result.liked, likeCount: result.like_count };
 });
 
@@ -38,6 +42,7 @@ export const postComment = action(CommentSchema, async ({ tripKey, body }, { use
   const saved = z.object({ key: z.uuid(), saved_at: z.string() }).parse(data);
   const profile = await getMyProfile(user.id);
   updateTag(tripSocialTag(tripKey));
+  after(() => notifyQuestOwner({ kind: 'comment', tripKey, actorKey: user.id, commentBody: body }));
   const comment: Comment = {
     key: saved.key,
     body,

@@ -21,10 +21,11 @@ export async function createSocialDatabase() {
     one,
     count,
     like: (user: string, trip: string, liked = true) =>
-      one<{ liked: boolean; like_count: number }>(user, 'select public.set_like($1, $2) as result', [
-        trip,
-        liked,
-      ]),
+      one<{ liked: boolean; notified: boolean; like_count: number }>(
+        user,
+        'select public.set_like($1, $2) as result',
+        [trip, liked],
+      ),
     comment: (user: string, trip: string, body: string) =>
       one<{ key: string; saved_at: string }>(user, 'select public.post_comment($1, $2) as result', [
         trip,
