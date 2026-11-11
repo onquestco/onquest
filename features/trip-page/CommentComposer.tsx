@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useId, useState } from 'react';
-import { Button, buttonClassName } from '@/design-system/components/Button';
+import { Button } from '@/design-system/components/Button';
 import { COMMENT_MAX } from '@/lib/social/schema';
 import { charactersLeft } from './likeCopy';
 import { signInPath } from './socialActions';
@@ -13,6 +13,10 @@ const ERRORS: Record<string, string> = {
   comments_off: 'Comments are off for this Quest.',
   not_visible: "This Quest isn't available any more.",
 };
+
+// Closed, the composer looks like the comment box it opens (the prototype's pill field).
+const COMPOSER_PROMPT =
+  'flex min-h-11 w-full items-center rounded-pill border border-line-control bg-surface px-4 text-left text-body text-ink-subtle focus-visible:outline-2 focus-visible:outline-brand-strong';
 
 /** "Add a comment". Signed out it signs in first and comes back with the box open (M11). */
 export function CommentComposer() {
@@ -32,19 +36,16 @@ export function CommentComposer() {
 
   if (!viewer.signedIn) {
     return (
-      <Link
-        href={signInPath('comment', path, tripKey)}
-        className={buttonClassName({ variant: 'secondary', block: true })}
-      >
+      <Link href={signInPath('comment', path, tripKey)} className={COMPOSER_PROMPT}>
         Add a comment
       </Link>
     );
   }
   if (!open) {
     return (
-      <Button variant="secondary" block onClick={() => setOpen(true)}>
+      <button type="button" className={COMPOSER_PROMPT} onClick={() => setOpen(true)}>
         Add a comment
-      </Button>
+      </button>
     );
   }
 

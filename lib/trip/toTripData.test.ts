@@ -83,7 +83,7 @@ describe('toTripData with an empty trip', () => {
     expect(trip()).toMatchObject({
       title: 'Default title',
       closingHeadline: 'Default closing',
-      shortTitle: 'My Trip',
+      shortTitle: 'a Quest by @alex',
       statsLabel: '',
     });
   });

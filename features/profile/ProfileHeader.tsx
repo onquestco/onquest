@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Avatar } from '@/design-system/components/Avatar';
-import { buttonClassName } from '@/design-system/components/Button';
+import { Button, buttonClassName } from '@/design-system/components/Button';
 import { SettingsIcon } from '@/design-system/components/icons';
 import { AppBottomBar } from '@/features/shell/AppBottomBar';
 import { FollowButton } from './FollowButton';
@@ -19,6 +19,20 @@ import { useViewer } from './ProfileViewerContext';
 export function ProfileHeader({ profile }: { profile: ProfileView }) {
   const viewer = useViewer();
   const [followers, setFollowers] = useState(profile.stats.followers);
+  const [shared, setShared] = useState(false);
+
+  async function shareProfile(handle: string) {
+    const url = `${window.location.origin}/@${handle}`;
+    try {
+      if (navigator.share) await navigator.share({ title: profile.name, url });
+      else {
+        await navigator.clipboard.writeText(url);
+        setShared(true);
+      }
+    } catch {
+      // Closing the share sheet throws; nothing to do.
+    }
+  }
   const { handle } = profile;
   const counts = [
     { value: profile.stats.quests, label: profile.stats.quests === 1 ? 'Quest' : 'Quests' },
@@ -44,7 +58,21 @@ export function ProfileHeader({ profile }: { profile: ProfileView }) {
         </span>
       </div>
 
-      <div className="mt-10 flex flex-col gap-1">
+      {/* Someone else's profile: Follow sits beside the avatar, under the cover (prototype). */}
+      <div className="flex min-h-10 justify-end">
+        {viewer && !viewer.isSelf && (
+          <FollowButton
+            targetKey={profile.key}
+            following={viewer.following}
+            signedIn={viewer.signedIn}
+            returnPath={`/@${handle}`}
+            source="profile"
+            onChange={(_, count) => setFollowers(count)}
+          />
+        )}
+      </div>
+
+      <div className="flex flex-col gap-1">
         <h1 className="text-title text-ink">{profile.name}</h1>
         <p className="text-label font-normal text-ink-muted">
           @{handle}
@@ -76,19 +104,14 @@ export function ProfileHeader({ profile }: { profile: ProfileView }) {
       </ul>
 
       {viewer?.isSelf && (
-        <Link href="/settings/profile" className={buttonClassName({ variant: 'secondary' })}>
-          Edit profile
-        </Link>
-      )}
-      {viewer && !viewer.isSelf && (
-        <FollowButton
-          targetKey={profile.key}
-          following={viewer.following}
-          signedIn={viewer.signedIn}
-          returnPath={`/@${handle}`}
-          source="profile"
-          onChange={(_, count) => setFollowers(count)}
-        />
+        <div className="flex gap-2">
+          <Link href="/settings/profile" className={`${buttonClassName({ variant: 'secondary' })} flex-1`}>
+            Edit profile
+          </Link>
+          <Button variant="secondary" className="flex-1" onClick={() => void shareProfile(handle)}>
+            {shared ? 'Link copied' : 'Share profile'}
+          </Button>
+        </div>
       )}
       {viewer?.isSelf && <AppBottomBar handle={handle} />}
     </header>
