@@ -1,3 +1,5 @@
+import { publishedGuides, toGuideCard } from '@/features/guides/guides';
+import { searchGuides } from '@/features/guides/searchGuides';
 import { toPeople, toQuestCards } from '@/lib/social/cardRows';
 import type { SearchResults } from '@/lib/social/schema';
 import { createServerSupabase } from '@/lib/supabase/server';
@@ -13,6 +15,9 @@ export async function searchPublic(text: string): Promise<SearchResults> {
   const { data, error } = await supabase.rpc('search_public', { p_query: query, p_limit: 10 });
   if (error) throw new Error('Search failed');
   const result = data as { quests: unknown; people: unknown };
-  // Stories (guides) join with C-06.
-  return { quests: toQuestCards(result.quests), people: toPeople(result.people), guides: [] };
+  return {
+    quests: toQuestCards(result.quests),
+    people: toPeople(result.people),
+    guides: searchGuides(publishedGuides(), query).map(toGuideCard),
+  };
 }

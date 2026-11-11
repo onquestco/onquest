@@ -10,6 +10,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Guides are read from content/guides at runtime too (search), so ship the folder.
+  outputFileTracingIncludes: { '/**': ['./content/guides/**'] },
   // Next.js reserves folders starting with "@", so /@handle URLs map onto app/(public)/u/...
   async rewrites() {
     return [

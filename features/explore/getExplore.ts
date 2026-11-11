@@ -1,4 +1,5 @@
 import { unstable_cache } from 'next/cache';
+import { publishedGuides, toGuideCard } from '@/features/guides/guides';
 import { EXPLORE_TAG } from '@/lib/cacheTags';
 import { toPeople, toQuestCards } from '@/lib/social/cardRows';
 import { createPublicSupabase } from '@/lib/supabase/public';
@@ -29,6 +30,6 @@ export async function getExplore() {
     supabase.rpc('list_travellers_to_follow', { p_limit: 6 }),
   ]);
   if (travellers.error) throw new Error('Could not load travellers');
-  // Guides join with C-06.
-  return { ...shared, travellers: toPeople(travellers.data), guides: [] };
+  const guides = publishedGuides().slice(0, 6).map(toGuideCard);
+  return { ...shared, travellers: toPeople(travellers.data), guides };
 }
