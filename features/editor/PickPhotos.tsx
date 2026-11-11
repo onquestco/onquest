@@ -1,5 +1,6 @@
 'use client';
 
+import { TopBar } from '@/design-system/components/TopBar';
 import type { ChangeEvent } from 'react';
 import { Button } from '@/design-system/components/Button';
 import { Toast } from '@/design-system/components/Toast';
@@ -27,56 +28,59 @@ export function PickPhotos({ tripKey, deps, onNext }: Props) {
   }
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-lg flex-col gap-6 bg-surface px-4 pt-6 pb-28">
-      <header className="flex items-center justify-between gap-3">
-        <h1 className="text-title text-ink">Pick up to {MAX_PHOTOS} photos</h1>
-        <span
-          className="shrink-0 rounded-pill bg-brand-wash px-3 py-1 text-label text-ink"
-          aria-live="polite"
-        >
-          {tiles.length} of {MAX_PHOTOS}
-        </span>
-      </header>
+    <>
+      <TopBar title="New Quest" label="Cancel" href="/home" fallback="/home" />
+      <main className="mx-auto flex min-h-svh max-w-lg flex-col gap-6 bg-surface px-4 pt-4 pb-28">
+        <header className="flex items-center justify-between gap-3">
+          <h2 className="text-title text-ink">Pick up to {MAX_PHOTOS} photos</h2>
+          <span
+            className="shrink-0 rounded-pill bg-brand-wash px-3 py-1 text-label text-ink"
+            aria-live="polite"
+          >
+            {tiles.length} of {MAX_PHOTOS}
+          </span>
+        </header>
 
-      {!online && (
-        <p role="status" className="rounded-sm bg-brand-wash px-3 py-2 text-label text-ink">
-          Waiting for a connection. Your photos are safe.
+        {!online && (
+          <p role="status" className="rounded-sm bg-brand-wash px-3 py-2 text-label text-ink">
+            Waiting for a connection. Your photos are safe.
+          </p>
+        )}
+
+        <label className="flex min-h-11 cursor-pointer items-center justify-center rounded-pill border border-line-control px-6 py-3 text-body font-semibold text-ink has-focus-visible:outline-2 has-focus-visible:outline-brand-strong">
+          {tiles.length === 0 ? 'Choose photos' : 'Add more photos'}
+          <input type="file" accept="image/*" multiple onChange={choose} className="sr-only" />
+        </label>
+
+        <p className="text-caption text-ink-muted">
+          Location and camera details are removed from your photos before they leave this phone.
         </p>
-      )}
 
-      <label className="flex min-h-11 cursor-pointer items-center justify-center rounded-pill border border-line-control px-6 py-3 text-body font-semibold text-ink has-focus-visible:outline-2 has-focus-visible:outline-brand-strong">
-        {tiles.length === 0 ? 'Choose photos' : 'Add more photos'}
-        <input type="file" accept="image/*" multiple onChange={choose} className="sr-only" />
-      </label>
+        {tiles.length > 0 && (
+          <ul className="grid grid-cols-3 gap-1">
+            {tiles.map((tile, index) => (
+              <PhotoTile
+                key={tile.uploadId}
+                tile={tile}
+                number={index + 1}
+                total={tiles.length}
+                onRetry={() => retry(tile.uploadId)}
+                onRemove={() => remove(tile.uploadId)}
+              />
+            ))}
+          </ul>
+        )}
 
-      <p className="text-caption text-ink-muted">
-        Location and camera details are removed from your photos before they leave this phone.
-      </p>
-
-      {tiles.length > 0 && (
-        <ul className="grid grid-cols-3 gap-1">
-          {tiles.map((tile, index) => (
-            <PhotoTile
-              key={tile.uploadId}
-              tile={tile}
-              number={index + 1}
-              total={tiles.length}
-              onRetry={() => retry(tile.uploadId)}
-              onRemove={() => remove(tile.uploadId)}
-            />
-          ))}
-        </ul>
-      )}
-
-      <div className="fixed inset-x-0 bottom-0 border-t border-line bg-surface px-4 py-4">
-        <div className="mx-auto max-w-lg">
-          <Button block disabled={!enough || waiting} onClick={() => onNext(tiles)}>
-            {enough ? 'Next' : `Pick at least ${MIN_PHOTOS_TO_PUBLISH} photos`}
-          </Button>
+        <div className="fixed inset-x-0 bottom-0 border-t border-line bg-surface px-4 py-4">
+          <div className="mx-auto max-w-lg">
+            <Button block disabled={!enough || waiting} onClick={() => onNext(tiles)}>
+              {enough ? 'Next' : `Pick at least ${MIN_PHOTOS_TO_PUBLISH} photos`}
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {message && <Toast message={message} onDismiss={clearMessage} />}
-    </main>
+        {message && <Toast message={message} onDismiss={clearMessage} />}
+      </main>
+    </>
   );
 }

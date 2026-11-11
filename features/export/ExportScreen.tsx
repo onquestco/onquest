@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Button, buttonClassName } from '@/design-system/components/Button';
+import { Button } from '@/design-system/components/Button';
+import { TopBar } from '@/design-system/components/TopBar';
 import { withLocalPreviews } from '@/features/editor/localPreview';
 import type { TripData } from '@/lib/trip/types';
 import { getTemplate } from '@/templates/registry';
@@ -109,57 +109,59 @@ export function ExportScreen({ tripKey, trip, templateId }: Props) {
   }
 
   return (
-    <main ref={screen} className="mx-auto flex min-h-svh max-w-lg flex-col gap-6 bg-surface px-4 pt-6 pb-28">
-      <header className="flex items-center gap-2">
-        <Link href={`/quests/${tripKey}/share`} className={buttonClassName({ variant: 'quiet' })}>
-          Back
-        </Link>
-        <h1 className="text-title text-ink">Download for Instagram</h1>
-      </header>
+    <>
+      <TopBar title="Instagram" fallback={`/quests/${tripKey}/share`} />
+      <main
+        ref={screen}
+        className="mx-auto flex min-h-svh max-w-lg flex-col gap-6 bg-surface px-4 pt-4 pb-28"
+      >
+        <section aria-label="Story" className="flex flex-col gap-2">
+          <h2 className="text-lead font-semibold text-ink">Story</h2>
+          <Scaled size={STORY_SIZE} name="onquest-story.jpg">
+            <template.StoryFrame trip={exportTrip} />
+          </Scaled>
+        </section>
 
-      <section aria-label="Story" className="flex flex-col gap-2">
-        <h2 className="text-label text-ink-muted">Story</h2>
-        <Scaled size={STORY_SIZE} name="onquest-story.jpg">
-          <template.StoryFrame trip={exportTrip} />
-        </Scaled>
-      </section>
+        <section aria-label="Carousel" className="flex flex-col gap-2">
+          <h2 className="text-lead font-semibold text-ink">Carousel · {carousel.length} slides</h2>
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {carousel.map((frame, index) => (
+              <Scaled key={index} size={CAROUSEL_SIZE} name={`onquest-${index + 1}.jpg`}>
+                {frame}
+              </Scaled>
+            ))}
+          </div>
+          <p className="text-label font-normal text-ink-muted">
+            Every image carries your Quest&apos;s link, so friends on Instagram can find the full trip.
+          </p>
+        </section>
 
-      <section aria-label="Carousel" className="flex flex-col gap-2">
-        <h2 className="text-label text-ink-muted">Carousel · {carousel.length} images</h2>
-        <div className="flex gap-3 overflow-x-auto pb-2">
-          {carousel.map((frame, index) => (
-            <Scaled key={index} size={CAROUSEL_SIZE} name={`onquest-${index + 1}.jpg`}>
-              {frame}
-            </Scaled>
-          ))}
+        <div className="fixed inset-x-0 bottom-0 border-t border-line bg-surface px-4 py-4">
+          <div className="mx-auto flex max-w-lg flex-col gap-2">
+            {status === 'failed' && (
+              <p role="alert" className="text-label text-danger">
+                Couldn&apos;t make the images. Try again.
+              </p>
+            )}
+            {status === 'saved' && (
+              <p role="status" className="text-label text-success">
+                Saved. Post the story and carousel from Instagram.
+              </p>
+            )}
+            <Button
+              block
+              disabled={status === 'loading' || status === 'saving'}
+              onClick={() => void downloadAll()}
+            >
+              {status === 'loading'
+                ? 'Getting your photos…'
+                : status === 'saving'
+                  ? 'Making images…'
+                  : 'Download all'}
+            </Button>
+          </div>
         </div>
-      </section>
-
-      <div className="fixed inset-x-0 bottom-0 border-t border-line bg-surface px-4 py-4">
-        <div className="mx-auto flex max-w-lg flex-col gap-2">
-          {status === 'failed' && (
-            <p role="alert" className="text-label text-danger">
-              Couldn&apos;t make the images. Try again.
-            </p>
-          )}
-          {status === 'saved' && (
-            <p role="status" className="text-label text-success">
-              Saved. Post the story and carousel from Instagram.
-            </p>
-          )}
-          <Button
-            block
-            disabled={status === 'loading' || status === 'saving'}
-            onClick={() => void downloadAll()}
-          >
-            {status === 'loading'
-              ? 'Getting your photos…'
-              : status === 'saving'
-                ? 'Making images…'
-                : 'Download all'}
-          </Button>
-        </div>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }

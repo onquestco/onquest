@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, type ChangeEvent } from 'react';
 import { buttonClassName } from '@/design-system/components/Button';
 import { Toast } from '@/design-system/components/Toast';
+import { TopBar } from '@/design-system/components/TopBar';
 import { MAX_PHOTOS } from '@/lib/trip/limits';
 import type { QuestDocument } from '@/lib/trip/schema';
 import { useDraft } from './draftStore';
@@ -84,102 +85,105 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
   const photo = current.photos.find((candidate) => candidate.id === openPhoto);
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-lg flex-col gap-4 bg-surface-page px-4 pt-6 pb-28">
-      <label className="flex flex-col gap-1 text-label text-ink-muted">
-        Title
-        <input
-          maxLength={60}
-          value={current.title ?? ''}
-          onChange={(event) => setDocument({ ...current, title: event.target.value })}
-          className="min-h-12 rounded-sm border border-line-control bg-surface px-3 text-title text-ink"
-        />
-      </label>
-      <SaveStatusLine />
+    <>
+      <TopBar title="Review" href="/quests" fallback="/quests" />
+      <main className="mx-auto flex min-h-svh max-w-lg flex-col gap-4 bg-surface-page px-4 pt-4 pb-28">
+        <label className="flex flex-col gap-1 text-label text-ink-muted">
+          Title
+          <input
+            maxLength={60}
+            value={current.title ?? ''}
+            onChange={(event) => setDocument({ ...current, title: event.target.value })}
+            className="min-h-12 rounded-sm border border-line-control bg-surface px-3 text-title text-ink"
+          />
+        </label>
+        <SaveStatusLine />
 
-      {current.content.days.map((page, index) => (
-        <PageCard
-          key={page.id}
-          page={page}
-          number={index + 1}
-          previews={previews}
-          undated={undated}
-          onRename={(title) => apply(renamePage(current, index, title))}
-          onOpenPhoto={setOpenPhoto}
-          onAddHere={() => window.document.getElementById('add-photos')?.click()}
-        />
-      ))}
+        {current.content.days.map((page, index) => (
+          <PageCard
+            key={page.id}
+            page={page}
+            number={index + 1}
+            previews={previews}
+            undated={undated}
+            onRename={(title) => apply(renamePage(current, index, title))}
+            onOpenPhoto={setOpenPhoto}
+            onAddHere={() => window.document.getElementById('add-photos')?.click()}
+          />
+        ))}
 
-      <label className="flex min-h-11 cursor-pointer items-center justify-center rounded-pill border border-dashed border-line-control px-6 py-3 text-body font-semibold text-brand-strong has-focus-visible:outline-2 has-focus-visible:outline-brand-strong">
-        + Add photos · {total} of {MAX_PHOTOS}
-        <input
-          id="add-photos"
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={add}
-          disabled={total >= MAX_PHOTOS}
-          className="sr-only"
-        />
-      </label>
+        <label className="flex min-h-11 cursor-pointer items-center justify-center rounded-pill border border-dashed border-line-control px-6 py-3 text-body font-semibold text-brand-strong has-focus-visible:outline-2 has-focus-visible:outline-brand-strong">
+          + Add photos · {total} of {MAX_PHOTOS}
+          <input
+            id="add-photos"
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={add}
+            disabled={total >= MAX_PHOTOS}
+            className="sr-only"
+          />
+        </label>
 
-      <div className="fixed inset-x-0 bottom-0 border-t border-line bg-surface px-4 py-4">
-        <div className="mx-auto max-w-lg">
-          <Link href={`/quests/${tripKey}/template`} className={buttonClassName({ block: true })}>
-            Choose a template
-          </Link>
+        <div className="fixed inset-x-0 bottom-0 border-t border-line bg-surface px-4 py-4">
+          <div className="mx-auto max-w-lg">
+            <Link href={`/quests/${tripKey}/template`} className={buttonClassName({ block: true })}>
+              Choose a template
+            </Link>
+          </div>
         </div>
-      </div>
 
-      {photo && !moving && (
-        <PhotoSheet
-          key={photo.id}
-          photo={photo}
-          previewUrl={previews[photo.id]}
-          onClose={() => setOpenPhoto(undefined)}
-          onCaption={(caption) => apply(setCaption(current, photo.id, caption))}
-          onDate={(date) => apply(setPhotoDate(current, photo.id, date))}
-          onMove={() => setMoving(photo.id)}
-          onReplace={(files) => void replace(photo.id, files)}
-          onRemove={() => {
-            const result = removePhoto(current, photo.id);
-            if (result.ok) setOpenPhoto(undefined);
-            change(result, 'Photo removed.');
-          }}
-        />
-      )}
+        {photo && !moving && (
+          <PhotoSheet
+            key={photo.id}
+            photo={photo}
+            previewUrl={previews[photo.id]}
+            onClose={() => setOpenPhoto(undefined)}
+            onCaption={(caption) => apply(setCaption(current, photo.id, caption))}
+            onDate={(date) => apply(setPhotoDate(current, photo.id, date))}
+            onMove={() => setMoving(photo.id)}
+            onReplace={(files) => void replace(photo.id, files)}
+            onRemove={() => {
+              const result = removePhoto(current, photo.id);
+              if (result.ok) setOpenPhoto(undefined);
+              change(result, 'Photo removed.');
+            }}
+          />
+        )}
 
-      {moving && (
-        <MoveSheet
-          document={current}
-          photoId={moving}
-          previews={previews}
-          onClose={() => setMoving(undefined)}
-          onMove={(pageIndex) => {
-            change(movePhoto(current, moving, pageIndex), 'Photo moved.');
-            setMoving(undefined);
-            setOpenPhoto(undefined);
-          }}
-          onSwap={(otherId) => {
-            change(swapPhotos(current, moving, otherId), 'Photos swapped.');
-            setMoving(undefined);
-            setOpenPhoto(undefined);
-          }}
-          onNewPage={() => {
-            change(startNewPage(current, moving, crypto.randomUUID()), 'New page started.');
-            setMoving(undefined);
-            setOpenPhoto(undefined);
-          }}
-        />
-      )}
+        {moving && (
+          <MoveSheet
+            document={current}
+            photoId={moving}
+            previews={previews}
+            onClose={() => setMoving(undefined)}
+            onMove={(pageIndex) => {
+              change(movePhoto(current, moving, pageIndex), 'Photo moved.');
+              setMoving(undefined);
+              setOpenPhoto(undefined);
+            }}
+            onSwap={(otherId) => {
+              change(swapPhotos(current, moving, otherId), 'Photos swapped.');
+              setMoving(undefined);
+              setOpenPhoto(undefined);
+            }}
+            onNewPage={() => {
+              change(startNewPage(current, moving, crypto.randomUUID()), 'New page started.');
+              setMoving(undefined);
+              setOpenPhoto(undefined);
+            }}
+          />
+        )}
 
-      {notice && (
-        <Toast
-          message={notice.message}
-          actionLabel={notice.undo ? 'Undo' : undefined}
-          onAction={undo}
-          onDismiss={() => setNotice(undefined)}
-        />
-      )}
-    </main>
+        {notice && (
+          <Toast
+            message={notice.message}
+            actionLabel={notice.undo ? 'Undo' : undefined}
+            onAction={undo}
+            onDismiss={() => setNotice(undefined)}
+          />
+        )}
+      </main>
+    </>
   );
 }

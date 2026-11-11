@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { Contour } from '@/design-system/components/Contour';
 import { nameLocations, reportCreateProgress, writeCaptions } from './arrangeActions';
 import { arrangeQuest, type ArrangeStep } from './arrangeQuest';
 import { withCaptions } from './captionTargets';
@@ -19,6 +20,7 @@ const LINES: Record<ArrangeStep, string> = {
 };
 const FALLBACK = "We couldn't arrange this automatically. Your photos are in the order you picked them.";
 const FALLBACK_SHOW_MS = 2500;
+const STEPS: ArrangeStep[] = ['sorting', 'places', 'captions'];
 
 type Props = { tripKey: string; arrangedBefore: boolean };
 
@@ -85,11 +87,70 @@ export function Arranging({ tripKey, arrangedBefore }: Props) {
 
   if (!known) return arrangedBefore ? null : <LostDraft />;
 
+  const done = STEPS.indexOf(step);
   return (
-    <main className="mx-auto flex min-h-svh max-w-lg flex-col items-center justify-center gap-4 px-4 text-center">
-      <p role="status" className="text-lead text-ink">
-        {failed ? FALLBACK : LINES[step]}
+    <main className="relative flex min-h-svh flex-col items-center justify-center gap-6 overflow-hidden bg-surface px-6 text-center">
+      <Contour />
+      <PhotoPiles />
+      <h1 className="relative text-title text-ink">Arranging your Quest</h1>
+      <div className="relative h-1.5 w-60 overflow-hidden rounded-pill bg-line">
+        <div
+          className="h-full bg-brand-strong transition-all duration-700 motion-reduce:transition-none"
+          style={{ width: `${((done + 1) / (STEPS.length + 1)) * 100}%` }}
+        />
+      </div>
+      {failed ? (
+        <p role="status" className="relative max-w-xs text-body text-ink">
+          {FALLBACK}
+        </p>
+      ) : (
+        <ol role="status" className="relative flex flex-col gap-3 text-left text-body">
+          {STEPS.map((name, index) => (
+            <li
+              key={name}
+              className={`flex items-center gap-3 ${
+                index < done ? 'text-ink' : index === done ? 'font-semibold text-ink' : 'text-ink-subtle'
+              }`}
+            >
+              <span className="w-5 text-center font-semibold text-brand-strong" aria-hidden>
+                {index < done ? '✓' : index === done ? '•' : '○'}
+              </span>
+              {LINES[name]}
+            </li>
+          ))}
+        </ol>
+      )}
+      <p className="relative max-w-xs text-label font-normal text-ink-muted">
+        Under a minute. You can change anything after.
       </p>
     </main>
+  );
+}
+
+/** The picked photos flying into up to 5 page piles of 3 (the prototype's arranging moment). */
+function PhotoPiles() {
+  const picked = useDraft((state) => state.picked);
+  const piles = Array.from({ length: Math.min(5, Math.ceil(picked.length / 3)) }, (_, pile) =>
+    picked.slice(pile * 3, pile * 3 + 3),
+  );
+  return (
+    <div aria-hidden className="relative flex h-24 justify-center gap-3">
+      {piles.map((photos, pile) => (
+        <div key={pile} className="relative h-18 w-15 rounded-sm border border-dashed border-brand-tint">
+          {photos.map((photo, index) => (
+            <img
+              key={photo.id}
+              src={photo.previewUrl}
+              alt=""
+              className="absolute inset-1 h-16 w-13 animate-oq-fly border-2 border-surface object-cover"
+              style={{
+                animationDelay: `${(pile * 3 + index) * 140}ms`,
+                rotate: `${(index - 1) * 7}deg`,
+              }}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
   );
 }

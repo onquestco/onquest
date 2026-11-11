@@ -8,15 +8,23 @@ type Props = {
   title: string;
   /** Where Back goes when there's no page to go back to (a link opened in a fresh tab). */
   fallback: string;
+  /**
+   * A fixed place to go instead of the browser's back: the create flow, where going back would
+   * land on a step that redirects (Arranging) or start over.
+   */
+  href?: string;
+  /** "Back" (with the arrow) unless set: "Cancel", "Done". */
+  label?: string;
   right?: ReactNode;
 };
 
 /** The bar on inner screens: ‹ Back, the title in the middle, an optional action on the right. */
-export function TopBar({ title, fallback, right }: Props) {
+export function TopBar({ title, fallback, href, label, right }: Props) {
   const router = useRouter();
 
   function back() {
-    if (window.history.length > 1) router.back();
+    if (href) router.push(href);
+    else if (window.history.length > 1) router.back();
     else router.push(fallback);
   }
 
@@ -28,8 +36,8 @@ export function TopBar({ title, fallback, right }: Props) {
           onClick={back}
           className="flex min-h-11 items-center gap-1 justify-self-start px-2 text-label font-semibold text-brand-strong focus-visible:outline-2 focus-visible:outline-brand-strong"
         >
-          <BackIcon size={20} />
-          Back
+          {!label && <BackIcon size={20} />}
+          {label ?? 'Back'}
         </button>
         <h1 className="truncate text-center text-body font-semibold text-ink">{title}</h1>
         <div className="flex justify-self-end">{right}</div>
