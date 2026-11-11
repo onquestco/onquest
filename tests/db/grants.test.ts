@@ -96,7 +96,7 @@ describe('function and table grants (with Supabase default privileges)', () => {
         from information_schema.role_table_grants
         where table_schema = 'public' and grantee in ('anon', 'authenticated', 'service_role')`)
     ).rows;
-  });
+  }, 30_000); // builds a whole database, like the other db tests
 
   it('lists every function in public', () => {
     expect(functions.map((row) => row.name).sort()).toEqual(Object.keys(EXPECTED).sort());
@@ -133,5 +133,5 @@ describe('function and table grants (with Supabase default privileges)', () => {
       select 1 from information_schema.role_table_grants
       where table_name = 'later_table' and grantee in ('anon', 'authenticated', 'service_role')`);
     expect(table.rows).toEqual([]);
-  });
+  }, 30_000);
 });
