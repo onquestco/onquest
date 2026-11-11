@@ -32,9 +32,9 @@ describe('toQuestCards', () => {
   it('names untitled Quests, builds the cover URL and keeps three places', () => {
     const [card] = toQuestCards([row]);
     expect(card).toMatchObject({ title: 'Untitled Quest', pageCount: 3, likeCount: 4, path: '/@riya/goa' });
-    expect(card?.coverThumb).toBe(
-      'https://example.supabase.co/storage/v1/object/public/photos/u/t/00000000-0000-4000-8000-0000000000b1/thumb.webp',
-    );
+    // Whatever the Supabase URL is (CI sets its own).
+    const coverPath = '/storage/v1/object/public/photos/u/t/00000000-0000-4000-8000-0000000000b1/thumb.webp';
+    expect(card?.coverThumb?.endsWith(coverPath)).toBe(true);
     expect(card?.places).toEqual(['Panjim', 'Palolem', 'Agonda']);
   });
 
