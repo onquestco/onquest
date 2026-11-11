@@ -48,7 +48,7 @@ export function ProfileHeader({ profile }: { profile: ProfileView }) {
           <Link
             href="/settings"
             aria-label="Settings"
-            className="absolute top-2 right-2 flex size-11 items-center justify-center rounded-pill bg-surface text-ink"
+            className="absolute top-2 right-2 flex size-11 items-center justify-center rounded-pill bg-surface text-ink shadow-float"
           >
             <SettingsIcon />
           </Link>

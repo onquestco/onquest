@@ -6,7 +6,7 @@ import { BackIcon, MoreIcon } from '@/design-system/components/icons';
 import { useQuestSocial } from './useQuestSocial';
 
 const round =
-  'flex size-11 items-center justify-center rounded-pill bg-surface text-ink border border-line focus-visible:outline-2 focus-visible:outline-brand-strong';
+  'flex size-11 items-center justify-center rounded-pill bg-surface text-ink shadow-float focus-visible:outline-2 focus-visible:outline-brand-strong';
 
 /**
  * Over the top of the Quest, for signed-in people moving around the app (screen 6, screen 19):

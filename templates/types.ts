@@ -16,7 +16,7 @@ export type Theme = {
   colors: ThemeColors;
   /** Background per day card, cycled: dayBackgrounds[i % length]. */
   dayBackgrounds: string[];
-  /** Emoji offered in the viewer sticker tray. */
+  /** Emoji for a viewer sticker tray. Unused since the tray was removed (founder, 11 Nov). */
   stickers: string[];
   /**
    * next/font class names. Each template loads 5 fonts exposed as

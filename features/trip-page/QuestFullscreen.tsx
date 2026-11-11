@@ -5,7 +5,7 @@ import { useQuestPlayer } from '@/templates/shared/QuestPlayer';
 import { LikeButton } from './LikeButton';
 
 const round =
-  'flex size-11 items-center justify-center rounded-pill bg-surface text-ink border border-line focus-visible:outline-2 focus-visible:outline-brand-strong';
+  'flex size-11 items-center justify-center rounded-pill bg-surface text-ink shadow-float focus-visible:outline-2 focus-visible:outline-brand-strong';
 
 /** The full-screen button (bottom right of the Quest) and, in full screen, counter, close and like (M9). */
 export function QuestFullscreen({ withLike }: { withLike: boolean }) {
@@ -24,7 +24,7 @@ export function QuestFullscreen({ withLike }: { withLike: boolean }) {
     <>
       <div className="fixed inset-x-0 top-0 flex items-center justify-between px-4 pt-3">
         <span
-          className="rounded-pill bg-surface px-3 py-1 text-label text-ink border border-line"
+          className="rounded-pill bg-night-band/60 px-3 py-1 text-label font-semibold text-on-night"
           aria-live="polite"
         >
           {page + 1} / {count}

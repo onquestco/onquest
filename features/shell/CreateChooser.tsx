@@ -13,7 +13,7 @@ export function CreateChooser({ onClose }: { onClose: () => void }) {
       <Link
         href="/quests/new"
         onClick={onClose}
-        className="flex flex-col gap-1 rounded-lg border-2 border-brand-strong bg-brand-wash p-4"
+        className="flex flex-col gap-1 rounded-lg border-2 border-brand-strong bg-brand-wash p-4 shadow-brand"
       >
         <span className="text-lead font-semibold text-ink">Create a Quest</span>
         <span className="text-label font-normal text-ink-muted">Pick 3 to 15 photos from a trip</span>

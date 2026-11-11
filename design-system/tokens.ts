@@ -108,6 +108,22 @@ export const radii = {
 } as const;
 
 /**
+ * Shadows, used as `shadow-<name>`, from the clickable prototype (founder, 11 Nov). Only for things
+ * that float: buttons over photos, the raised Create button, photo fans, the selected segment.
+ * Cards and rows still separate with space and `line`, not depth.
+ */
+export const shadows = {
+  /** Round buttons over a photo or a Quest (Back, ⋯, full screen, gear). */
+  float: '0 2px 6px #00000033',
+  /** Polaroid-style photos in fans and piles. */
+  photo: '0 8px 18px -10px #00000073',
+  /** The raised orange Create button and the main Create card. */
+  brand: '0 6px 14px -6px #c25000',
+  /** The selected option in a segmented control. */
+  select: '0 1px 3px #00000033',
+} as const;
+
+/**
  * Spacing: the design system's space-1 … space-8 are 4px steps, which is Tailwind's own spacing scale
  * (`p-4` = 16px = space-4). Use space-4 for the phone gutter, space-6 between cards and space-8
  * between sections of a screen.

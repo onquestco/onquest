@@ -12,7 +12,7 @@ export function PhotoFan({ scenes }: { scenes: [Scene, Scene, Scene] }) {
           key={scene}
           src={placeholderImage(scene, index + 1)}
           alt=""
-          className={`-mx-2 aspect-4/5 w-24 rounded-sm border-4 border-surface object-cover ${TILTS[index]}`}
+          className={`-mx-2 aspect-4/5 w-24 border-4 border-b-12 border-surface object-cover shadow-photo ${TILTS[index]}`}
         />
       ))}
     </div>

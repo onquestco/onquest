@@ -15,14 +15,18 @@ type Props<Value extends string> = {
 
 export function Segmented<Value extends string>({ label, options, value, onChange }: Props<Value>) {
   return (
-    <div role="radiogroup" aria-label={label} className="flex gap-1 rounded-pill bg-surface-page p-1">
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className="flex gap-1 rounded-pill border border-line bg-surface-page p-1"
+    >
       {options.map((option) => {
         const selected = option.value === value;
         return (
           <label
             key={option.value}
             className={`flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-pill px-3 text-label has-focus-visible:outline-2 has-focus-visible:outline-brand-strong ${
-              selected ? 'bg-brand-strong text-on-brand' : 'text-ink-muted'
+              selected ? 'bg-surface font-semibold text-ink shadow-select' : 'font-semibold text-ink-muted'
             }`}
           >
             <input

@@ -47,7 +47,7 @@ function Card({ quest, onManage }: { quest: QuestCard; onManage: () => void }) {
             onClick={onManage}
             className="absolute top-1 right-1 flex size-11 items-center justify-center rounded-pill text-ink focus-visible:outline-2 focus-visible:outline-brand-strong"
           >
-            <span className="flex size-8 items-center justify-center rounded-pill bg-surface">
+            <span className="flex size-8 items-center justify-center rounded-pill bg-surface shadow-float">
               <MoreIcon size={20} />
             </span>
           </button>

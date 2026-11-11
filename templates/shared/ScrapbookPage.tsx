@@ -4,7 +4,6 @@ import type { Theme } from '../types';
 import { MemorySheet } from './MemorySheet';
 import { ScrapbookEffects } from './ScrapbookEffects';
 import { buildSheets } from './sheets';
-import { StickerTray } from './StickerTray';
 import styles from './scrapbook.module.css';
 
 const themeVariables = ({ colors }: Theme) =>
@@ -20,7 +19,7 @@ const themeVariables = ({ colors }: Theme) =>
 
 /**
  * The frame every template's trip page renders inside: theme colours + fonts,
- * the memory sheet, sticker tray and drag/drop-in effects. The app adds the byline, Make your own
+ * the memory sheet and drag/drop-in effects (no sticker tray: not in the prototype, founder 11 Nov). The app adds the byline, Make your own
  * and the site footer (with Report) under it, so the template has no footer of its own.
  */
 export function ScrapbookPage({
@@ -36,7 +35,6 @@ export function ScrapbookPage({
     <div className={`${theme.fontClassName} ${styles.page}`} style={themeVariables(theme)}>
       <article>{children}</article>
       <MemorySheet sheets={buildSheets(trip)} />
-      <StickerTray emoji={theme.stickers} />
       <ScrapbookEffects />
     </div>
   );

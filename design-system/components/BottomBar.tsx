@@ -39,7 +39,7 @@ export function BottomBar({ left, right, action }: Props) {
         <button
           type="button"
           onClick={action.onClick}
-          className="mx-2 -mt-6 flex size-14 items-center justify-center rounded-pill bg-brand-strong text-on-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-strong"
+          className="mx-2 -mt-6 flex size-14 items-center justify-center rounded-pill bg-brand-strong text-on-brand shadow-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-strong"
         >
           {action.icon}
           <span className="sr-only">{action.label}</span>

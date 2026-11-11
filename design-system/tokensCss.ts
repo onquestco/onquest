@@ -1,4 +1,4 @@
-import { colors, fontFamilies, radii, spacingUnit, textStyles } from './tokens.ts';
+import { colors, fontFamilies, radii, shadows, spacingUnit, textStyles } from './tokens.ts';
 
 /**
  * Turns the tokens into a Tailwind v4 `@theme` block. Each namespace is reset first, so Tailwind's
@@ -14,7 +14,7 @@ export function renderTokensCss(): string {
     '  --font-*: initial;',
     '  --text-*: initial;',
     '  --radius-*: initial;',
-    // The app has no shadows: things are separated with space and `line`, not depth.
+    // Only the design system's few shadows exist (tokens.ts `shadows`), not Tailwind's defaults.
     '  --shadow-*: initial;',
     `  --spacing: ${spacingUnit};`,
     '',
@@ -23,7 +23,8 @@ export function renderTokensCss(): string {
   for (const [name, value] of Object.entries(colors)) lines.push(`  --color-${name}: ${value};`);
   lines.push('');
 
-  for (const [name, stack] of Object.entries(fontFamilies)) lines.push(`  --font-${name}: ${stack.join(', ')};`);
+  for (const [name, stack] of Object.entries(fontFamilies))
+    lines.push(`  --font-${name}: ${stack.join(', ')};`);
   lines.push('');
 
   for (const [name, style] of Object.entries(textStyles)) {
@@ -35,6 +36,9 @@ export function renderTokensCss(): string {
   lines.push('');
 
   for (const [name, value] of Object.entries(radii)) lines.push(`  --radius-${name}: ${value};`);
+  lines.push('');
+
+  for (const [name, value] of Object.entries(shadows)) lines.push(`  --shadow-${name}: ${value};`);
 
   lines.push('}', '');
   return lines.join('\n');

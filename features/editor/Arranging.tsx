@@ -142,7 +142,7 @@ function PhotoPiles() {
               key={photo.id}
               src={photo.previewUrl}
               alt=""
-              className="absolute inset-1 h-16 w-13 animate-oq-fly border-2 border-surface object-cover"
+              className="absolute inset-1 h-16 w-13 animate-oq-fly border-2 border-surface object-cover shadow-photo"
               style={{
                 animationDelay: `${(pile * 3 + index) * 140}ms`,
                 rotate: `${(index - 1) * 7}deg`,
