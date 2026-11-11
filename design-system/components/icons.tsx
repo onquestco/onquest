@@ -65,6 +65,12 @@ export const CloseIcon = ({ size = 24 }: Props) => (
     <path d="M6 6l12 12M18 6L6 18" />
   </svg>
 );
+export const SettingsIcon = ({ size = 24 }: Props) => (
+  <svg {...base(size)}>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1" />
+  </svg>
+);
 export const MoreIcon = ({ size = 24 }: Props) => (
   <svg {...base(size)}>
     <path d="M5 12h.01M12 12h.01M19 12h.01" strokeWidth={3} />
