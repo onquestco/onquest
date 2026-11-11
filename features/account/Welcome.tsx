@@ -34,14 +34,11 @@ export function Welcome() {
         </div>
       </div>
       {last ? (
-        <div className="flex flex-col gap-2">
-          <Link href="/quests/new" className={buttonClassName({ block: true })}>
-            Create your first Quest
-          </Link>
-          <Link href="/home" className={buttonClassName({ variant: 'quiet', block: true })}>
-            Look around first
-          </Link>
-        </div>
+        // Founder, 11 Nov: the last step goes to Home and the feed; creating starts from Home's
+        // banner or the Create button, not straight from here.
+        <Link href="/home" className={buttonClassName({ block: true })}>
+          Get started
+        </Link>
       ) : (
         <Button block onClick={() => setStep(step + 1)}>
           Next
