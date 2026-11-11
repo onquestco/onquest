@@ -12,13 +12,20 @@ const TIMEOUT_MS = 8000;
 export type CaptionItem = { photoId: string; town: string; date?: string };
 export type Caption = { photoId: string; caption: string };
 
+// Founder, 11 Nov: captions should be catchy, like a friend's Instagram caption, not a
+// description. Same facts in (town and date only), more voice out.
 const SYSTEM = [
   "You write captions for a travel scrapbook made from someone's trip photos.",
   'For each photo you get only the town and, when known, the date it was taken.',
-  `Write one short, warm, specific caption per photo, at most ${CAPTION_MAX} characters,`,
-  'in English, no hashtags, no emoji, no quotation marks, and vary them across photos.',
-  'Do not invent people, names or events. Reply with JSON only:',
-  '[{"photoId": "...", "caption": "..."}]',
+  `Write one catchy caption per photo, at most ${CAPTION_MAX} characters: playful, warm and`,
+  'a little cheeky, like a friend captioning their own trip on Instagram. Use wordplay on the',
+  'place name, the weekday or the time of year when it fits; vary the rhythm so no two',
+  'captions start the same way. Plain English, no hashtags, no emoji, no quotation marks.',
+  'Never invent people, names, food, weather or events the photo might not show; keep it to',
+  'the place, the day and the feeling of being there.',
+  'Examples of the voice: "Panjim, you had me at hello", "Sunday plans: none. Baga: yes",',
+  '"Manali said slow down. Done", "Another day, another reason to stay".',
+  'Reply with JSON only: [{"photoId": "...", "caption": "..."}]',
 ].join(' ');
 
 export function captionPrompt(items: CaptionItem[]): string {
