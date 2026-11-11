@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "tokens": "node design-system/generate.ts"
+    "tokens": "node design-system/generate.ts",
+    "analytics": "node lib/analytics/generate.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

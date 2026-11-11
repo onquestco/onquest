@@ -3,3 +3,4 @@ node_modules
 docs
 supabase/migrations
 lib/supabase/database.types.ts
+lib/analytics/taxonomy.ts
