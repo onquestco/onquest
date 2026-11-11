@@ -1,3 +1,4 @@
+import { SiteFooter } from '@/features/shell/SiteFooter';
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { getMovedHandle } from '@/features/trip-page/getMovedHandle';
@@ -39,7 +40,12 @@ export default async function TripPage({ params }: Props) {
 
   // null only if the Quest went private between the two reads: show it without likes and comments.
   const social = (await getQuestSocial(result.trip.key)) ?? EMPTY_SOCIAL;
-  return <TripView trip={result.trip} social={{ mode: 'live', initial: social }} />;
+  return (
+    <>
+      <TripView trip={result.trip} social={{ mode: 'live', initial: social }} />
+      <SiteFooter />
+    </>
+  );
 }
 
 const EMPTY_SOCIAL = { likeCount: 0, commentCount: 0, commentsOn: false, comments: [] };

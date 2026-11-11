@@ -89,4 +89,6 @@ profile_link_shared,user_id,client,client_ts,channel,STRING,copy / native_share,
 followers_list_viewed,user_id,client,client_ts,profile_user_id,STRING,,,yes,A Followers or Following list opens,Pass · fired 2×
 followers_list_viewed,,,,list,STRING,followers / following,,yes,,Pass · fired 2×
 settings_viewed,user_id,client,client_ts,(common only),,,,,Settings opens,Pass · fired 1×
+legal_page_viewed,user_id (empty when signed out),client,client_ts,page,STRING,privacy / terms,Which legal page,yes,The Privacy policy or Terms page opens,Not yet tested
+legal_page_viewed,,,,source,STRING,sign_in / settings / footer / direct,Where the link was tapped,yes,,Not yet tested
 account_delete_started,user_id,client,client_ts,(common only),,,,,Delete account is tapped (before confirming),Pass · fired 1×

@@ -19,6 +19,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     { url: absoluteUrl('/'), changeFrequency: 'weekly', priority: 1 },
     { url: absoluteUrl('/demo'), changeFrequency: 'monthly', priority: 0.5 },
+    { url: absoluteUrl('/privacy'), changeFrequency: 'yearly', priority: 0.2 },
+    { url: absoluteUrl('/terms'), changeFrequency: 'yearly', priority: 0.2 },
     ...publishedGuides()
       .filter((guide) => !guide.draft)
       .map((guide) => ({

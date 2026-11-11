@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { ProfileView as Profile } from './getProfile';
+import { SiteFooter } from '@/features/shell/SiteFooter';
 import { ProfileHeader } from './ProfileHeader';
 
 /** Screen 15: who they are, their numbers, places, and their public Quests (M15, M22). */
@@ -42,6 +43,7 @@ export function ProfileView({ profile }: { profile: Profile }) {
           </ul>
         )}
       </section>
+      <SiteFooter />
     </main>
   );
 }

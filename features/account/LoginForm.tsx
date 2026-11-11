@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useTransition, type FormEvent } from 'react';
 import { Button } from '@/design-system/components/Button';
 import { TextField } from '@/design-system/components/TextField';
@@ -59,6 +60,26 @@ export function LoginForm({
           Send sign-in link
         </Button>
       </form>
+
+      <p className="text-caption text-ink-muted">
+        By continuing you confirm you&apos;re 18 or older and agree to our{' '}
+        <Link
+          href="/terms?from=sign_in"
+          target="_blank"
+          className="inline-flex min-h-11 items-center underline"
+        >
+          Terms
+        </Link>{' '}
+        and{' '}
+        <Link
+          href="/privacy?from=sign_in"
+          target="_blank"
+          className="inline-flex min-h-11 items-center underline"
+        >
+          Privacy policy
+        </Link>
+        .
+      </p>
 
       {error && (
         <p role="alert" className="text-label font-normal text-danger">

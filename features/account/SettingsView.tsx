@@ -124,6 +124,12 @@ export function SettingsView({ email, settings: initial, savedAt }: Props) {
         >
           Send feedback
         </a>
+        <Link href="/privacy?from=settings" className={buttonClassName({ variant: 'quiet' })}>
+          Privacy policy
+        </Link>
+        <Link href="/terms?from=settings" className={buttonClassName({ variant: 'quiet' })}>
+          Terms of use
+        </Link>
       </Section>
 
       <div className="flex flex-col gap-2">

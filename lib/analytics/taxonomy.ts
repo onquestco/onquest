@@ -163,6 +163,26 @@ export const CLIENT_EVENTS = {
       "max": 6
     }
   },
+  "legal_page_viewed": {
+    "page": {
+      "type": "STRING",
+      "required": true,
+      "values": [
+        "privacy",
+        "terms"
+      ]
+    },
+    "source": {
+      "type": "STRING",
+      "required": true,
+      "values": [
+        "sign_in",
+        "settings",
+        "footer",
+        "direct"
+      ]
+    }
+  },
   "make_your_own_tapped": {
     "quest_id": {
       "type": "STRING",
