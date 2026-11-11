@@ -7,3 +7,6 @@ export const absoluteUrl = (path: string) => `${SITE_URL}${path.startsWith('/') 
 
 /** "See an example" in What's a Quest. The Goa sample until a real example Quest is published. */
 export const EXAMPLE_QUEST_PATH = '/demo';
+
+/** Settings → Send feedback (a mailto link). Founder to confirm the address. */
+export const SUPPORT_EMAIL = 'support@onquest.in';

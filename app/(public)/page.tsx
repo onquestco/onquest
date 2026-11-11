@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { buttonClassName } from '@/design-system/components/Button';
 import { Logo } from '@/design-system/components/Logo';
+import { DeletedNotice } from '@/features/account/DeletedNotice';
 
 // Placeholder landing page. The real one (demo preview + sign-up CTA) comes with auth in week 2.
 export default function HomePage() {
@@ -15,6 +16,7 @@ export default function HomePage() {
       <Link href="/demo" className={buttonClassName()}>
         See a sample trip
       </Link>
+      <DeletedNotice />
     </main>
   );
 }

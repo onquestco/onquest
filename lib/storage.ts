@@ -138,3 +138,10 @@ export async function deleteUserFiles(supabase: SupabaseClient, userId: string):
     }
   }
 }
+
+/** A new profile photo (400 px). A new id each time: paths never change and old ones are kept. */
+export function uploadAvatar(supabase: SupabaseClient, userId: string, photoId: string, thumb: Blob) {
+  return uploadAll(supabase, `${userId}/avatar`, photoId, [
+    { bucket: 'photos', name: 'thumb.webp', file: thumb },
+  ]);
+}
