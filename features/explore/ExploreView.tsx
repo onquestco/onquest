@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Button } from '@/design-system/components/Button';
 import { Chip } from '@/design-system/components/Chip';
 import { SearchResultsSchema, type GuideCard, type Person, type SearchResults } from '@/lib/social/schema';
 import type { QuestCard } from '@/lib/trip/cards';
@@ -61,17 +62,24 @@ export function ExploreView({ chips, trending, guides, travellers }: Props) {
   return (
     <main className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-4">
       <h1 className="text-title text-ink">Explore</h1>
-      <label className="flex flex-col gap-1">
-        <span className="sr-only">Search places, people and stories</span>
-        <input
-          type="search"
-          value={text}
-          maxLength={60}
-          placeholder="Search places, people and stories"
-          onChange={(event) => setText(event.target.value)}
-          className="min-h-12 w-full rounded-pill border border-line-control bg-surface px-4 text-body text-ink placeholder:text-ink-subtle focus:border-brand-strong focus:outline-2 focus:outline-brand-strong"
-        />
-      </label>
+      <div className="flex items-center gap-2">
+        <label className="flex flex-1 flex-col gap-1">
+          <span className="sr-only">Search places, Quests or people</span>
+          <input
+            type="search"
+            value={text}
+            maxLength={60}
+            placeholder="Search places, Quests or people"
+            onChange={(event) => setText(event.target.value)}
+            className="min-h-12 w-full rounded-pill border border-line-control bg-surface-page px-4 text-body text-ink placeholder:text-ink-subtle focus:border-brand-strong focus:outline-2 focus:outline-brand-strong"
+          />
+        </label>
+        {text && (
+          <Button variant="quiet" onClick={() => setText('')}>
+            Clear
+          </Button>
+        )}
+      </div>
 
       {searching ? (
         // Keeps the last results on screen while the next search loads.
@@ -98,7 +106,7 @@ export function ExploreView({ chips, trending, guides, travellers }: Props) {
             </Section>
           )}
           {results && results.guides.length > 0 && (
-            <Section title="Stories">
+            <Section title="Stories and guides">
               <GuideCards guides={results.guides} />
             </Section>
           )}
@@ -115,12 +123,12 @@ export function ExploreView({ chips, trending, guides, travellers }: Props) {
             </ul>
           )}
           {trending.length > 0 && (
-            <Section title="Trending">
-              <QuestGrid quests={trending} />
+            <Section title="Trending Quests">
+              <QuestGrid quests={trending} showLikes />
             </Section>
           )}
           {guides.length > 0 && (
-            <Section title="Guides">
+            <Section title="Stories and guides">
               <GuideCards guides={guides} />
             </Section>
           )}

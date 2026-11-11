@@ -12,6 +12,8 @@ const SIGNED_OUT: ViewerState = { signedIn: false, liked: false, isOwner: false,
 type Social = {
   tripKey: string;
   path: string;
+  /** The creator's profile key, when the page knows it (not on /demo). */
+  ownerKey?: string;
   /** Signed out until the viewer is known (the cached page can't know who is looking). */
   viewer: ViewerState;
   viewerKnown: boolean;
@@ -40,6 +42,7 @@ export function useQuestSocial(): Social {
 type Props = {
   tripKey: string;
   path: string;
+  ownerKey?: string;
   initial: QuestSocial;
   /** null while it's still loading. */
   viewer: ViewerState | null;
@@ -51,6 +54,7 @@ type Props = {
 export function QuestSocialProvider({
   tripKey,
   path,
+  ownerKey,
   initial,
   viewer,
   actions,
@@ -80,6 +84,7 @@ export function QuestSocialProvider({
   const value: Social = {
     tripKey,
     path,
+    ownerKey,
     viewer: viewer ?? SIGNED_OUT,
     viewerKnown: viewer !== null,
     ...like,

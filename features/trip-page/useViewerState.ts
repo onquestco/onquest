@@ -9,12 +9,13 @@ const SIGNED_OUT: ViewerState = { signedIn: false, liked: false, isOwner: false,
  * Who is looking at this Quest: signed in, liked, owner. Asked after the cached page loads, from a
  * route that is never cached (spec B §3.2). null until it answers; signed out if it fails.
  */
-export function useViewerState(tripKey: string): ViewerState | null {
+export function useViewerState(tripKey: string, ownerKey?: string): ViewerState | null {
   const [viewer, setViewer] = useState<ViewerState | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`/api/quests/${tripKey}/me`, { cache: 'no-store', signal: controller.signal })
+    const query = ownerKey ? `?${new URLSearchParams({ owner: ownerKey }).toString()}` : '';
+    fetch(`/api/quests/${tripKey}/me${query}`, { cache: 'no-store', signal: controller.signal })
       .then((response) => response.json())
       .then((body: unknown) => {
         const parsed = ViewerStateSchema.safeParse(body);
@@ -24,7 +25,7 @@ export function useViewerState(tripKey: string): ViewerState | null {
         if (!controller.signal.aborted) setViewer(SIGNED_OUT);
       });
     return () => controller.abort();
-  }, [tripKey]);
+  }, [tripKey, ownerKey]);
 
   return viewer;
 }

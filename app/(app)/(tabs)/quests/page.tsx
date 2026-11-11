@@ -5,6 +5,9 @@ import { SITE_NAME } from '@/lib/site';
 
 export const metadata: Metadata = { title: `Your Quests | ${SITE_NAME}`, robots: { index: false } };
 
-export default async function YourQuestsPage() {
-  return <YourQuestsView initial={await getYourQuests()} />;
+type Props = { searchParams: Promise<{ manage?: string }> };
+
+export default async function YourQuestsPage({ searchParams }: Props) {
+  const { manage } = await searchParams;
+  return <YourQuestsView initial={await getYourQuests()} manage={manage} />;
 }

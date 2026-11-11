@@ -7,6 +7,7 @@ import { LiveSocialProvider } from './LiveSocialProvider';
 import { MakeYourOwnBar } from './MakeYourOwnBar';
 import { QuestByline } from './QuestByline';
 import { QuestFullscreen } from './QuestFullscreen';
+import { QuestTopBar } from './QuestTopBar';
 import { QuestSocial as QuestSocialSection } from './QuestSocial';
 
 type Props = {
@@ -16,7 +17,7 @@ type Props = {
    * load). `demo`: /demo's sample data with a chosen viewer.
    */
   social:
-    | { mode: 'live'; initial: QuestSocial }
+    | { mode: 'live'; initial: QuestSocial; ownerKey?: string }
     | { mode: 'demo'; initial: QuestSocial; viewer: ViewerState; openComposer?: boolean };
 };
 
@@ -27,6 +28,7 @@ export function TripView({ trip, social }: Props) {
 
   const page = (
     <>
+      <QuestTopBar />
       <TripPage trip={trip} controls={<QuestFullscreen withLike />} />
       <div className="bg-surface">
         <div className="mx-auto flex max-w-lg flex-col gap-8 px-4 py-8">
@@ -44,7 +46,7 @@ export function TripView({ trip, social }: Props) {
 
   if (social.mode === 'live') {
     return (
-      <LiveSocialProvider tripKey={trip.key} path={path} initial={social.initial}>
+      <LiveSocialProvider tripKey={trip.key} path={path} initial={social.initial} ownerKey={social.ownerKey}>
         {page}
       </LiveSocialProvider>
     );

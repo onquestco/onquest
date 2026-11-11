@@ -76,3 +76,24 @@ export const MoreIcon = ({ size = 24 }: Props) => (
     <path d="M5 12h.01M12 12h.01M19 12h.01" strokeWidth={3} />
   </svg>
 );
+export const BackIcon = ({ size = 24 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M15 18l-6-6 6-6" />
+  </svg>
+);
+export const ChevronIcon = ({ size = 18 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M9 6l6 6-6 6" />
+  </svg>
+);
+export const PinIcon = ({ size = 14 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M12 21s-7-7.5-7-12a7 7 0 0 1 14 0c0 4.5-7 12-7 12z" />
+    <circle cx="12" cy="9" r="2.5" />
+  </svg>
+);
+export const ShareIcon = ({ size = 20 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
+  </svg>
+);

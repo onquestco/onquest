@@ -18,6 +18,8 @@ export function LoginForm({
   const [email, setEmail] = useState('');
   const [error, setError] = useState(initialError);
   const [emailSent, setEmailSent] = useState(false);
+  // Screen 1: email is a quiet link that opens the field, so Google stays the one main action.
+  const [usingEmail, setUsingEmail] = useState(false);
   const [pending, startTransition] = useTransition();
 
   function sendEmail(event: FormEvent) {
@@ -47,21 +49,27 @@ export function LoginForm({
         Continue with Google
       </Button>
 
-      <form onSubmit={sendEmail} className="flex flex-col gap-3">
-        <TextField
-          label="Or get a link by email"
-          type="email"
-          required
-          autoComplete="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-        />
-        <Button type="submit" variant="secondary" disabled={pending} block>
-          Send sign-in link
+      {usingEmail ? (
+        <form onSubmit={sendEmail} className="flex flex-col gap-3">
+          <TextField
+            label="Your email"
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+          <Button type="submit" variant="secondary" disabled={pending} block>
+            Send sign-in link
+          </Button>
+        </form>
+      ) : (
+        <Button variant="quiet" block onClick={() => setUsingEmail(true)}>
+          Email me a sign-in link
         </Button>
-      </form>
+      )}
 
-      <p className="text-caption text-ink-muted">
+      <p className="text-center text-caption text-ink-muted">
         By continuing you confirm you&apos;re 18 or older and agree to our{' '}
         <Link
           href="/terms?from=sign_in"

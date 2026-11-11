@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Avatar } from '@/design-system/components/Avatar';
 import { buttonClassName } from '@/design-system/components/Button';
 import { HeartIcon } from '@/design-system/components/icons';
+import { TopBar } from '@/design-system/components/TopBar';
 import type { NotificationItem } from '@/lib/social/schema';
 import { notificationHref, notificationText, timeAgo } from './notificationText';
 
@@ -16,16 +17,12 @@ type Props = {
 export function NotificationsView({ items, now, olderHref }: Props) {
   return (
     <main className="mx-auto flex max-w-lg flex-col">
-      <header className="flex items-center gap-2 border-b border-line px-4 py-2">
-        <Link href="/home" className={buttonClassName({ variant: 'quiet' })}>
-          Back
-        </Link>
-        <h1 className="text-lead font-semibold text-ink">Notifications</h1>
-      </header>
+      <TopBar title="Notifications" fallback="/home" />
       {items.length === 0 ? (
         <div className="flex flex-col items-center gap-4 px-4 py-12 text-center">
+          <h2 className="text-lead font-semibold text-ink">Nothing yet</h2>
           <p className="text-body text-ink-muted">
-            No notifications yet. Share your Quest to get likes and comments.
+            When friends like or comment on your Quests, you&apos;ll see it here and get an email.
           </p>
           <Link href="/quests" className={buttonClassName({ variant: 'secondary' })}>
             Your Quests

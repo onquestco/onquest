@@ -9,7 +9,7 @@ import { AppBottomBar } from '@/features/shell/AppBottomBar';
 import { FollowButton } from './FollowButton';
 import type { ProfileView } from './getProfile';
 import { ProfileCover } from './ProfileCover';
-import { useProfileViewer } from './useProfileViewer';
+import { useViewer } from './ProfileViewerContext';
 
 /**
  * The top of a profile (PRD screen 15). The page is cached for everyone, so the parts that depend
@@ -17,7 +17,7 @@ import { useProfileViewer } from './useProfileViewer';
  * the bottom bar; someone else's gets Follow. Everything else is in the server HTML.
  */
 export function ProfileHeader({ profile }: { profile: ProfileView }) {
-  const viewer = useProfileViewer(profile.key);
+  const viewer = useViewer();
   const [followers, setFollowers] = useState(profile.stats.followers);
   const { handle } = profile;
   const counts = [

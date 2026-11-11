@@ -1,4 +1,4 @@
-import { QuestCardView } from '@/design-system/components/QuestCardView';
+import { QuestCardView, questCardMeta } from '@/design-system/components/QuestCardView';
 import { serializeJsonLd } from '@/features/trip-page/jsonLd';
 import { absoluteUrl, SITE_NAME } from '@/lib/site';
 import type { QuestCard } from '@/lib/trip/cards';
@@ -46,6 +46,7 @@ export function GuideView({ guide, quests }: { guide: Guide; quests: QuestCard[]
                 title={quest.title}
                 coverUrl={quest.coverThumb}
                 places={quest.places}
+                meta={questCardMeta(quest.pageCount, quest.photoCount)}
                 owner={{
                   name: quest.owner.name,
                   avatarUrl: quest.owner.avatarUrl,

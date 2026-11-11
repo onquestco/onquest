@@ -69,7 +69,7 @@ function Card({ quest, onManage }: { quest: QuestCard; onManage: () => void }) {
 }
 
 /** Screen 20: every Quest you've made, with All / Published / Drafts and ⋯ on published ones. */
-export function YourQuestsView({ initial }: { initial: QuestCard[] }) {
+export function YourQuestsView({ initial, manage }: { initial: QuestCard[]; manage?: string }) {
   const [filter, setFilter] = useState<Filter>('all');
   const [quests, setQuests] = useState(initial);
   // The server's list after a reload (e.g. a conflict): take it.
@@ -78,7 +78,8 @@ export function YourQuestsView({ initial }: { initial: QuestCard[] }) {
     setLoaded(initial);
     setQuests(initial);
   }
-  const [managing, setManaging] = useState<string>();
+  // ⋯ on your own Quest page lands here with ?manage=<key> (screen 19).
+  const [managing, setManaging] = useState<string | undefined>(manage);
   const [notice, setNotice] = useState<string>();
   const shown = quests.filter((quest) => matchesFilter(filter, quest));
   const open = quests.find((quest) => quest.key === managing);

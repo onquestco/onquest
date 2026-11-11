@@ -38,13 +38,20 @@ function FinishIntent() {
   return null;
 }
 
-type Props = { tripKey: string; path: string; initial: QuestSocial; children: ReactNode };
+type Props = { tripKey: string; path: string; initial: QuestSocial; ownerKey?: string; children: ReactNode };
 
-export function LiveSocialProvider({ tripKey, path, initial, children }: Props) {
-  const viewer = useViewerState(tripKey);
+export function LiveSocialProvider({ tripKey, path, initial, ownerKey, children }: Props) {
+  const viewer = useViewerState(tripKey, ownerKey);
   const actions = useMemo(() => liveActions(tripKey), [tripKey]);
   return (
-    <QuestSocialProvider tripKey={tripKey} path={path} initial={initial} viewer={viewer} actions={actions}>
+    <QuestSocialProvider
+      tripKey={tripKey}
+      path={path}
+      ownerKey={ownerKey}
+      initial={initial}
+      viewer={viewer}
+      actions={actions}
+    >
       <FinishIntent />
       {children}
     </QuestSocialProvider>
