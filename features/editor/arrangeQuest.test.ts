@@ -37,6 +37,10 @@ function deps(overrides: Partial<ArrangeDeps> = {}) {
       calls.push('writeCaptions');
       return [{ photoId: id(1), caption: 'Morning in Panjim' }];
     },
+    describe: async () => {
+      calls.push('describe');
+      return null;
+    },
     createId: () => id(next++),
     onStep: (step) => calls.push(`step:${step}`),
     ...overrides,
@@ -52,7 +56,7 @@ const picked = [
 ];
 
 describe('arrangeQuest', () => {
-  it('sorts, names places, saves, then asks for captions', async () => {
+  it('sorts, names places, saves, then town-only captions when the collage gives nothing', async () => {
     const { fake, calls, saved } = deps();
     const result = await arrangeQuest(picked, undefined, fake);
     expect(calls).toEqual([
@@ -60,6 +64,7 @@ describe('arrangeQuest', () => {
       'step:places',
       'nameLocations',
       'save',
+      'describe',
       'step:captions',
       'writeCaptions',
     ]);
@@ -69,15 +74,30 @@ describe('arrangeQuest', () => {
     expect(result.failed).toBe(false);
   });
 
-  it('skips places and captions when no photo has a location', async () => {
-    const { fake, calls } = deps();
+  it('without GPS, asks the collage for the town and captions (decision 0003)', async () => {
+    const { fake, calls } = deps({
+      describe: async () => {
+        calls.push('describe');
+        return [{ photoId: id(1), caption: 'Gateway to a very good day' }];
+      },
+    });
     const result = await arrangeQuest(
       picked.map((item) => ({ ...item, gps: undefined })),
       undefined,
       fake,
     );
-    expect(calls).toEqual(['step:sorting', 'save']);
-    expect(result.document.photos).toHaveLength(3);
+    expect(calls).toEqual(['step:sorting', 'save', 'step:places', 'describe', 'step:captions']);
+    expect(result.captions).toHaveLength(1);
+  });
+
+  it('without GPS and no collage answer, writes no captions', async () => {
+    const { fake, calls } = deps();
+    await arrangeQuest(
+      picked.map((item) => ({ ...item, gps: undefined })),
+      undefined,
+      fake,
+    );
+    expect(calls).not.toContain('writeCaptions');
   });
 
   it('still finishes when the geocoder fails', async () => {
@@ -91,5 +111,6 @@ describe('arrangeQuest', () => {
     const { fake, calls } = deps({ save: async () => false });
     await arrangeQuest(picked, undefined, fake);
     expect(calls).not.toContain('writeCaptions');
+    expect(calls).not.toContain('describe');
   });
 });

@@ -18,6 +18,11 @@ export type ArrangeDeps = {
   save: (document: QuestDocument) => Promise<boolean>;
   /** Captions written into the saved draft, or [] on a timeout or error. */
   writeCaptions: () => Promise<{ photoId: string; caption: string }[]>;
+  /**
+   * Town and captions from a collage of the photos (decision 0003), saved into the draft:
+   * the captions written, or null when it didn't work (then town-only captions are tried).
+   */
+  describe: () => Promise<{ photoId: string; caption: string }[] | null>;
   createId: () => string;
   onStep: (step: ArrangeStep) => void;
 };
@@ -67,9 +72,13 @@ export async function arrangeQuest(
 
   const saved = await deps.save(document).catch(() => false);
   let captions: { photoId: string; caption: string }[] = [];
-  if (saved && document.places.length > 0) {
+  if (saved) {
+    // Phone browsers strip GPS, so the photos themselves usually say where the trip was.
+    if (located.length === 0) deps.onStep('places');
+    const described = await deps.describe().catch(() => null);
     deps.onStep('captions');
-    captions = await deps.writeCaptions().catch(() => []);
+    if (described) captions = described;
+    else if (document.places.length > 0) captions = await deps.writeCaptions().catch(() => []);
   }
   return { document, captions, fallbackUsed: arrangement.fallbackUsed, failed };
 }

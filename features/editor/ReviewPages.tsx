@@ -26,6 +26,7 @@ import {
 } from './pageEdits';
 import { PhotoSheet } from './PhotoSheet';
 import { readPhotos } from './readPhotos';
+import { TownBox } from './TownBox';
 
 type Notice = { message: string; undo?: boolean };
 
@@ -106,6 +107,7 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
           photo has them. Tap a caption or photo to change it.
         </p>
         <SaveStatusLine />
+        {current.places.length === 0 && <TownBox tripKey={tripKey} />}
 
         {current.content.days.map((page, index) => (
           <PageCard

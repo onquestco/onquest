@@ -4,6 +4,9 @@ import { z } from 'zod';
 import { action } from '@/lib/action';
 import { writeCaptions as askModel } from '@/lib/captions';
 import { geocoderFor } from '@/lib/geoServer';
+import { describePhotos } from '@/lib/photoCaptions';
+import type { QuestDocument } from '@/lib/trip/schema';
+import { applyPlaces } from './applyPlaces';
 import { saveError } from './dbErrors';
 import { captionTargets, withCaptions } from './captionTargets';
 import { loadOwnTrip } from './questRows';
@@ -62,6 +65,62 @@ export const writeCaptions = action(CaptionsSchema, async ({ key, basedOn }, { d
   if (error) throw new Error('Could not save captions');
   return { written: true as const, captions, savedAt: data as string };
 });
+
+// ~700 KB of base64 is a 1024 px JPEG collage with room to spare (the server action limit is 1 MB).
+const COLLAGE_PREFIX = 'data:image/jpeg;base64,';
+const DescribeSchema = z.object({
+  key: z.uuid(),
+  basedOn: z.string().min(1),
+  photoIds: z.array(z.uuid()).min(1).max(15),
+  collage: z.string().startsWith(COLLAGE_PREFIX).max(700_000),
+});
+
+/**
+ * Decision 0003: the town (when the draft has none from GPS) and captions, from one collage of
+ * the photos. Captions only go on photos without one. Saved into the draft as automatic; on a
+ * timeout or error nothing changes and the same savedAt comes back.
+ */
+export const describeQuest = action(
+  DescribeSchema,
+  async ({ key, basedOn, photoIds, collage }, { user, db }) => {
+    const own = await loadOwnTrip(db, key);
+    if (!own) return { written: false as const, error: 'not_found' as const };
+    const unchanged = { written: true as const, document: null, savedAt: basedOn };
+    let document: QuestDocument = own.draft.document;
+    const photoById = new Map(document.photos.map((photo) => [photo.id, photo]));
+    if (!photoIds.every((id) => photoById.has(id))) return unchanged;
+
+    const tiles = photoIds.map((photoId) => ({ photoId, date: photoById.get(photoId)?.date }));
+    const description = await describePhotos(collage.slice(COLLAGE_PREFIX.length), tiles, {
+      fetch,
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+    if (!description) return unchanged;
+
+    if (description.town && document.places.length === 0) {
+      const [town] = await geocoderFor(user.id).searchPlaces(description.town);
+      if (town) {
+        const everyPhoto = [
+          { lat: town.lat, lng: town.lng, photoIds: document.photos.map((photo) => photo.id) },
+        ];
+        document = applyPlaces(document, everyPhoto, [town], () => crypto.randomUUID(), true);
+      }
+    }
+    const placed = document !== own.draft.document;
+    if (!placed && description.captions.length === 0) return unchanged;
+    document = withCaptions(document, description.captions);
+
+    const { data, error } = await db.rpc('save_trip_draft', {
+      p_key: key,
+      p_based_on: basedOn,
+      p_document: document,
+    });
+    const failure = saveError(error);
+    if (failure === 'conflict' || failure === 'not_found') return { written: false as const, error: failure };
+    if (error) throw new Error('Could not save captions');
+    return { written: true as const, document, savedAt: data as string };
+  },
+);
 
 const ProgressSchema = z.object({
   key: z.uuid(),

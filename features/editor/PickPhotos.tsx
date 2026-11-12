@@ -1,7 +1,7 @@
 'use client';
 
 import { TopBar } from '@/design-system/components/TopBar';
-import type { ChangeEvent } from 'react';
+import { useSyncExternalStore, type ChangeEvent } from 'react';
 import { Button } from '@/design-system/components/Button';
 import { Toast } from '@/design-system/components/Toast';
 import { MAX_PHOTOS, MIN_PHOTOS_TO_PUBLISH } from '@/lib/trip/limits';
@@ -16,11 +16,17 @@ type Props = {
   onNext: (tiles: Tile[]) => void;
 };
 
+// iPhones hand websites photos without their location unless the person turns it on in the
+// picker (Options → Location), so we say how before they pick (decision 0003).
+const isIPhone = () => /iPhone|iPad|iPod/.test(navigator.userAgent);
+const noSubscribe = () => () => undefined;
+
 /** Screen 3: pick 3 to 15 photos. Uploading starts the moment a photo is picked. */
 export function PickPhotos({ tripKey, deps, onNext }: Props) {
   const { tiles, add, retry, remove, online, message, clearMessage } = usePickPhotos(tripKey, deps);
   const enough = tiles.length >= MIN_PHOTOS_TO_PUBLISH;
   const waiting = tiles.some((tile) => tile.status === 'processing');
+  const iPhone = useSyncExternalStore(noSubscribe, isIPhone, () => false);
 
   function choose(event: ChangeEvent<HTMLInputElement>) {
     add(Array.from(event.target.files ?? []));
@@ -52,8 +58,15 @@ export function PickPhotos({ tripKey, deps, onNext }: Props) {
           <input type="file" accept="image/*" multiple onChange={choose} className="sr-only" />
         </label>
 
+        {iPhone && tiles.length === 0 && (
+          <p className="rounded-sm bg-brand-wash px-3 py-2 text-label font-normal text-ink">
+            Tip: in the photo picker, tap <b>Options</b> and turn on <b>Location</b> so we can name your
+            places.
+          </p>
+        )}
         <p className="text-caption text-ink-muted">
-          Location and camera details are removed from your photos before they leave this phone.
+          We only use where a photo was taken to name the town. The exact spot and camera details are removed
+          before your photos leave this phone.
         </p>
 
         {tiles.length > 0 && (

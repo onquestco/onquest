@@ -3,9 +3,10 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Contour } from '@/design-system/components/Contour';
-import { nameLocations, reportCreateProgress, writeCaptions } from './arrangeActions';
+import { describeQuest, nameLocations, reportCreateProgress, writeCaptions } from './arrangeActions';
 import { arrangeQuest, type ArrangeStep } from './arrangeQuest';
 import { withCaptions } from './captionTargets';
+import { buildCollage } from './collage';
 import { saveDraftNow } from './draftSaver';
 import { useDraft } from './draftStore';
 import { LostDraft } from './LostDraft';
@@ -52,6 +53,29 @@ export function Arranging({ tripKey, arrangedBefore }: Props) {
       async save(document) {
         setDocument(document);
         return (await saveDraftNow()) === 'saved';
+      },
+      async describe() {
+        const { savedAt, document, previews } = useDraft.getState();
+        if (!savedAt || !document) return null;
+        const tiles = document.photos.filter((photo) => previews[photo.id]).slice(0, 15);
+        const collage = await buildCollage(tiles.map((photo) => previews[photo.id] ?? ''));
+        if (!collage) return null;
+        const result = await describeQuest({
+          key: tripKey,
+          basedOn: savedAt,
+          photoIds: tiles.map((photo) => photo.id),
+          collage,
+        });
+        if (!result.ok || !result.data.written || !result.data.document) return null;
+        // The server saved the town and captions into the draft: take them and its saved_at.
+        const written = result.data.document;
+        useDraft.getState().setDocument(written);
+        useDraft.getState().markSaved(result.data.savedAt, useDraft.getState().version);
+        return written.photos.flatMap((photo) =>
+          photo.caption && photo.captionSource === 'auto'
+            ? [{ photoId: photo.id, caption: photo.caption }]
+            : [],
+        );
       },
       async writeCaptions() {
         const { savedAt } = useDraft.getState();
