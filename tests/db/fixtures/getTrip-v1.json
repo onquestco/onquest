@@ -1,0 +1,139 @@
+{
+  "getTrip": {
+    "goa-2026": {
+      "trip": {
+        "id": "00000000-0000-4000-8000-0000000000a1",
+        "seed": "<varies>",
+        "slug": "goa-2026",
+        "title": "Salt in the Air, Sand in My Hair",
+        "status": "published",
+        "content": {
+          "days": [],
+          "favourites": [],
+          "destination": "Goa"
+        },
+        "end_date": "2026-02-16",
+        "start_date": "2026-02-12",
+        "updated_at": "<varies>",
+        "visibility": "public",
+        "word_count": 120,
+        "short_title": "My Goa Trip",
+        "template_id": "beach",
+        "published_at": "<varies>",
+        "cover_photo_id": null
+      },
+      "owner": {
+        "name": "Alex Morgan",
+        "handle": "alex",
+        "avatar_url": null
+      },
+      "photos": [],
+      "places": [
+        {
+          "id": "<varies>",
+          "lat": 15.496,
+          "lng": 73.833,
+          "name": "Fontainhas",
+          "note": "Every wall a different colour.",
+          "photo_id": null
+        },
+        {
+          "id": "<varies>",
+          "lat": 15.01,
+          "lng": 74.023,
+          "name": "Palolem Beach",
+          "note": "A sunrise worth the alarm.",
+          "photo_id": null
+        }
+      ],
+      "photo_folder": "00000000-0000-4000-8000-000000000001/00000000-0000-4000-8000-0000000000a1"
+    },
+    "gokarna-k3f9x2": {
+      "trip": {
+        "id": "00000000-0000-4000-8000-0000000000a2",
+        "seed": "<varies>",
+        "slug": "gokarna-k3f9x2",
+        "title": "Quiet Coast",
+        "status": "published",
+        "content": {
+          "days": [],
+          "favourites": [],
+          "destination": "Gokarna"
+        },
+        "end_date": "2026-03-03",
+        "start_date": "2026-03-01",
+        "updated_at": "<varies>",
+        "visibility": "unlisted",
+        "word_count": 20,
+        "short_title": "Gokarna",
+        "template_id": "beach",
+        "published_at": "<varies>",
+        "cover_photo_id": null
+      },
+      "owner": {
+        "name": "Alex Morgan",
+        "handle": "alex",
+        "avatar_url": null
+      },
+      "photos": [],
+      "places": [
+        {
+          "id": "<varies>",
+          "lat": 14.519,
+          "lng": 74.32,
+          "name": "Om Beach",
+          "note": null,
+          "photo_id": null
+        }
+      ],
+      "photo_folder": "00000000-0000-4000-8000-000000000001/00000000-0000-4000-8000-0000000000a2"
+    }
+  },
+  "getProfile": {
+    "pins": [
+      {
+        "lat": 15.496,
+        "lng": 73.833,
+        "name": "Fontainhas",
+        "trip_slug": "goa-2026"
+      },
+      {
+        "lat": 15.01,
+        "lng": 74.023,
+        "name": "Palolem Beach",
+        "trip_slug": "goa-2026"
+      }
+    ],
+    "stats": {
+      "days": 5,
+      "trips": 1,
+      "places": 2,
+      "countries": 1
+    },
+    "trips": [
+      {
+        "id": "00000000-0000-4000-8000-0000000000a1",
+        "slug": "goa-2026",
+        "title": "Salt in the Air, Sand in My Hair",
+        "end_date": "2026-02-16",
+        "start_date": "2026-02-12",
+        "short_title": "My Goa Trip",
+        "template_id": "beach",
+        "cover_photo_id": null
+      }
+    ],
+    "profile": {
+      "bio": "Made of memories, miles, and moments",
+      "name": "Alex Morgan",
+      "handle": "alex",
+      "home_city": "Bengaluru",
+      "avatar_url": null
+    }
+  },
+  "sitemap": [
+    {
+      "handle": "alex",
+      "slug": "goa-2026"
+    }
+  ]
+}

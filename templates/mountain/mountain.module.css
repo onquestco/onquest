@@ -1,0 +1,54 @@
+/* Mountain-only pieces. Shared pieces live in ../shared/scrapbook.module.css. */
+
+/* Topographic contour lines behind every page. */
+.contours {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: var(--accent);
+  stroke-opacity: 0.2;
+  stroke-width: 1.2;
+}
+
+/* Ridge line along the bottom of a page. */
+.ridge {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 1;
+  width: 100%;
+}
+
+.kicker {
+  font: 500 6cqw/1 var(--font-hand);
+  color: var(--accent);
+  margin: 0;
+}
+.title {
+  margin: 0;
+  font: 700 8.4cqw/1.05 var(--font-serif);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.pageTitle {
+  margin: 0;
+  font: 700 5.6cqw/1.15 var(--font-serif);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.meta {
+  font: 400 3.6cqw/1.3 var(--font-type);
+  color: var(--ink);
+  opacity: 0.75;
+}
+.pageNumber {
+  font: 500 6cqw/1 var(--font-hand);
+  color: var(--ink);
+  opacity: 0.6;
+}

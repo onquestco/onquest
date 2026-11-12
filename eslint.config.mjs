@@ -11,7 +11,7 @@ const config = [
       '@next/next/no-img-element': 'off',
     },
   },
-  { ignores: ['.next/**', 'node_modules/**', 'next-env.d.ts', 'docs/**'] },
+  { ignores: ['.next/**', 'node_modules/**', 'next-env.d.ts', 'docs/**', 'lib/supabase/database.types.ts'] },
 ];
 
 export default config;

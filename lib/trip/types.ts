@@ -22,6 +22,7 @@ export type Place = {
 export type Day = {
   number: number; // 1-based
   title: string;
+  dateLabel?: string; // "Sat 17 Oct" or "12 – 14 February", from the page's own dates
   quote?: string;
   story?: string;
   places: Place[];
@@ -29,6 +30,9 @@ export type Day = {
 };
 
 export type TripData = {
+  /** The Quest's permanent key. */
+  key: string;
+  /** Same as `key`, kept for existing templates. */
   id: string;
   templateId: string;
   url: string; // absolute, canonical

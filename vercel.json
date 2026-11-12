@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["sin1"],
+  "git": {
+    "deploymentEnabled": {
+      "spec/**": false,
+      "review/**": false,
+      "dependabot/**": false
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/finish-deletions",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}

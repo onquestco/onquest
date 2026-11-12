@@ -14,7 +14,7 @@ export async function getMyProfile(userId: string) {
   const { data, error } = await supabase
     .from('profiles')
     .select('handle, name')
-    .eq('id', userId)
+    .eq('key', userId)
     .maybeSingle();
   if (error) throw new Error('Could not load profile');
   return data as { handle: string; name: string | null } | null;

@@ -152,6 +152,7 @@ const startDate = '2026-02-12';
 const endDate = '2026-02-16';
 
 export const goaTrip: TripData = {
+  key: 'demo-goa',
   id: 'demo-goa',
   templateId: 'beach',
   url: absoluteUrl('/demo'),

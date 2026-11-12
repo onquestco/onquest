@@ -16,7 +16,7 @@ export type Theme = {
   colors: ThemeColors;
   /** Background per day card, cycled: dayBackgrounds[i % length]. */
   dayBackgrounds: string[];
-  /** Emoji offered in the viewer sticker tray. */
+  /** Emoji for a viewer sticker tray. Unused since the tray was removed (founder, 11 Nov). */
   stickers: string[];
   /**
    * next/font class names. Each template loads 5 fonts exposed as
@@ -33,6 +33,10 @@ export type Template = {
   defaults: { title: string; closingHeadline: string };
   theme: Theme;
   /** The full interactive trip page. Pure: TripData in, markup out. */
-  TripPage: (props: { trip: TripData }) => ReactNode;
-  // Instagram StoryFrames / CarouselFrames are added in week 3 (see docs/02-lld.md §7).
+  /** `controls` is app chrome (full screen, like) placed inside the player; templates only pass it through. */
+  TripPage: (props: { trip: TripData; controls?: ReactNode }) => ReactNode;
+  /** Instagram story, 1080 × 1920 px, with the Quest's link as text (spec B §3.7). */
+  StoryFrame: (props: { trip: TripData }) => ReactNode;
+  /** Instagram carousel: the cover, then up to 5 pages, 1080 × 1350 px each. */
+  CarouselFrames: (props: { trip: TripData }) => ReactNode[];
 };

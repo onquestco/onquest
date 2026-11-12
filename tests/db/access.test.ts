@@ -22,7 +22,17 @@ const getProfile = async (handle: string) =>
     .r;
 
 describe('logged-out visitors', () => {
-  it.each(['profiles', 'trips', 'photos', 'places'])('cannot read the %s table directly', async (table) => {
+  it.each([
+    'profiles',
+    'trips',
+    'photos',
+    'places',
+    'trip_drafts',
+    'trips_archive',
+    'handle_claims',
+    'removed_trip_urls',
+    'geocode_cache',
+  ])('cannot read the %s table directly', async (table) => {
     await expect(queryAs(undefined, `select * from public.${table}`)).rejects.toThrow(/permission denied/);
   });
 });
@@ -61,7 +71,14 @@ describe('get_profile', () => {
     const profile = await getProfile('ALEX');
     expect(profile?.trips.map((t) => t.slug)).toEqual(['goa-2026']);
     expect(profile?.pins).toHaveLength(2);
-    expect(profile?.stats).toEqual({ trips: 1, places: 2, countries: 1, days: 5 });
+    expect(profile?.stats).toEqual({
+      trips: 1,
+      places: 2,
+      countries: 1,
+      days: 5,
+      followers: 0,
+      following: 0,
+    });
   });
 
   it('returns null for an unknown handle', async () => {
@@ -78,25 +95,30 @@ describe('list_sitemap_trips', () => {
 
 describe('signed-in users', () => {
   it('see all of their own trips', async () => {
-    expect(await queryAs(ALEX, 'select id from public.trips')).toHaveLength(3);
+    expect(await queryAs(ALEX, 'select key from public.trips')).toHaveLength(3);
   });
 
   it("can't see other people's trips", async () => {
-    expect(await queryAs(STRANGER, 'select id from public.trips')).toHaveLength(0);
+    expect(await queryAs(STRANGER, 'select key from public.trips')).toHaveLength(0);
   });
 
-  it("can't change other people's trips", async () => {
-    expect(await queryAs(STRANGER, `update public.trips set title = 'hacked' returning id`)).toHaveLength(0);
+  it("can't change anyone's trips directly, even their own (writes go through the save functions)", async () => {
+    await expect(queryAs(STRANGER, `update public.trips set title = 'hacked'`)).rejects.toThrow(
+      /permission denied/,
+    );
+    await expect(queryAs(ALEX, `update public.trips set title = 'edited'`)).rejects.toThrow(
+      /permission denied/,
+    );
   });
 
-  it("can't attach photos to other people's trips", async () => {
+  it("can't write to the frozen legacy photos table", async () => {
     await expect(
       queryAs(
         STRANGER,
         `insert into public.photos (id, trip_id, owner_id, width, height) values (gen_random_uuid(), $1, $2, 1, 1)`,
         [ALEX_PUBLIC_TRIP, STRANGER],
       ),
-    ).rejects.toThrow(/row-level security/);
+    ).rejects.toThrow(/permission denied/);
   });
 });
 

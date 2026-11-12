@@ -2,6 +2,20 @@
 
 Implements `01-hld.md`. Coding conventions are in `CLAUDE.md`. Security/SEO details are in `03-security-visibility-seo.md`.
 
+> **MVP specs supersede parts of this document.** The OnQuest MVP (`docs/prds/onquest-mvp.md`) changes the data model, the editor and the trip page. Until this LLD is rewritten after the MVP ships, the exact contracts are in the specs' §4 and §5:
+>
+> | LLD section | Superseded by |
+> |---|---|
+> | §2.1 stored content, §2.2 `TripData` | Spec A §4.1 (new optional fields; nothing narrowed) |
+> | §2.3 template contract | Spec B §4.1 (`StoryFrame`, `CarouselFrames`; paged `TripPage` on `QuestPlayer`) |
+> | §3 database (tables, RLS, public reads) | Spec A §4.3 + §5 (keys, archives, `trip_drafts`, save functions, deferred foreign keys), spec B §5 (likes, comments, notifications), spec C §5 (follows, discovery) |
+> | §4 server actions | Spec A §4.2, spec B §4.2, spec C §4.2 (no `.update`/`.upsert`/`.delete` on data tables) |
+> | §5 editor internals | Spec A §3.2–3.4 and §16 (what is kept from the v1 editor WIP); 15 photos, ≤ 5 pages of 3 |
+> | §6 trip page | Spec B §3.1–3.2 |
+> | §7 Instagram export | Spec B §3.7 (share sheet or single downloads, no ZIP) |
+> | §9 analytics | Spec A §3.9 (Taxonomy sheet is the source of names; PostHog with a persistent `anon_id`) |
+> | §11 build order | `docs/specs/onquest-mvp-tasks.md` |
+
 Stack: Next.js 16 (App Router), React 19, **TypeScript strict**, Tailwind (app screens) + CSS modules (templates), Supabase (`@supabase/ssr`), Zustand (editor), zod, MapLibre GL, `modern-screenshot`, `jszip`, `exifr`, PostHog, Sentry, Vitest, Playwright.
 
 ---

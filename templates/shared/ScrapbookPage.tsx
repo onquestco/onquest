@@ -1,11 +1,9 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { TripData } from '@/lib/trip/types';
 import type { Theme } from '../types';
-import { Footer } from './Footer';
 import { MemorySheet } from './MemorySheet';
 import { ScrapbookEffects } from './ScrapbookEffects';
 import { buildSheets } from './sheets';
-import { StickerTray } from './StickerTray';
 import styles from './scrapbook.module.css';
 
 const themeVariables = ({ colors }: Theme) =>
@@ -21,7 +19,8 @@ const themeVariables = ({ colors }: Theme) =>
 
 /**
  * The frame every template's trip page renders inside: theme colours + fonts,
- * the memory sheet, sticker tray, drag/drop-in effects and the footer.
+ * the memory sheet and drag/drop-in effects (no sticker tray: not in the prototype, founder 11 Nov). The app adds the byline, Make your own
+ * and the site footer (with Report) under it, so the template has no footer of its own.
  */
 export function ScrapbookPage({
   trip,
@@ -35,9 +34,7 @@ export function ScrapbookPage({
   return (
     <div className={`${theme.fontClassName} ${styles.page}`} style={themeVariables(theme)}>
       <article>{children}</article>
-      <Footer trip={trip} />
       <MemorySheet sheets={buildSheets(trip)} />
-      <StickerTray emoji={theme.stickers} />
       <ScrapbookEffects />
     </div>
   );

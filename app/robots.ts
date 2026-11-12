@@ -19,7 +19,21 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/trips/', '/new', '/settings', '/login', '/onboarding', '/auth/'],
+        // Signed-in app screens (all noindex): nothing for a crawler there.
+        disallow: [
+          '/trips/',
+          '/new',
+          '/settings',
+          '/login',
+          '/onboarding',
+          '/auth/',
+          '/api/',
+          '/home',
+          '/explore',
+          '/quests',
+          '/notifications',
+          '/welcome',
+        ],
       },
       { userAgent: AI_TRAINING_BOTS, disallow: '/' },
     ],

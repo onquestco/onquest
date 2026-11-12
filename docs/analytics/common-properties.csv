@@ -1,0 +1,8 @@
+properties [JSON key],Data type,Allowed values,Property description,On
+event_id,STRING,UUID,"Unique per event, for de-duplication",every client and server event
+session_id,STRING,,Same on every event of one visit; new after 30 min idle,every client and server event
+anon_id,STRING,anon_<uuid>,"Device ID; the only person ID when signed out, kept after sign-in so events join up. Unique viewers of a Quest = distinct anon_id on quest_viewed (link-preview bots excluded). View counts are for the OnQuest team only, never shown in the app.",every client and server event
+platform,STRING,web_mobile / web_desktop,,every client and server event
+app_version,STRING,,,every client and server event
+screen,STRING,,Screen the event happened on,every client and server event
+country,STRING,ISO 3166-1 alpha-2,From IP at ingest; the IP is not stored,every client and server event

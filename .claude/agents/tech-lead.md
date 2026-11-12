@@ -54,13 +54,13 @@ If something product-level is missing or contradictory, do not invent the answer
 
 Decide the build mode and write it in the spec:
 
-- **Single Builder** when the feature is small (roughly under a day of work or one PR), or the frontend and backend parts can't be tested apart.
+- **Single builder** when the feature is small (roughly under a day of work or one PR), or the frontend and backend parts can't be tested apart. Assign the task to the `backend` or `frontend` agent, whichever side carries most of the work, and list every file it may change on both sides.
 - **Backend + Frontend split** when both sides are substantial and the contract is stable. Backend lands first when the frontend depends on its actions or data; otherwise both start together against the contract.
 
 Task rules:
 
 - One task = one PR, ideally under ~400 changed lines, independently testable.
-- Each task states: owner (`backend` | `frontend` | `builder`), files or folders it touches, which ACs it covers, which tests it adds, what it depends on, and "done when".
+- Each task states: owner (`backend` | `frontend`; agents in `.claude/agents/backend.md` and `frontend.md`), files or folders it touches, which ACs it covers, which tests it adds, what it depends on, and "done when".
 - Backend tasks own `supabase/migrations/`, database tests in `tests/db/`, `features/*/actions.ts`, loaders, `lib/`. Frontend tasks own `app/` routes, feature components, `templates/`. Shared contract files (`lib/trip/schema.ts`) belong to the first task that needs them.
 - Include a final task for the Playwright smoke test or Instagram/size checks when the feature touches those flows.
 

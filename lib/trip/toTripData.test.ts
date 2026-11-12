@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { TripRows } from './schema';
-import { toTripData } from './toTripData';
+import { TripRowsSchema, type QuestDocument, type TripRows } from './schema';
+import { draftToTripData, toTripData } from './toTripData';
 
 const TRIP = '00000000-0000-4000-8000-0000000000a1';
 const PHOTO_1 = '00000000-0000-4000-8000-0000000000b1';
@@ -83,7 +83,7 @@ describe('toTripData with an empty trip', () => {
     expect(trip()).toMatchObject({
       title: 'Default title',
       closingHeadline: 'Default closing',
-      shortTitle: 'My Trip',
+      shortTitle: 'a Quest by @alex',
       statsLabel: '',
     });
   });
@@ -159,5 +159,110 @@ describe('toTripData stats', () => {
       trip: { ...emptyTrip.trip, start_date: '2026-02-12', end_date: '2026-02-16' },
     };
     expect(toTripData(rows, defaults).statsLabel).toBe('5 days');
+  });
+
+  it('says 1 day when three pages hold photos from a single day', () => {
+    const page = { placeIds: [], photoIds: [] };
+    const rows = {
+      ...emptyTrip,
+      trip: {
+        ...emptyTrip.trip,
+        start_date: '2026-10-02',
+        end_date: '2026-10-02',
+        content: {
+          favourites: [],
+          days: [
+            { ...page, id: TRIP },
+            { ...page, id: PHOTO_1 },
+            { ...page, id: PHOTO_2 },
+          ],
+        },
+      },
+    };
+    expect(toTripData(rows, defaults).statsLabel).toMatch(/^1 day\b/);
+  });
+});
+
+describe('get_trip output before and after migration 9', () => {
+  const KEY = '00000000-0000-4000-8000-0000000000a2';
+
+  it('parses the old output, with key taken from id', () => {
+    const rows = TripRowsSchema.parse(emptyTrip);
+    expect(toTripData(rows, defaults).key).toBe(TRIP);
+  });
+
+  it('parses the new output and prefers key', () => {
+    const rows = TripRowsSchema.parse({
+      ...emptyTrip,
+      trip: {
+        ...emptyTrip.trip,
+        key: KEY,
+        status: 'published',
+        saved_at: '2026-02-20 00:00:00.123456+00',
+        comments_on: false,
+        word_count: 12,
+      },
+    });
+    const trip = toTripData(rows, defaults);
+    expect({ key: trip.key, id: trip.id }).toEqual({ key: KEY, id: KEY });
+  });
+});
+
+describe('page dates', () => {
+  it('labels a page with its own dates and leaves undated pages unlabelled', () => {
+    const rows: TripRows = {
+      ...emptyTrip,
+      trip: {
+        ...emptyTrip.trip,
+        content: {
+          favourites: [],
+          days: [
+            { id: PHOTO_1, startDate: '2026-02-12', endDate: '2026-02-14', placeIds: [], photoIds: [] },
+            { id: PHOTO_2, placeIds: [], photoIds: [] },
+          ],
+        },
+      },
+    };
+    const labels = toTripData(rows, defaults).days.map((day) => day.dateLabel);
+    expect(labels).toEqual(['12 – 14 February', undefined]);
+  });
+});
+
+describe('draftToTripData', () => {
+  const document: QuestDocument = {
+    templateId: 'beach',
+    title: 'Salt in the Air',
+    content: { favourites: [], days: [{ id: TRIP, placeIds: [PLACE_1], photoIds: [PHOTO_1] }] },
+    photos: [
+      {
+        id: PHOTO_1,
+        width: 1600,
+        height: 1200,
+        caption: 'Beach',
+        takenAt: '2026-02-12T09:00:00+05:30',
+        date: '2026-02-12',
+      },
+    ],
+    places: [{ id: PLACE_1, name: 'Panjim', lat: 15.49, lng: 73.82, photoId: PHOTO_1 }],
+  };
+  const draft = {
+    key: TRIP,
+    photoFolder: 'user/trip',
+    visibility: 'public' as const,
+    savedAt: 'x',
+    document,
+  };
+
+  it('renders a draft the way the published Quest will look', () => {
+    const preview = draftToTripData(draft, emptyTrip.owner, 42, defaults);
+    expect(preview).toMatchObject({ key: TRIP, title: 'Salt in the Air', seed: 42 });
+    expect(preview.days[0]?.title).toBe('Panjim');
+    expect(preview.places[0]?.photo?.id).toBe(PHOTO_1);
+  });
+
+  it('never carries owner-only photo fields', () => {
+    const preview = draftToTripData(draft, emptyTrip.owner, 42, defaults);
+    expect(Object.keys(preview.photos[0] ?? {})).not.toContain('takenAt');
+    expect(JSON.stringify(preview)).not.toContain('2026-02-12T09:00');
   });
 });

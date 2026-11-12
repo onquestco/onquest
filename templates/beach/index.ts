@@ -1,4 +1,5 @@
 import type { Template } from '../types';
+import { CarouselFrames, StoryFrame } from './exportFrames';
 import { theme } from './theme';
 import { TripPage } from './TripPage';
 
@@ -9,6 +10,8 @@ const beach = {
   defaults: { title: 'Salt in the Air, Sand in My Hair', closingHeadline: 'Nowhere else to be.' },
   theme,
   TripPage,
+  StoryFrame,
+  CarouselFrames,
 } satisfies Template;
 
 export default beach;

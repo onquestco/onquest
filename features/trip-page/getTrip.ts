@@ -31,5 +31,9 @@ export const getTrip = cache(async (rawHandle: string, rawSlug: string) => {
   return {
     trip: toTripData(rows, getTemplate(rows.trip.template_id).defaults),
     unlisted: rows.trip.visibility === 'unlisted',
+    /** `{owner}/{trip}` in storage, for the link preview's export-size cover. */
+    photoFolder: rows.photo_folder,
+    /** The creator's profile key (public, like get_profile's), for Follow next to their name. */
+    ownerKey: rows.photo_folder.split('/')[0],
   };
 });
