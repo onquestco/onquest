@@ -43,7 +43,9 @@ export function TownBox({ tripKey }: { tripKey: string }) {
       document.title === defaultQuestTitle(document.photos.map((photo) => ({ date: photo.date })));
     apply(applyPlaces(document, everyPhoto, [town], () => crypto.randomUUID(), automatic));
 
-    if ((await saveDraftNow()) === 'saved') {
+    // Autosave may already have saved the change ('unchanged'): captions go ahead either way.
+    const outcome = await saveDraftNow();
+    if (outcome === 'saved' || outcome === 'unchanged') {
       const { savedAt } = useDraft.getState();
       const written = savedAt
         ? await writeCaptions({ key: tripKey, basedOn: savedAt }).catch(() => null)
