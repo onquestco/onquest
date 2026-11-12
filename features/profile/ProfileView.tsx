@@ -1,9 +1,10 @@
 import { PinIcon } from '@/design-system/components/icons';
 import { questCardMeta } from '@/design-system/components/QuestCardView';
-import { QuestTile, tileMeta } from '@/features/quests/QuestTile';
+import { QuestTile } from '@/features/quests/QuestTile';
 import { SiteFooter } from '@/features/shell/SiteFooter';
 import type { ProfileView as Profile } from './getProfile';
 import { ProfileHeader } from './ProfileHeader';
+import { PublishedAgo } from './PublishedAgo';
 import { OwnProfileNote, ProfileTopBar, ProfileViewerProvider } from './ProfileViewerContext';
 
 /** Screen 15: who they are, their numbers, places, and their public Quests (M15, M22). */
@@ -39,7 +40,13 @@ export function ProfileView({ profile }: { profile: Profile }) {
                 <li key={quest.key}>
                   <QuestTile
                     quest={quest}
-                    meta={tileMeta(quest, 'place') || questCardMeta(quest.pageCount, quest.photoCount)}
+                    meta={
+                      quest.publishedAt ? (
+                        <PublishedAgo iso={quest.publishedAt} />
+                      ) : (
+                        questCardMeta(quest.pageCount, quest.photoCount)
+                      )
+                    }
                   />
                 </li>
               ))}

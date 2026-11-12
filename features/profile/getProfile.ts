@@ -35,6 +35,8 @@ const ProfileRowSchema = z.object({
       photo_folder: z.string(),
       page_count: z.number(),
       photo_count: z.number(),
+      /** Migration 14; absent from older database code. */
+      published_at: z.string().nullable().optional(),
     }),
   ),
   pins: z.array(z.object({ name: z.string(), lat: z.number(), lng: z.number(), trip_slug: z.string() })),
@@ -58,6 +60,7 @@ function toProfileView(row: z.infer<typeof ProfileRowSchema>) {
     path: `/@${profile.handle}/${trip.slug}`,
     coverThumb: trip.cover_photo_id ? photoUrls(trip.photo_folder, trip.cover_photo_id).thumb : undefined,
     pageCount: trip.page_count,
+    publishedAt: trip.published_at ?? undefined,
     photoCount: trip.photo_count,
     places: [],
     likeCount: 0,
