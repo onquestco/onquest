@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { CAPTION_MAX } from './trip/limits';
 
+/** What fits on one line under a polaroid; longer captions are cut with "…" on the page. */
+export const CAPTION_FITS = 32;
+
 // Short scrapbook captions from Claude Haiku (spec A §3.5). The prompt is built only from each
 // photo's date and town as stored in the draft: no text a person typed ever reaches the model.
 // One request per Quest; anything that goes wrong means no captions, never an error.
@@ -17,7 +20,7 @@ export type Caption = { photoId: string; caption: string };
 const SYSTEM = [
   "You write captions for a travel scrapbook made from someone's trip photos.",
   'For each photo you get only the town and, when known, the date it was taken.',
-  `Write one catchy caption per photo, at most ${CAPTION_MAX} characters: playful, warm and`,
+  `Write one catchy caption per photo, at most ${CAPTION_FITS} characters (it has to fit under a polaroid): playful, warm and`,
   'a little cheeky, like a friend captioning their own trip on Instagram. Use wordplay on the',
   'place name, the weekday or the time of year when it fits; vary the rhythm so no two',
   'captions start the same way. Plain English, no hashtags, no emoji, no quotation marks.',

@@ -68,11 +68,13 @@ export function toTripData(rows: TripRows, defaults: Defaults): TripData {
       profileUrl: absoluteUrl(`/@${owner.handle}`),
     },
     title: trip.title || defaults.title,
-    // Without a destination the cover strip names the maker (the prototype's kicker), so it never
-    // repeats the title or says a bare "My Trip".
+    // The cover strip: the destination, else the trip's first place ("My Mumbai Trip"), else the
+    // maker (the prototype's kicker), so it never repeats the title or says a bare "My Trip".
     shortTitle:
       trip.short_title ||
-      (content.destination ? `My ${content.destination} Trip` : `a Quest by @${owner.handle}`),
+      (content.destination || places[0]?.name
+        ? `My ${content.destination || places[0]?.name} Trip`
+        : `a Quest by @${owner.handle}`),
     destination: content.destination || undefined,
     dateLabel: startDate ? formatDateRange(startDate, endDate ?? undefined) : undefined,
     startDate: startDate ?? undefined,
