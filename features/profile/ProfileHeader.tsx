@@ -43,7 +43,7 @@ export function ProfileHeader({ profile }: { profile: ProfileView }) {
   return (
     <header className="flex flex-col">
       <ProfileCover />
-      <div className="mx-auto flex w-full max-w-lg flex-col gap-3 px-4">
+      <div className="relative mx-auto flex w-full max-w-lg flex-col gap-3 px-4">
         <div className="-mt-13 flex items-end justify-between">
           <span className="rounded-pill border-4 border-surface bg-surface">
             <Avatar name={profile.name} src={profile.avatarUrl} size={88} />

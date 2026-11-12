@@ -5,7 +5,6 @@ import { buttonClassName } from '@/design-system/components/Button';
 import { TopBar } from '@/design-system/components/TopBar';
 import { goaTrip } from '@/lib/demo/goaTrip';
 import { templates } from '@/templates/registry';
-import { CAROUSEL_SIZE } from '@/templates/shared/ExportFrames';
 import { useDraft } from './draftStore';
 import { LostDraft } from './LostDraft';
 import { ScaledFrame } from './ScaledFrame';
@@ -13,6 +12,8 @@ import { ScaledFrame } from './ScaledFrame';
 // The same sample trip in every template, as in the prototype: the choice is about the look, and
 // the creator sees their own photos in it on the next screen, Preview (founder, 12 Nov).
 const SAMPLE = { ...goaTrip, title: 'Three days in Goa' };
+// Drawn at a phone's width, then scaled down to the card.
+const COVER_WIDTH = 390;
 
 /** Screen 6: each template shown as its own cover page, in its own colours, fonts and decorations. */
 export function ChooseTemplate({ tripKey }: { tripKey: string }) {
@@ -28,7 +29,6 @@ export function ChooseTemplate({ tripKey }: { tripKey: string }) {
         <div role="radiogroup" aria-label="Template" className="flex flex-col gap-4">
           {live.map((template) => {
             const selected = document.templateId === template.id;
-            const [cover] = template.CarouselFrames({ trip: { ...SAMPLE, templateId: template.id } });
             return (
               <button
                 key={template.id}
@@ -40,8 +40,11 @@ export function ChooseTemplate({ tripKey }: { tripKey: string }) {
                   selected ? 'border-brand-strong bg-brand-wash' : 'border-line bg-surface'
                 } focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-strong`}
               >
-                <span className="relative block aspect-4/3 overflow-hidden rounded-md bg-surface-page">
-                  <ScaledFrame width={CAROUSEL_SIZE.width}>{cover}</ScaledFrame>
+                <span className="relative block aspect-16/9 overflow-hidden rounded-md bg-surface-page">
+                  {/* The template's own Quest cover, shrunk and cropped like the prototype's mini covers. */}
+                  <ScaledFrame width={COVER_WIDTH}>
+                    <template.TripPage trip={{ ...SAMPLE, templateId: template.id }} />
+                  </ScaledFrame>
                 </span>
                 <span className="flex justify-between px-2 pb-1 text-body font-semibold text-ink">
                   {template.name}

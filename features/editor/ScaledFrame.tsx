@@ -21,7 +21,7 @@ export function ScaledFrame({ width, children }: { width: number; children: Reac
   }, [width]);
 
   return (
-    <div ref={box} className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+    <div ref={box} className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden inert>
       {scale > 0 && (
         <div style={{ width, transform: `scale(${scale})`, transformOrigin: 'top left' }}>{children}</div>
       )}
