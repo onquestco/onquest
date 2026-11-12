@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CAPTION_MODEL } from './captions';
+import { CAPTION_MODEL, logRefusal } from './captions';
 import { CAPTION_MAX } from './trip/limits';
 
 // The town and a caption for every photo, from one small picture of all of them (decision 0003).
@@ -102,13 +102,17 @@ export async function describePhotos(
       }),
       signal: AbortSignal.timeout(timeoutMs),
     });
-    if (!response.ok) return null;
+    if (!response.ok) {
+      await logRefusal(response, 'collage');
+      return null;
+    }
     const body = z
       .object({ content: z.array(z.object({ type: z.string(), text: z.string().optional() })) })
       .safeParse(await response.json());
     if (!body.success) return null;
     return parseDescription(body.data.content.map((block) => block.text ?? '').join(''), tiles);
-  } catch {
+  } catch (error) {
+    console.warn(`[collage] request failed: ${error instanceof Error ? error.name : 'unknown'}`);
     return null;
   }
 }

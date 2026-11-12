@@ -81,7 +81,10 @@ export async function writeCaptions(
       }),
       signal: AbortSignal.timeout(timeoutMs),
     });
-    if (!response.ok) return [];
+    if (!response.ok) {
+      await logRefusal(response);
+      return [];
+    }
     const body = z
       .object({ content: z.array(z.object({ type: z.string(), text: z.string().optional() })) })
       .safeParse(await response.json());
@@ -91,7 +94,18 @@ export async function writeCaptions(
       reply,
       items.map((item) => item.photoId),
     );
-  } catch {
+  } catch (error) {
+    console.warn(`[captions] request failed: ${error instanceof Error ? error.name : 'unknown'}`);
     return [];
   }
+}
+
+/** The API's error type and message (never ours or the traveller's text), so a failing key or
+ * empty credit balance shows in the logs instead of silently giving no captions. */
+export async function logRefusal(response: Response, label = 'captions') {
+  const body = await response.json().catch(() => null);
+  const error = z.object({ error: z.object({ type: z.string(), message: z.string() }) }).safeParse(body);
+  console.warn(
+    `[${label}] Anthropic replied ${response.status}${error.success ? `: ${error.data.error.type}, ${error.data.error.message.slice(0, 120)}` : ''}`,
+  );
 }
