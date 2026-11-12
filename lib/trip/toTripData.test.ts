@@ -160,6 +160,27 @@ describe('toTripData stats', () => {
     };
     expect(toTripData(rows, defaults).statsLabel).toBe('5 days');
   });
+
+  it('says 1 day when three pages hold photos from a single day', () => {
+    const page = { placeIds: [], photoIds: [] };
+    const rows = {
+      ...emptyTrip,
+      trip: {
+        ...emptyTrip.trip,
+        start_date: '2026-10-02',
+        end_date: '2026-10-02',
+        content: {
+          favourites: [],
+          days: [
+            { ...page, id: TRIP },
+            { ...page, id: PHOTO_1 },
+            { ...page, id: PHOTO_2 },
+          ],
+        },
+      },
+    };
+    expect(toTripData(rows, defaults).statsLabel).toMatch(/^1 day\b/);
+  });
 });
 
 describe('get_trip output before and after migration 9', () => {

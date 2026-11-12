@@ -8,15 +8,15 @@ export type ButtonVariant = 'primary' | 'secondary' | 'quiet' | 'danger';
 type ButtonStyle = { variant?: ButtonVariant; block?: boolean };
 
 const base =
-  'inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-pill border border-transparent ' +
+  'inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-pill border ' +
   'px-6 py-3 text-body leading-5 font-semibold no-underline transition-colors motion-reduce:transition-none ' +
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-strong ' +
   'disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50';
 
 const variants: Record<ButtonVariant, string> = {
-  primary: 'bg-brand-strong text-on-brand hover:enabled:bg-brand',
+  primary: 'border-transparent bg-brand-strong text-on-brand hover:enabled:bg-brand',
   secondary: 'border-line-control bg-surface text-ink hover:enabled:bg-brand-wash',
-  quiet: 'bg-transparent px-3 text-brand-strong hover:enabled:bg-brand-wash',
+  quiet: 'border-transparent bg-transparent px-3 text-brand-strong hover:enabled:bg-brand-wash',
   danger: 'border-danger bg-surface text-danger',
 };
 

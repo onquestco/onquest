@@ -39,6 +39,22 @@ const shape = (document: QuestDocument) =>
   document.content.days.map((page) => page.photoIds.map((photoId) => Number(photoId.slice(-3))));
 
 describe('Review pages edits', () => {
+  it('keeps "Page N" titles on a one-day Quest after a move, instead of "Day 1" twice', () => {
+    const sameDay = { 1: '2026-10-02', 2: '2026-10-02', 3: '2026-10-02', 4: '2026-10-02', 5: '2026-10-02' };
+    const result = movePhoto(
+      documentWith(
+        [
+          [1, 2, 3],
+          [4, 5],
+        ],
+        sameDay,
+      ),
+      id(1),
+      1,
+    );
+    expect(result.ok && result.document.content.days.map((page) => page.title)).toEqual(['Page 1', 'Page 2']);
+  });
+
   it('moves a photo to a page with room (M5)', () => {
     const result = movePhoto(
       documentWith([

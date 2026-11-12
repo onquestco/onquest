@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { HeartIcon, MoreIcon } from '@/design-system/components/icons';
+import { MoreIcon, PlusIcon } from '@/design-system/components/icons';
 import { Segmented } from '@/design-system/components/Segmented';
 import { Toast } from '@/design-system/components/Toast';
 import type { QuestCard } from '@/lib/trip/cards';
@@ -23,46 +23,44 @@ function Tag({ children }: { children: string }) {
   );
 }
 
+const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
+
 function Card({ quest, onManage }: { quest: QuestCard; onManage: () => void }) {
   const draft = quest.status === 'draft';
   const tag = questTag(quest);
+  const meta = draft
+    ? 'Continue editing'
+    : `${plural(quest.likeCount, 'like')} · ${plural(quest.commentCount, 'comment')}`;
   return (
-    <li className="flex flex-col gap-2">
-      <div className="relative">
-        <Link
-          href={draft ? `/quests/${quest.key}/review` : (quest.path ?? `/quests/${quest.key}/review`)}
-          className="block aspect-4/5 overflow-hidden rounded-lg bg-surface-page"
+    <li className="relative">
+      {/* Title and counts sit on the cover, like every other Quest card (prototype screen 20). */}
+      <Link
+        href={draft ? `/quests/${quest.key}/review` : (quest.path ?? `/quests/${quest.key}/review`)}
+        className="relative block aspect-4/5 overflow-hidden rounded-lg bg-night-band"
+      >
+        {quest.coverThumb && <img src={quest.coverThumb} alt="" className="h-full w-full object-cover" />}
+        <span className="absolute inset-0 bg-linear-to-t from-night-band via-transparent to-transparent" />
+        <span className="absolute inset-x-3 bottom-3 flex flex-col text-on-night">
+          <span className="line-clamp-2 text-label font-semibold">{quest.title}</span>
+          <span className="truncate text-caption text-on-night-muted">{meta}</span>
+        </span>
+      </Link>
+      {tag && (
+        <span className="absolute top-2 left-2">
+          <Tag>{tag}</Tag>
+        </span>
+      )}
+      {!draft && (
+        <button
+          type="button"
+          aria-label={`Manage ${quest.title}`}
+          onClick={onManage}
+          className="absolute top-1 right-1 flex size-11 items-center justify-center rounded-pill text-ink focus-visible:outline-2 focus-visible:outline-brand-strong"
         >
-          {quest.coverThumb && <img src={quest.coverThumb} alt="" className="h-full w-full object-cover" />}
-        </Link>
-        {tag && (
-          <span className="absolute top-2 left-2">
-            <Tag>{tag}</Tag>
+          <span className="flex size-8 items-center justify-center rounded-pill bg-surface shadow-float">
+            <MoreIcon size={20} />
           </span>
-        )}
-        {!draft && (
-          <button
-            type="button"
-            aria-label={`Manage ${quest.title}`}
-            onClick={onManage}
-            className="absolute top-1 right-1 flex size-11 items-center justify-center rounded-pill text-ink focus-visible:outline-2 focus-visible:outline-brand-strong"
-          >
-            <span className="flex size-8 items-center justify-center rounded-pill bg-surface shadow-float">
-              <MoreIcon size={20} />
-            </span>
-          </button>
-        )}
-      </div>
-      <p className="truncate text-label font-semibold text-ink">{quest.title}</p>
-      {draft ? (
-        <Link href={`/quests/${quest.key}/review`} className="text-label text-brand-strong">
-          Continue editing
-        </Link>
-      ) : (
-        <p className="flex items-center gap-1 text-caption text-ink-muted">
-          <HeartIcon size={14} /> {quest.likeCount} · {quest.commentCount}{' '}
-          {quest.commentCount === 1 ? 'comment' : 'comments'}
-        </p>
+        </button>
       )}
     </li>
   );
@@ -89,10 +87,15 @@ export function YourQuestsView({ initial, manage }: { initial: QuestCard[]; mana
       <h1 className="text-title text-ink">Your Quests</h1>
       <Link
         href="/quests/new?source=quests_tab"
-        className="flex flex-col gap-1 rounded-lg border-2 border-brand-strong bg-brand-wash p-4"
+        className="flex items-center gap-4 rounded-lg border-2 border-dashed border-brand-strong bg-brand-wash p-4"
       >
-        <span className="text-lead font-semibold text-ink">Create a Quest</span>
-        <span className="text-label font-normal text-ink-muted">Pick 3 to 15 photos from a trip</span>
+        <span className="flex size-12 shrink-0 items-center justify-center rounded-pill bg-brand-strong text-on-brand shadow-brand">
+          <PlusIcon size={24} />
+        </span>
+        <span className="flex flex-col gap-1">
+          <span className="text-lead font-semibold text-ink">Create a Quest</span>
+          <span className="text-label font-normal text-ink-muted">Pick 3 to 15 photos from a trip</span>
+        </span>
       </Link>
       <Segmented
         label="Show"
@@ -112,6 +115,12 @@ export function YourQuestsView({ initial, manage }: { initial: QuestCard[]; mana
             <Card key={quest.key} quest={quest} onManage={() => setManaging(quest.key)} />
           ))}
         </ul>
+      )}
+      {quests.length > 0 && (
+        <p className="text-label font-normal text-ink-muted">
+          Every Quest you&apos;ve made, whoever can see it. Use ⋯ to edit, share, change who can see it, or
+          delete.
+        </p>
       )}
       {open && (
         <ManageQuestSheet

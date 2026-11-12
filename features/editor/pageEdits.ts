@@ -25,6 +25,14 @@ export function retitle(document: QuestDocument): QuestDocument {
   const photoById = new Map(document.photos.map((photo) => [photo.id, photo]));
   const placeName = new Map(document.places.map((place) => [place.id, place.name]));
   const allDates = document.photos.flatMap((photo) => (photo.date ? [photo.date] : [])).sort();
+  // One busy day split over several pages: arranging titled them "Page N" or by time of day, and
+  // date titles would make every page "Day 1". Keep those, renumbering the "Page N" ones.
+  const oneBusyDay = new Set(allDates).size === 1 && document.content.days.length > 1;
+  const autoTitle = (page: Page, info: { date?: string; placeName?: string }[], index: number) => {
+    if (!oneBusyDay) return pageTitle(info, index + 1, allDates[0]);
+    if (!page.title || /^Page \d+$/.test(page.title)) return `Page ${index + 1}`;
+    return page.title;
+  };
   const days = document.content.days.map((page, index) => {
     const info = page.photoIds.map((id) => {
       const photo = photoById.get(id);
@@ -35,7 +43,7 @@ export function retitle(document: QuestDocument): QuestDocument {
       ...page,
       startDate: dates.startDate,
       endDate: dates.endDate,
-      title: page.titleSource === 'auto' ? pageTitle(info, index + 1, allDates[0]) : page.title,
+      title: page.titleSource === 'auto' ? autoTitle(page, info, index) : page.title,
     };
   });
   return { ...document, content: { ...document.content, days } };

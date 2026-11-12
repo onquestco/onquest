@@ -48,7 +48,10 @@ export function toTripData(rows: TripRows, defaults: Defaults): TripData {
   });
 
   const { start_date: startDate, end_date: endDate } = trip;
-  const dayCount = days.length || (startDate && endDate ? countDays(startDate, endDate) : 0);
+  // Pages aren't always days: one busy day can fill three pages. The dates cap the count.
+  const datedDays = startDate && endDate ? countDays(startDate, endDate) : undefined;
+  const dayCount =
+    days.length && datedDays ? Math.min(days.length, datedDays) : days.length || datedDays || 0;
 
   return {
     key: trip.key ?? trip.id,

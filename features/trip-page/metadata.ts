@@ -35,7 +35,9 @@ type Options = {
 };
 
 export function tripMetadata(trip: TripData, { unlisted = false }: Options = {}): Metadata {
-  const title = trim(`${trip.title}: ${trip.shortTitle} by ${trip.traveler.name}`, 60);
+  // The destination only: without one, shortTitle is "a Quest by @handle" and would say "by" twice.
+  const where = trip.destination ? `: ${trip.destination}` : '';
+  const title = trim(`${trip.title}${where} by ${trip.traveler.name}`, 60);
   const index = !unlisted && countWords(trip) >= MIN_WORDS_TO_INDEX;
 
   return {

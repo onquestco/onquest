@@ -11,8 +11,9 @@ export function Avatar({ name, src, size = 32 }: Props) {
   return (
     <span
       aria-hidden
-      style={style}
-      className="flex items-center justify-center rounded-pill bg-brand-tint text-label font-semibold text-ink"
+      // The initial grows with the circle: a fixed text size looks lost in a profile-sized avatar.
+      style={{ ...style, fontSize: Math.round(size * 0.4) }}
+      className="flex items-center justify-center rounded-pill bg-brand-tint leading-none font-semibold text-ink"
     >
       {name.trim().charAt(0).toUpperCase() || '?'}
     </span>

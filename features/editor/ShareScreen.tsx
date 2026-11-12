@@ -4,11 +4,13 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Button, buttonClassName } from '@/design-system/components/Button';
 import { TopBar } from '@/design-system/components/TopBar';
+import { SITE_URL } from '@/lib/site';
 import type { Visibility } from '@/lib/trip/schema';
 import { useDraft } from './draftStore';
 import { LostDraft } from './LostDraft';
 
-const SITE_HOST = 'onquest.in';
+// The host the link really points at (the preview's own on a preview build), so the box matches what's copied.
+const SITE_HOST = new URL(SITE_URL).host;
 
 const WHO_SEES: Record<Visibility, string> = {
   public: 'Anyone with the link can see it, and it shows on your profile.',

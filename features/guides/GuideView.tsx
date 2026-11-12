@@ -5,6 +5,7 @@ import type { QuestCard } from '@/lib/trip/cards';
 import type { Guide } from './guideSchema';
 import { renderGuide } from './renderGuide';
 import { SiteFooter } from '@/features/shell/SiteFooter';
+import { TopBar } from '@/design-system/components/TopBar';
 
 /** Screen 14: the image, "Guide · 4 min read · by the OnQuest team", the text, its Quests. */
 export function GuideView({ guide, quests }: { guide: Guide; quests: QuestCard[] }) {
@@ -22,6 +23,7 @@ export function GuideView({ guide, quests }: { guide: Guide; quests: QuestCard[]
 
   return (
     <>
+      <TopBar title="Guide" fallback="/explore" />
       <main className="mx-auto flex max-w-lg flex-col gap-4 px-4 py-6">
         {guide.draft && (
           <p className="rounded-sm bg-brand-wash px-3 py-2 text-label text-ink">

@@ -29,7 +29,7 @@ export function PhotoPage({ trip, page, pageNumber }: Props) {
   return (
     <Stage background={background} label={page.title}>
       {page.dateLabel && (
-        <Text x={6} y={4} width={60} role="script">
+        <Text x={6} y={4} width={88} role="script">
           {page.dateLabel}
         </Text>
       )}
