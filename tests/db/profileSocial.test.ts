@@ -28,6 +28,7 @@ describe('get_profile', () => {
     expect(result.stats).toMatchObject({ trips: 1, places: 2, countries: 1 });
     expect(result.trips).toHaveLength(1); // public only
     expect(result.trips[0]).toMatchObject({ key: GOA, slug: 'goa-2026', page_count: 0, photo_count: 0 });
+    expect(result.trips[0]).toHaveProperty('published_at'); // migration 14: profile tiles say "5 days ago"
     expect(result.places).toEqual(['Fontainhas', 'Palolem Beach']);
     expect(result.pins).toHaveLength(2);
   });

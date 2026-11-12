@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import { MoreIcon } from '@/design-system/components/icons';
 import type { QuestCard } from '@/lib/trip/cards';
 import { questTag } from './questFilters';
@@ -18,7 +19,7 @@ export function tileMeta(quest: QuestCard, kind: 'place' | 'counts'): string {
   return [quest.places[0], when].filter(Boolean).join(' · ');
 }
 
-type Props = { quest: QuestCard; meta: string; onManage?: () => void };
+type Props = { quest: QuestCard; meta: ReactNode; onManage?: () => void };
 
 /** The prototype's Quest tile (.qcard): cover, tag top-left, ⋯ top-right, title and meta on the photo. */
 export function QuestTile({ quest, meta, onManage }: Props) {
