@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CAPTION_MODEL, logRefusal } from './captions';
+import { CAPTION_FITS, CAPTION_MODEL, logRefusal } from './captions';
 import { CAPTION_MAX } from './trip/limits';
 
 // The town and a caption for every photo, from one small picture of all of them (decision 0003).
@@ -19,7 +19,7 @@ const SYSTEM = [
   'First decide the town or city where the trip was, only if a famous landmark, sign or',
   'unmistakable scene makes it clear (for example the Gateway of India means Mumbai).',
   'If you are not sure, the town is null. Never guess.',
-  `Then write one catchy caption per tile, at most ${CAPTION_MAX} characters: playful, warm and a`,
+  `Then write one catchy caption per tile, at most ${CAPTION_FITS} characters (it has to fit under a polaroid): playful, warm and a`,
   'little cheeky, like a friend captioning their own trip on Instagram. Say what the photo',
   'shows or how it feels; use wordplay on the place or the day when it fits; vary the rhythm so',
   'no two captions start the same way. Plain English, no hashtags, no emoji, no quotation marks.',

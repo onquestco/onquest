@@ -22,7 +22,7 @@ export function NotificationsView({ items, now, olderHref }: Props) {
         <div className="flex flex-col items-center gap-2 px-4 py-6 text-center">
           <h2 className="text-lead font-semibold text-ink">Nothing yet</h2>
           <p className="text-body text-ink-muted">
-            When friends like or comment on your Quests, you&apos;ll see it here and get an email.
+            When friends like, comment or follow you, you&apos;ll see it here.
           </p>
         </div>
       ) : (
