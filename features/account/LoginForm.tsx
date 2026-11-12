@@ -7,6 +7,10 @@ import { TextField } from '@/design-system/components/TextField';
 import type { SignInReturn } from '@/lib/auth/next';
 import { signInWithEmail, signInWithGoogle } from './actions';
 
+// Email links need our own mail sender (Resend); until it's set up, Supabase only emails its own team,
+// so friends see Google only. Set NEXT_PUBLIC_EMAIL_SIGN_IN=on once email works.
+const EMAIL_SIGN_IN = process.env.NEXT_PUBLIC_EMAIL_SIGN_IN === 'on';
+
 /** `signInReturn` rides along through Google or the email link, so sign-in lands back where it started. */
 export function LoginForm({
   initialError,
@@ -49,7 +53,7 @@ export function LoginForm({
         Continue with Google
       </Button>
 
-      {usingEmail ? (
+      {!EMAIL_SIGN_IN ? null : usingEmail ? (
         <form onSubmit={sendEmail} className="flex flex-col gap-3">
           <TextField
             label="Your email"
