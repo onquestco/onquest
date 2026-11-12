@@ -20,8 +20,8 @@ Location in the picker's Options. So almost no Quest made on a phone got a place
    every photo; automatic page titles and the Quest title follow. Captions go only on photos
    without one, marked automatic.
 3. If the collage gives nothing, photos with a GPS place still get town-only captions (as before).
-4. Review shows "Where was this trip?" when the Quest has no place: one town names every page and
-   gets captions written.
+4. No "Where was this trip?" question (it isn't in the prototype; founder, 12 Nov): when the
+   collage can't tell, the Quest simply has no town, and the photo sheet's town search still works.
 5. Pick photos tells iPhone users to turn on Location in the picker's Options.
 6. The model is told never to identify people or read out private text.
 7. The privacy policy (12 Nov 2026) says a collage goes to Anthropic.
