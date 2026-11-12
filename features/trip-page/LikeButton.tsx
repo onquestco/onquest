@@ -6,35 +6,33 @@ import { likeLabel } from './likeCopy';
 import { signInPath, type LikeSource } from './socialActions';
 import { useQuestSocial } from './useQuestSocial';
 
-const look =
-  'inline-flex min-h-11 items-center gap-2 rounded-pill border border-line-control bg-surface px-4 text-label font-semibold text-ink focus-visible:outline-2 focus-visible:outline-brand-strong';
+// The prototype's like: a round outlined heart, and the count (or "Be the first…") beside it.
+const circle =
+  'flex size-11 shrink-0 items-center justify-center rounded-pill border-2 border-line-control text-brand-strong transition-transform active:scale-90 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-brand-strong';
 
 /** Signed out, the heart is a sign-in link that comes back here and counts the like (M10). */
 export function LikeButton({ source }: { source: LikeSource }) {
   const { viewer, liked, likeCount, toggleLike, path, tripKey } = useQuestSocial();
   const label = likeLabel(likeCount, liked);
-  const heart = (
-    <span className={liked ? 'text-brand-strong' : ''}>
-      <HeartIcon size={20} filled={liked} />
-    </span>
-  );
 
-  if (!viewer.signedIn) {
-    return (
-      <Link
-        href={signInPath('like', path, tripKey)}
-        className={look}
-        aria-label={`Like this Quest. ${label}`}
-      >
-        {heart}
-        {label}
-      </Link>
-    );
-  }
   return (
-    <button type="button" className={look} aria-pressed={liked} onClick={() => toggleLike(source)}>
-      {heart}
-      {label}
-    </button>
+    <div className="flex min-w-0 items-center gap-2.5">
+      {viewer.signedIn ? (
+        <button
+          type="button"
+          className={circle}
+          aria-pressed={liked}
+          aria-label={liked ? 'Unlike this Quest' : 'Like this Quest'}
+          onClick={() => toggleLike(source)}
+        >
+          <HeartIcon size={20} filled={liked} />
+        </button>
+      ) : (
+        <Link href={signInPath('like', path, tripKey)} className={circle} aria-label="Like this Quest">
+          <HeartIcon size={20} />
+        </Link>
+      )}
+      <span className="truncate text-body font-semibold text-ink">{label}</span>
+    </div>
   );
 }

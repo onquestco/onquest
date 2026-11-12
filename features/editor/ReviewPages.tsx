@@ -81,6 +81,7 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
   }
 
   const total = current.photos.length;
+  const captions = Object.fromEntries(current.photos.map((photo) => [photo.id, photo.caption ?? '']));
   const undated = new Set(current.photos.filter((photo) => !photo.date).map((photo) => photo.id));
   const photo = current.photos.find((candidate) => candidate.id === openPhoto);
 
@@ -88,15 +89,22 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
     <>
       <TopBar title="Review" href="/quests" fallback="/quests" />
       <main className="mx-auto flex min-h-svh max-w-lg flex-col gap-4 bg-surface-page px-4 pt-4 pb-28">
-        <label className="flex flex-col gap-1 text-label text-ink-muted">
-          Title
+        <label className="flex flex-col gap-1">
+          <span className="flex justify-between text-label text-ink-muted">
+            Quest title
+            <span className="font-normal">{(current.title ?? '').length}/60</span>
+          </span>
           <input
             maxLength={60}
             value={current.title ?? ''}
             onChange={(event) => setDocument({ ...current, title: event.target.value })}
-            className="min-h-12 rounded-sm border border-line-control bg-surface px-3 text-title text-ink"
+            className="min-h-12 rounded-sm border border-line-control bg-surface px-3 text-body text-ink focus:border-brand-strong focus:outline-2 focus:outline-brand-strong"
           />
         </label>
+        <p className="text-label font-normal text-ink-muted">
+          Ready to publish as it is. Each photo gets its own caption, written from its date and place when the
+          photo has them. Tap a caption or photo to change it.
+        </p>
         <SaveStatusLine />
 
         {current.content.days.map((page, index) => (
@@ -105,6 +113,7 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
             page={page}
             number={index + 1}
             previews={previews}
+            captions={captions}
             undated={undated}
             onRename={(title) => apply(renamePage(current, index, title))}
             onOpenPhoto={setOpenPhoto}
@@ -112,8 +121,11 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
           />
         ))}
 
-        <label className="flex min-h-11 cursor-pointer items-center justify-center rounded-pill border border-dashed border-line-control px-6 py-3 text-body font-semibold text-brand-strong has-focus-visible:outline-2 has-focus-visible:outline-brand-strong">
-          + Add photos · {total} of {MAX_PHOTOS}
+        <label className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-pill border border-line-control bg-surface px-6 py-3 text-body font-semibold text-ink has-focus-visible:outline-2 has-focus-visible:outline-brand-strong">
+          + Add photos
+          <span className="font-medium text-ink-muted">
+            {total} of {MAX_PHOTOS}
+          </span>
           <input
             id="add-photos"
             type="file"

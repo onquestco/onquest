@@ -113,12 +113,14 @@ function Polaroid({
 }
 
 function LinkFooter({ look, url, bottom }: { look: FrameLook; url: string; bottom: number }) {
+  // One line, white pill, cut with "…" if long (the prototype): a long link never wraps or covers
+  // the photos. On onquest.in it's short enough to read whole.
   return (
     <div
       style={{
         position: 'absolute',
-        left: 0,
-        right: 0,
+        left: 48,
+        right: 48,
         bottom,
         display: 'flex',
         justifyContent: 'center',
@@ -126,13 +128,17 @@ function LinkFooter({ look, url, bottom }: { look: FrameLook; url: string; botto
     >
       <span
         style={{
-          padding: '18px 36px',
+          maxWidth: '100%',
+          padding: '16px 32px',
           borderRadius: 999,
-          background: look.theme.colors.ink,
-          color: look.theme.colors.paper,
-          fontSize: 36,
-          fontWeight: 500,
-          letterSpacing: 0.5,
+          background: '#ffffff',
+          color: look.theme.colors.ink,
+          fontSize: 30,
+          fontWeight: 700,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
         }}
       >
         {shownLink(url)}

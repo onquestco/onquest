@@ -19,14 +19,11 @@ export function NotificationsView({ items, now, olderHref }: Props) {
     <main className="mx-auto flex max-w-lg flex-col">
       <TopBar title="Notifications" fallback="/home" />
       {items.length === 0 ? (
-        <div className="flex flex-col items-center gap-4 px-4 py-12 text-center">
+        <div className="flex flex-col items-center gap-2 px-4 py-6 text-center">
           <h2 className="text-lead font-semibold text-ink">Nothing yet</h2>
           <p className="text-body text-ink-muted">
             When friends like or comment on your Quests, you&apos;ll see it here and get an email.
           </p>
-          <Link href="/quests" className={buttonClassName({ variant: 'secondary' })}>
-            Your Quests
-          </Link>
         </div>
       ) : (
         <ul>

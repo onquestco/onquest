@@ -15,7 +15,11 @@ type Props = {
   returnPath: string;
   source: Source;
   onChange?: (following: boolean, followerCount: number) => void;
+  /** `small` beside a byline (the prototype's .btn.sm). */
+  size?: 'regular' | 'small';
 };
+
+const SMALL = 'min-h-9 px-3.5 py-1.5 text-label';
 
 /** Follow / Following (M22, M27). Tapping Following unfollows. Signed out it signs in first. */
 export function FollowButton({
@@ -25,7 +29,9 @@ export function FollowButton({
   returnPath,
   source,
   onChange,
+  size = 'regular',
 }: Props) {
+  const extra = size === 'small' ? SMALL : '';
   const [following, setFollowing] = useState(initial);
   const [saving, setSaving] = useState(false);
 
@@ -33,7 +39,7 @@ export function FollowButton({
     return (
       <Link
         href={`/login?${new URLSearchParams({ next: returnPath }).toString()}`}
-        className={buttonClassName()}
+        className={`${buttonClassName()} ${extra}`}
       >
         Follow
       </Link>
@@ -54,6 +60,7 @@ export function FollowButton({
   return (
     <Button
       variant={following ? 'secondary' : 'primary'}
+      className={extra}
       aria-pressed={following}
       disabled={saving}
       onClick={() => void toggle()}

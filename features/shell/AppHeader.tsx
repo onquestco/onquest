@@ -1,26 +1,27 @@
+'use client';
+
 import Link from 'next/link';
-import { Avatar } from '@/design-system/components/Avatar';
+import { usePathname } from 'next/navigation';
 import { Logo } from '@/design-system/components/Logo';
 import { BellBadge } from '@/features/notifications/BellBadge';
 
-/** Logo, the bell with its unread count, and the person's avatar. */
-export function AppHeader({ handle, name }: { handle: string; name: string | null }) {
+// The prototype's top bar on the tabs: the logo on Home, the tab's name elsewhere, and the bell.
+const TITLES: Record<string, string> = { '/explore': 'Explore', '/quests': 'Your Quests' };
+
+export function AppHeader() {
+  const pathname = usePathname();
+  const title = TITLES[pathname];
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-surface">
-      <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-2">
-        <Link href="/home" aria-label="OnQuest home">
-          <Logo />
-        </Link>
-        <div className="flex items-center gap-1">
-          <BellBadge />
-          <Link
-            href={`/@${handle}`}
-            aria-label="Your profile"
-            className="flex size-11 items-center justify-center"
-          >
-            <Avatar name={name || handle} />
+      <div className="mx-auto flex min-h-14 max-w-lg items-center justify-between px-4 py-1">
+        {title ? (
+          <h1 className="text-title text-ink">{title}</h1>
+        ) : (
+          <Link href="/home" aria-label="OnQuest home">
+            <Logo />
           </Link>
-        </div>
+        )}
+        <BellBadge />
       </div>
     </header>
   );

@@ -129,6 +129,12 @@ export function QuestPlayer({ pages, children }: Props) {
         }}
         onPointerUp={onPointerUp}
       >
+        {/* The prototype's progress bars sit above the page, the "tap" hint under the cover. */}
+        <div className={styles.playerDots} aria-hidden>
+          {pages.map((item, index) => (
+            <i key={item.key} data-on={index === page ? '' : undefined} />
+          ))}
+        </div>
         {pages.map((item, index) => (
           <section
             key={item.key}
@@ -140,11 +146,7 @@ export function QuestPlayer({ pages, children }: Props) {
             {item.content}
           </section>
         ))}
-        <div className={styles.playerDots} aria-hidden>
-          {pages.map((item, index) => (
-            <i key={item.key} data-on={index === page ? '' : undefined} />
-          ))}
-        </div>
+        {page === 0 && count > 1 && <p className={styles.playerHint}>Tap to turn the page →</p>}
         {/* Inside the player so they stay visible in full screen. */}
         {children}
       </div>

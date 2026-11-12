@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/design-system/components/Button';
 import { Chip } from '@/design-system/components/Chip';
+import { SearchIcon } from '@/design-system/components/icons';
 import { SearchResultsSchema, type GuideCard, type Person, type SearchResults } from '@/lib/social/schema';
 import type { QuestCard } from '@/lib/trip/cards';
 import { GuideCards } from './GuideCards';
@@ -13,6 +14,8 @@ type Props = { chips: string[]; trending: QuestCard[]; guides: GuideCard[]; trav
 
 const PAUSE_MS = 500; // search after a typing pause (the search_performed trigger)
 const MIN = 2;
+// Shown until real Quests give enough places of their own (the prototype's chips).
+const STARTER_CHIPS = ['Goa', 'Spiti', 'Kerala', 'Delhi', 'Coorg', 'Manali'];
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -24,7 +27,8 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 /** Screen 13: place chips, trending, guides and travellers; search replaces them while typing. */
-export function ExploreView({ chips, trending, guides, travellers }: Props) {
+export function ExploreView({ chips: placeChips, trending, guides, travellers }: Props) {
+  const chips = placeChips.length >= 3 ? placeChips : STARTER_CHIPS;
   const [text, setText] = useState('');
   const [results, setResults] = useState<SearchResults | null>(null);
   const [searchedFor, setSearchedFor] = useState('');
@@ -60,22 +64,26 @@ export function ExploreView({ chips, trending, guides, travellers }: Props) {
   const empty = results && results.quests.length + results.people.length + results.guides.length === 0;
 
   return (
-    <main className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-4">
-      <h1 className="text-title text-ink">Explore</h1>
-      <div className="flex items-center gap-2">
-        <label className="flex flex-1 flex-col gap-1">
+    <main className="mx-auto flex max-w-lg flex-col gap-4 px-4 py-4">
+      {/* The prototype's search band: icon, rounded field, Clear while there's text. */}
+      <div className="sticky top-14 z-10 -mx-4 -mt-4 flex items-center gap-2 border-b border-line bg-surface px-4 py-2.5 text-ink-muted">
+        <SearchIcon />
+        <label className="flex flex-1">
           <span className="sr-only">Search places, Quests or people</span>
           <input
-            type="search"
+            type="text"
+            inputMode="search"
+            enterKeyHint="search"
             value={text}
             maxLength={60}
+            autoComplete="off"
             placeholder="Search places, Quests or people"
             onChange={(event) => setText(event.target.value)}
-            className="min-h-12 w-full rounded-pill border border-line-control bg-surface-page px-4 text-body text-ink placeholder:text-ink-subtle focus:border-brand-strong focus:outline-2 focus:outline-brand-strong"
+            className="min-h-11 w-full rounded-pill border border-line-control bg-surface-page px-4 text-body text-ink placeholder:text-ink-subtle focus:border-brand-strong focus:outline-2 focus:outline-brand-strong"
           />
         </label>
         {text && (
-          <Button variant="quiet" onClick={() => setText('')}>
+          <Button variant="quiet" className="px-1" onClick={() => setText('')}>
             Clear
           </Button>
         )}
@@ -114,7 +122,7 @@ export function ExploreView({ chips, trending, guides, travellers }: Props) {
       ) : (
         <>
           {chips.length > 0 && (
-            <ul className="flex flex-wrap gap-2" aria-label="Places">
+            <ul className="flex flex-wrap gap-1.5" aria-label="Places">
               {chips.map((chip) => (
                 <li key={chip}>
                   <Chip onClick={() => setText(chip)}>{chip}</Chip>

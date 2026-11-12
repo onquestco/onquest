@@ -65,8 +65,8 @@ export function ShareScreen({ tripKey, siteUrl }: { tripKey: string; siteUrl: st
           <p className="text-body text-ink-muted">{WHO_SEES[published.visibility]}</p>
         </div>
         <div className="flex min-w-0 items-center gap-2 rounded-sm border border-line py-1.5 pr-1.5 pl-3">
-          <span className="min-w-0 flex-1 truncate text-label font-normal text-ink-muted">{shown}</span>
-          <Button variant="secondary" onClick={() => void copy()}>
+          <span className="min-w-0 flex-1 truncate text-body text-ink-muted">{shown}</span>
+          <Button variant="secondary" className="min-h-10 px-4 py-2" onClick={() => void copy()}>
             {copied ? 'Copied' : 'Copy link'}
           </Button>
         </div>
@@ -85,7 +85,7 @@ export function ShareScreen({ tripKey, siteUrl }: { tripKey: string; siteUrl: st
           Download for Instagram
         </Link>
         <Link href={published.path} className={buttonClassName({ variant: 'quiet', block: true })}>
-          Open your Quest
+          See it as a friend would
         </Link>
       </main>
     </>

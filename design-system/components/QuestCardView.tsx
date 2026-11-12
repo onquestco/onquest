@@ -36,7 +36,7 @@ export function QuestCardView({ href, title, coverUrl, places, owner, when, meta
         {coverUrl && <img src={coverUrl} alt="" className="h-full w-full object-cover" />}
         <span className="absolute inset-0 bg-linear-to-t from-night-band/80 via-transparent to-transparent" />
         <span className="absolute inset-x-3 bottom-3 flex flex-col text-on-night">
-          <span className="text-lead font-semibold">{title}</span>
+          <span className="text-lead font-extrabold">{title}</span>
           {meta && <span className="text-caption text-on-night-muted">{meta}</span>}
         </span>
       </Link>

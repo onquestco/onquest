@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getCreator } from '@/features/editor/getCreator';
 import { ChooseTemplate } from '@/features/editor/ChooseTemplate';
 import { EditorDraft } from '@/features/editor/EditorDraft';
 import { getQuestDraft } from '@/features/editor/getQuestDraft';
@@ -10,11 +9,11 @@ export const metadata: Metadata = { title: `Choose a template | ${SITE_NAME}`, r
 
 export default async function Page({ params }: { params: Promise<{ key: string }> }) {
   const { key } = await params;
-  const [draft, creator] = await Promise.all([getQuestDraft(key), getCreator()]);
+  const draft = await getQuestDraft(key);
   if (!draft) notFound();
   return (
     <EditorDraft initial={draft}>
-      <ChooseTemplate tripKey={key} creator={creator} />
+      <ChooseTemplate tripKey={key} />
     </EditorDraft>
   );
 }

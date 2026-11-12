@@ -5,7 +5,6 @@ import { DemoSocialProvider } from './DemoSocialProvider';
 import { serializeJsonLd, tripJsonLd } from './jsonLd';
 import { LiveSocialProvider } from './LiveSocialProvider';
 import { MakeYourOwnBar } from './MakeYourOwnBar';
-import { QuestByline } from './QuestByline';
 import { QuestFullscreen } from './QuestFullscreen';
 import { QuestTopBar } from './QuestTopBar';
 import { QuestSocial as QuestSocialSection } from './QuestSocial';
@@ -30,10 +29,9 @@ export function TripView({ trip, social }: Props) {
     <>
       <QuestTopBar />
       <TripPage trip={trip} controls={<QuestFullscreen withLike />} />
-      <div className="bg-surface">
-        <div className="mx-auto flex max-w-lg flex-col gap-8 px-4 py-8">
-          <QuestByline traveler={trip.traveler} />
-          <QuestSocialSection />
+      <div className="border-t border-line bg-surface">
+        <div className="mx-auto flex max-w-lg flex-col px-4 pt-3.5 pb-6">
+          <QuestSocialSection traveler={trip.traveler} />
         </div>
       </div>
       <MakeYourOwnBar />

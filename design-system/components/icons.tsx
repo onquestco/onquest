@@ -32,11 +32,10 @@ export const PlusIcon = ({ size = 24 }: Props) => (
   </svg>
 );
 export const QuestsIcon = ({ size = 24 }: Props) => (
+  // A map pin with a little mountain in it: the prototype's Quests tab.
   <svg {...base(size)}>
-    <rect x="4" y="4" width="7" height="7" rx="1.5" />
-    <rect x="13" y="4" width="7" height="7" rx="1.5" />
-    <rect x="4" y="13" width="7" height="7" rx="1.5" />
-    <rect x="13" y="13" width="7" height="7" rx="1.5" />
+    <path d="M12 21.5 6.6 16a7.6 7.6 0 1 1 10.8 0L12 21.5Z" />
+    <path d="m8.5 13 2.4-3.2 1.6 2 1.2-1.4 2 2.6" />
   </svg>
 );
 export const ProfileIcon = ({ size = 24 }: Props) => (
@@ -95,5 +94,26 @@ export const PinIcon = ({ size = 14 }: Props) => (
 export const ShareIcon = ({ size = 20 }: Props) => (
   <svg {...base(size)}>
     <path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
+  </svg>
+);
+export const ChatIcon = ({ size = 20 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M4 5h16v11H9l-5 4V5Z" />
+  </svg>
+);
+export const PencilIcon = ({ size = 16 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M4 20h4L19 9l-4-4L4 16v4Z" />
+  </svg>
+);
+export const DownloadIcon = ({ size = 20 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
+  </svg>
+);
+export const SearchIcon = ({ size = 20 }: Props) => (
+  <svg {...base(size)}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="m20 20-3.5-3.5" />
   </svg>
 );

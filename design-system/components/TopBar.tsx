@@ -16,10 +16,12 @@ type Props = {
   /** "Back" (with the arrow) unless set: "Cancel", "Done". */
   label?: string;
   right?: ReactNode;
+  /** `p` when the page has its own h1 (a guide, a profile), so there's only one. */
+  titleAs?: 'h1' | 'p';
 };
 
 /** The bar on inner screens: ‹ Back, the title in the middle, an optional action on the right. */
-export function TopBar({ title, fallback, href, label, right }: Props) {
+export function TopBar({ title, fallback, href, label, right, titleAs: Title = 'h1' }: Props) {
   const router = useRouter();
 
   function back() {
@@ -39,7 +41,7 @@ export function TopBar({ title, fallback, href, label, right }: Props) {
           {!label && <BackIcon size={20} />}
           {label ?? 'Back'}
         </button>
-        <h1 className="truncate text-center text-body font-semibold text-ink">{title}</h1>
+        <Title className="truncate text-center text-body font-semibold text-ink">{title}</Title>
         <div className="flex justify-self-end">{right}</div>
       </div>
     </header>

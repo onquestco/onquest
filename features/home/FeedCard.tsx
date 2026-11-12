@@ -2,16 +2,16 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { HeartIcon, ShareIcon } from '@/design-system/components/icons';
+import { ChatIcon, HeartIcon, ShareIcon } from '@/design-system/components/icons';
 import { QuestCardView, questCardMeta } from '@/design-system/components/QuestCardView';
 import { timeAgo } from '@/features/notifications/notificationText';
 import { setLike } from '@/features/trip-page/actions';
-import { likeLabel, toggledLike } from '@/features/trip-page/likeCopy';
+import { SHOW_COUNT_FROM, toggledLike } from '@/features/trip-page/likeCopy';
 import type { FeedItem } from '@/lib/social/schema';
 import type { QuestCard } from '@/lib/trip/cards';
 
 const pill =
-  'inline-flex min-h-11 items-center gap-2 rounded-pill px-3 text-label font-semibold text-ink-muted focus-visible:outline-2 focus-visible:outline-brand-strong';
+  'inline-flex min-h-11 items-center gap-1.5 rounded-pill px-2.5 text-label font-semibold text-ink-muted focus-visible:outline-2 focus-visible:outline-brand-strong';
 
 /** The phone's share sheet where there is one, else copy the link. */
 async function shareQuest(title: string, path: string) {
@@ -58,16 +58,20 @@ export function FeedCard({ quest }: { quest: FeedItem | QuestCard }) {
       meta={questCardMeta(quest.pageCount, quest.photoCount)}
       actions={
         <>
-          <button type="button" className={pill} aria-pressed={like.liked} onClick={toggle}>
-            <span className={like.liked ? 'text-brand-strong' : ''}>
-              <HeartIcon size={20} filled={like.liked} />
-            </span>
-            {likeLabel(like.likeCount, like.liked)}
+          {/* Icons with counts, as in the prototype. Likes stay hidden below 3 (PRD S3). */}
+          <button
+            type="button"
+            className={`${pill} ${like.liked ? 'text-brand-strong' : ''}`}
+            aria-pressed={like.liked}
+            aria-label="Like"
+            onClick={toggle}
+          >
+            <HeartIcon size={20} filled={like.liked} />
+            {like.likeCount >= SHOW_COUNT_FROM && like.likeCount}
           </button>
-          <Link href={`${path}#comments`} className={pill}>
-            {quest.commentCount === 0
-              ? 'Comment'
-              : `${quest.commentCount} ${quest.commentCount === 1 ? 'comment' : 'comments'}`}
+          <Link href={`${path}#comments`} className={pill} aria-label="Comments">
+            <ChatIcon />
+            {quest.commentCount}
           </Link>
           <button
             type="button"

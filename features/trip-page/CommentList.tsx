@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Avatar } from '@/design-system/components/Avatar';
 import { Toast } from '@/design-system/components/Toast';
 import type { Comment } from '@/lib/social/schema';
 import { useQuestSocial } from './useQuestSocial';
@@ -36,21 +35,18 @@ export function CommentList() {
   if (comments.length === 0 && !removed) return null;
   return (
     <>
-      <ul className="flex flex-col gap-4">
+      {/* The prototype's lines: name in bold, the comment, when; the owner can delete. */}
+      <ul className="flex flex-col gap-2">
         {comments.map((comment, index) => (
-          <li key={comment.key} className="flex gap-3">
-            <Avatar name={comment.author.name} src={comment.author.avatarUrl} size={32} />
-            <div className="flex flex-1 flex-col gap-1">
-              <p className="text-label text-ink">
-                {comment.author.name}{' '}
-                <span className="font-normal text-ink-muted">· {when.format(new Date(comment.savedAt))}</span>
-              </p>
-              <p className="text-body whitespace-pre-line text-ink">{comment.body}</p>
-            </div>
+          <li key={comment.key} className="flex items-start gap-2">
+            <p className="flex-1 text-label font-normal whitespace-pre-line text-ink">
+              <b className="font-semibold">{comment.author.name}</b> {comment.body}{' '}
+              <span className="text-caption text-ink-subtle">{when.format(new Date(comment.savedAt))}</span>
+            </p>
             {viewer.isOwner && (
               <button
                 type="button"
-                className="min-h-11 self-start rounded-pill px-3 text-label text-danger focus-visible:outline-2 focus-visible:outline-brand-strong"
+                className="-my-3 min-h-11 shrink-0 rounded-pill px-2 text-caption text-danger focus-visible:outline-2 focus-visible:outline-brand-strong"
                 aria-label={`Delete comment from ${comment.author.name}`}
                 onClick={() => remove(comment, index)}
               >

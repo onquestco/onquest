@@ -115,75 +115,97 @@ export function EditProfileForm({ initial }: { initial: Initial }) {
     photo.kind === 'new' ? photo.previewUrl : photo.kind === 'remove' ? undefined : initial.avatarUrl;
 
   return (
-    <main className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-4">
-      <header className="flex items-center justify-between gap-2">
-        <Button variant="quiet" onClick={() => router.back()}>
-          Cancel
-        </Button>
-        <h1 className="text-lead font-semibold text-ink">Edit profile</h1>
-        <Button disabled={!canSave} onClick={() => void save()}>
-          {saving ? 'Saving…' : 'Save'}
-        </Button>
-      </header>
-
-      <div className="flex items-center gap-4">
-        <Avatar name={name || initial.handle} src={avatar} size={72} />
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => fileInput.current?.click()}>
-            Change
+    <>
+      {/* The prototype's bar: Cancel · Edit profile · Save, Save greyed until something changes. */}
+      <header className="sticky top-0 z-20 border-b border-line bg-surface">
+        <div className="mx-auto grid max-w-lg grid-cols-3 items-center px-2 py-1">
+          <Button variant="quiet" className="justify-self-start px-2" onClick={() => router.back()}>
+            Cancel
           </Button>
-          {avatar && (
-            <Button variant="quiet" onClick={() => setPhoto({ kind: 'remove' })}>
-              Remove
-            </Button>
-          )}
+          <h1 className="text-center text-body font-semibold text-ink">Edit profile</h1>
+          <Button
+            variant="quiet"
+            className="justify-self-end px-2"
+            disabled={!canSave}
+            onClick={() => void save()}
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </Button>
         </div>
-        <input ref={fileInput} type="file" accept="image/*" className="sr-only" onChange={pickPhoto} />
-      </div>
+      </header>
+      <main className="mx-auto flex max-w-lg flex-col gap-4 px-4 py-4">
+        <div className="flex flex-col items-center gap-1.5">
+          <Avatar name={name || initial.handle} src={avatar} size={96} />
+          <div className="flex gap-1">
+            <Button variant="quiet" onClick={() => fileInput.current?.click()}>
+              {avatar ? 'Change photo' : 'Add a photo'}
+            </Button>
+            {avatar && (
+              <Button variant="quiet" className="text-danger" onClick={() => setPhoto({ kind: 'remove' })}>
+                Remove
+              </Button>
+            )}
+          </div>
+          <input ref={fileInput} type="file" accept="image/*" className="sr-only" onChange={pickPhoto} />
+        </div>
 
-      <TextField
-        label="Name"
-        value={name}
-        maxLength={40}
-        onChange={(event) => setName(event.target.value)}
-        error={nameError}
-      />
-      <TextField
-        label="Username"
-        prefix="onquest.in/@"
-        value={handle}
-        maxLength={20}
-        autoCapitalize="none"
-        autoCorrect="off"
-        onChange={(event) => {
-          setHandle(event.target.value);
-          setAvailable(event.target.value.trim().toLowerCase() === initial.handle ? true : null);
-        }}
-        error={handleError}
-        hint={handleChanged ? 'Your Quest links change to onquest.in/@… Old links keep working.' : undefined}
-      />
-      <TextField
-        label="Home city"
-        value={homeCity}
-        maxLength={60}
-        onChange={(event) => setHomeCity(event.target.value)}
-      />
-      <label className="flex flex-col gap-1 text-label text-ink-muted">
-        Bio
-        <textarea
-          rows={3}
-          maxLength={150}
-          value={bio}
-          onChange={(event) => setBio(event.target.value)}
-          className="w-full rounded-sm border border-line-control bg-surface px-3 py-3 text-body text-ink focus:border-brand-strong focus:outline-2 focus:outline-brand-strong"
+        <TextField
+          label="Name"
+          showCount
+          value={name}
+          maxLength={40}
+          onChange={(event) => setName(event.target.value)}
+          error={nameError}
         />
-      </label>
+        <TextField
+          label="Username"
+          showCount
+          value={handle}
+          maxLength={20}
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          onChange={(event) => {
+            setHandle(event.target.value);
+            setAvailable(event.target.value.trim().toLowerCase() === initial.handle ? true : null);
+          }}
+          error={handleError}
+          hint={
+            handleChanged
+              ? `Your Quest links change to onquest.in/@${cleanHandle}. Old links keep working.`
+              : `onquest.in/@${cleanHandle}`
+          }
+        />
+        <TextField
+          label={
+            <>
+              Home city <span className="font-normal">Optional</span>
+            </>
+          }
+          value={homeCity}
+          maxLength={60}
+          onChange={(event) => setHomeCity(event.target.value)}
+        />
+        <label className="flex flex-col gap-1">
+          <span className="flex justify-between text-label text-ink-muted">
+            Bio
+            <span className="text-caption">{bio.length}/150</span>
+          </span>
+          <textarea
+            rows={3}
+            maxLength={150}
+            value={bio}
+            onChange={(event) => setBio(event.target.value)}
+            className="w-full resize-none rounded-sm border border-line-control bg-surface px-3 py-3 text-body text-ink focus:border-brand-strong focus:outline-2 focus:outline-brand-strong"
+          />
+        </label>
 
-      {error && (
-        <p role="alert" className="text-label text-danger">
-          {error}
-        </p>
-      )}
-    </main>
+        {error && (
+          <p role="alert" className="text-label text-danger">
+            {error}
+          </p>
+        )}
+      </main>
+    </>
   );
 }

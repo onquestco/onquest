@@ -41,14 +41,6 @@ export function CommentComposer() {
       </Link>
     );
   }
-  if (!open) {
-    return (
-      <button type="button" className={COMPOSER_PROMPT} onClick={() => setOpen(true)}>
-        Add a comment
-      </button>
-    );
-  }
-
   const text = body.trim();
   const left = charactersLeft(body, COMMENT_MAX);
 
@@ -65,34 +57,38 @@ export function CommentComposer() {
     setBody('');
   }
 
+  // The prototype's composer: a pill field and Post beside it.
   return (
     <form
-      className="flex flex-col gap-2"
+      className="flex flex-col gap-1"
       onSubmit={(event) => {
         event.preventDefault();
         if (text && !sending) void send();
       }}
     >
-      <label htmlFor={fieldId} className="text-label text-ink-muted">
-        Your comment
-      </label>
-      <textarea
-        id={fieldId}
-        autoFocus
-        rows={3}
-        maxLength={COMMENT_MAX}
-        value={body}
-        onChange={(event) => setBody(event.target.value)}
-        className="w-full rounded-sm border border-line-control bg-surface px-3 py-3 text-body text-ink focus:border-brand-strong focus:outline-2 focus:outline-brand-strong"
-      />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-caption text-ink-muted" aria-live="polite">
-          {left !== null && `${left} characters left`}
-        </span>
-        <Button type="submit" disabled={!text || sending}>
+      <div className="flex gap-2">
+        <label htmlFor={fieldId} className="sr-only">
+          Add a comment
+        </label>
+        <input
+          id={fieldId}
+          autoFocus={open}
+          maxLength={COMMENT_MAX}
+          value={body}
+          placeholder="Add a comment"
+          onFocus={() => setOpen(true)}
+          onChange={(event) => setBody(event.target.value)}
+          className="min-h-11 min-w-0 flex-1 rounded-pill border border-line-control bg-surface px-4 text-body text-ink placeholder:text-ink-subtle focus:border-brand-strong focus:outline-2 focus:outline-brand-strong"
+        />
+        <Button type="submit" className="min-h-11 px-4.5 py-2" disabled={!text || sending}>
           {sending ? 'Posting…' : 'Post'}
         </Button>
       </div>
+      {left !== null && (
+        <span className="text-caption text-ink-muted" aria-live="polite">
+          {left} characters left
+        </span>
+      )}
       {error && (
         <p role="alert" className="text-label text-danger">
           {error}

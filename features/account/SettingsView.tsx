@@ -146,6 +146,7 @@ export function SettingsView({ email, settings: initial, savedAt }: Props) {
           <div className="px-4 py-2">
             <Switch
               label="Show places on my profile"
+              help="The list of places from your public Quests"
               checked={settings.showPlaces}
               onChange={(on) => change('showPlaces', on)}
             />

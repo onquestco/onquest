@@ -54,6 +54,12 @@ export const colors = {
   'accent-blue': '#3b82f6',
   /** Landing-page decoration only. Not used in the app; nothing readable sits on it. */
   'accent-green': '#22c55e',
+  /** Letter avatars (a person without a photo), picked by name, with `on-brand` text. From the prototype. */
+  'avatar-1': '#3c8dbc',
+  'avatar-2': '#7cb342',
+  'avatar-3': '#5f7f63',
+  'avatar-4': '#d9534f',
+  'avatar-5': '#c25000',
   /** Errors and destructive actions, always with words (6.47:1 on surface). */
   danger: '#b91c1c',
   /** Confirmations ("Link copied"), always with words (5.02:1 on surface). */
@@ -73,6 +79,8 @@ export function color(name: ColorToken): string {
  */
 export const fontFamilies = {
   sans: ['var(--font-inter)', 'Inter', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
+  /** The prototype's handwritten touch ("Hi Riya" on Home), used sparingly. */
+  handwritten: ['var(--font-caveat)', 'Caveat', '"Segoe Print"', 'cursive'],
 } as const;
 
 type TextStyle = {

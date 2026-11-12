@@ -2,69 +2,20 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { MoreIcon, PlusIcon } from '@/design-system/components/icons';
+import { PlusIcon } from '@/design-system/components/icons';
+import { placeholderImage } from '@/lib/demo/placeholderImages';
 import { Segmented } from '@/design-system/components/Segmented';
 import { Toast } from '@/design-system/components/Toast';
 import type { QuestCard } from '@/lib/trip/cards';
 import { ManageQuestSheet } from './ManageQuestSheet';
-import { matchesFilter, questTag, type QuestFilter as Filter } from './questFilters';
+import { matchesFilter, type QuestFilter as Filter } from './questFilters';
+import { QuestTile, tileMeta } from './QuestTile';
 
 const EMPTY: Record<Filter, string> = {
   all: 'No Quests yet. Your next trip starts here.',
   published: 'Nothing published yet.',
   drafts: 'No drafts. Quests you start and leave show up here.',
 };
-
-function Tag({ children }: { children: string }) {
-  return (
-    <span className="rounded-pill bg-surface px-2 py-0.5 text-caption font-semibold text-ink">
-      {children}
-    </span>
-  );
-}
-
-const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
-
-function Card({ quest, onManage }: { quest: QuestCard; onManage: () => void }) {
-  const draft = quest.status === 'draft';
-  const tag = questTag(quest);
-  const meta = draft
-    ? 'Continue editing'
-    : `${plural(quest.likeCount, 'like')} · ${plural(quest.commentCount, 'comment')}`;
-  return (
-    <li className="relative">
-      {/* Title and counts sit on the cover, like every other Quest card (prototype screen 20). */}
-      <Link
-        href={draft ? `/quests/${quest.key}/review` : (quest.path ?? `/quests/${quest.key}/review`)}
-        className="relative block aspect-4/5 overflow-hidden rounded-lg bg-night-band"
-      >
-        {quest.coverThumb && <img src={quest.coverThumb} alt="" className="h-full w-full object-cover" />}
-        <span className="absolute inset-0 bg-linear-to-t from-night-band via-transparent to-transparent" />
-        <span className="absolute inset-x-3 bottom-3 flex flex-col text-on-night">
-          <span className="line-clamp-2 text-label font-semibold">{quest.title}</span>
-          <span className="truncate text-caption text-on-night-muted">{meta}</span>
-        </span>
-      </Link>
-      {tag && (
-        <span className="absolute top-2 left-2">
-          <Tag>{tag}</Tag>
-        </span>
-      )}
-      {!draft && (
-        <button
-          type="button"
-          aria-label={`Manage ${quest.title}`}
-          onClick={onManage}
-          className="absolute top-1 right-1 flex size-11 items-center justify-center rounded-pill text-ink focus-visible:outline-2 focus-visible:outline-brand-strong"
-        >
-          <span className="flex size-8 items-center justify-center rounded-pill bg-surface shadow-float">
-            <MoreIcon size={20} />
-          </span>
-        </button>
-      )}
-    </li>
-  );
-}
 
 /** Screen 20: every Quest you've made, with All / Published / Drafts and ⋯ on published ones. */
 export function YourQuestsView({ initial, manage }: { initial: QuestCard[]; manage?: string }) {
@@ -84,7 +35,6 @@ export function YourQuestsView({ initial, manage }: { initial: QuestCard[]; mana
 
   return (
     <main className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-4">
-      <h1 className="text-title text-ink">Your Quests</h1>
       <Link
         href="/quests/new?source=quests_tab"
         className="flex items-center gap-4 rounded-lg border-2 border-dashed border-brand-strong bg-brand-wash p-4"
@@ -92,9 +42,21 @@ export function YourQuestsView({ initial, manage }: { initial: QuestCard[]; mana
         <span className="flex size-12 shrink-0 items-center justify-center rounded-pill bg-brand-strong text-on-brand shadow-brand">
           <PlusIcon size={24} />
         </span>
-        <span className="flex flex-col gap-1">
+        <span className="flex flex-1 flex-col gap-1">
           <span className="text-lead font-semibold text-ink">Create a Quest</span>
           <span className="text-label font-normal text-ink-muted">Pick 3 to 15 photos from a trip</span>
+        </span>
+        <span aria-hidden className="relative h-14 w-16 shrink-0">
+          <img
+            src={placeholderImage('beach', 2)}
+            alt=""
+            className="absolute top-0 left-0 h-12 w-10 -rotate-6 bg-surface object-cover p-0.5 pb-2 shadow-photo"
+          />
+          <img
+            src={placeholderImage('bonfire', 2)}
+            alt=""
+            className="absolute top-1 left-5 h-12 w-10 rotate-6 bg-surface object-cover p-0.5 pb-2 shadow-photo"
+          />
         </span>
       </Link>
       <Segmented
@@ -110,9 +72,15 @@ export function YourQuestsView({ initial, manage }: { initial: QuestCard[]; mana
       {shown.length === 0 ? (
         <p className="text-body text-ink-muted">{EMPTY[filter]}</p>
       ) : (
-        <ul className="grid grid-cols-2 gap-4">
+        <ul className="grid grid-cols-2 gap-3">
           {shown.map((quest) => (
-            <Card key={quest.key} quest={quest} onManage={() => setManaging(quest.key)} />
+            <li key={quest.key}>
+              <QuestTile
+                quest={quest}
+                meta={tileMeta(quest, 'counts')}
+                onManage={() => setManaging(quest.key)}
+              />
+            </li>
           ))}
         </ul>
       )}

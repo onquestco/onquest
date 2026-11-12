@@ -9,7 +9,7 @@ export default async function TabsLayout({ children }: { children: ReactNode }) 
   const creator = await getCreator();
   return (
     <div className="min-h-svh bg-surface-page pb-24">
-      <AppHeader handle={creator.handle} name={creator.name} />
+      <AppHeader />
       {children}
       <AppBottomBar handle={creator.handle} />
     </div>

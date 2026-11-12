@@ -1,61 +1,51 @@
-import Link from 'next/link';
 import { PinIcon } from '@/design-system/components/icons';
-import type { ProfileView as Profile } from './getProfile';
+import { questCardMeta } from '@/design-system/components/QuestCardView';
+import { QuestTile, tileMeta } from '@/features/quests/QuestTile';
 import { SiteFooter } from '@/features/shell/SiteFooter';
+import type { ProfileView as Profile } from './getProfile';
 import { ProfileHeader } from './ProfileHeader';
-import { ProfileTopBar, ProfileViewerProvider } from './ProfileViewerContext';
+import { OwnProfileNote, ProfileTopBar, ProfileViewerProvider } from './ProfileViewerContext';
 
 /** Screen 15: who they are, their numbers, places, and their public Quests (M15, M22). */
 export function ProfileView({ profile }: { profile: Profile }) {
   return (
     <ProfileViewerProvider profileKey={profile.key}>
       <ProfileTopBar handle={profile.handle} />
-      <main className="mx-auto flex max-w-lg flex-col gap-6 px-4 pt-4 pb-28">
-        <ProfileHeader profile={profile} />
-
+      <ProfileHeader profile={profile} />
+      <main className="mx-auto flex max-w-lg flex-col gap-3 px-4 pt-3 pb-28">
         {profile.places.length > 0 && (
-          <section aria-label="Places" className="flex flex-col gap-2">
-            <h2 className="text-lead font-semibold text-ink">Places</h2>
-            <ul className="flex flex-wrap gap-2">
-              {profile.places.map((place) => (
-                <li
-                  key={place}
-                  className="flex items-center gap-1 rounded-pill bg-brand-wash px-3 py-1 text-label text-ink"
-                >
-                  <span className="text-brand-strong">
-                    <PinIcon />
-                  </span>
-                  {place}
-                </li>
-              ))}
-            </ul>
-          </section>
+          <ul aria-label="Places" className="flex flex-wrap gap-1.5">
+            {profile.places.map((place) => (
+              <li
+                key={place}
+                className="flex min-h-9 items-center gap-1 rounded-pill bg-brand-wash px-3.5 text-label text-ink"
+              >
+                <span className="text-brand-strong">
+                  <PinIcon />
+                </span>
+                {place}
+              </li>
+            ))}
+          </ul>
         )}
 
-        <section aria-label="Quests" className="flex flex-col gap-2">
+        <section aria-label="Quests" className="flex flex-col gap-3 pt-1">
           <h2 className="text-lead font-semibold text-ink">Quests</h2>
           {profile.quests.length === 0 ? (
             <p className="text-body text-ink-muted">No public Quests yet.</p>
           ) : (
-            <ul className="grid grid-cols-2 gap-4">
+            <ul className="grid grid-cols-2 gap-3">
               {profile.quests.map((quest) => (
                 <li key={quest.key}>
-                  <Link
-                    href={quest.path ?? '#'}
-                    className="relative block aspect-4/5 overflow-hidden rounded-lg bg-night-band"
-                  >
-                    {quest.coverThumb && (
-                      <img src={quest.coverThumb} alt="" className="h-full w-full object-cover" />
-                    )}
-                    <span className="absolute inset-0 bg-linear-to-t from-night-band via-transparent to-transparent" />
-                    <span className="absolute inset-x-3 bottom-3 line-clamp-2 text-label font-semibold text-on-night">
-                      {quest.title}
-                    </span>
-                  </Link>
+                  <QuestTile
+                    quest={quest}
+                    meta={tileMeta(quest, 'place') || questCardMeta(quest.pageCount, quest.photoCount)}
+                  />
                 </li>
               ))}
             </ul>
           )}
+          <OwnProfileNote />
         </section>
         <SiteFooter />
       </main>

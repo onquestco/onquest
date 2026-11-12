@@ -13,7 +13,7 @@ import { saveFrames, type FrameToSave } from './exportImages';
 type Props = { tripKey: string; trip: TripData; templateId: string };
 type Status = 'loading' | 'ready' | 'saving' | 'saved' | 'failed';
 
-const PREVIEW_WIDTH = 240;
+const PREVIEW_WIDTH = 160;
 
 /** The full-size images, signed for an hour, as local blob URLs (no tainted canvas). */
 async function loadExportPhotos(tripKey: string): Promise<Record<string, string>> {

@@ -3,23 +3,21 @@
 import Link from 'next/link';
 import { buttonClassName } from '@/design-system/components/Button';
 import { TopBar } from '@/design-system/components/TopBar';
+import { goaTrip } from '@/lib/demo/goaTrip';
 import { templates } from '@/templates/registry';
 import { CAROUSEL_SIZE } from '@/templates/shared/ExportFrames';
 import { useDraft } from './draftStore';
-import type { Creator } from './getCreator';
 import { LostDraft } from './LostDraft';
 import { ScaledFrame } from './ScaledFrame';
-import { usePreviewTrip } from './usePreviewTrip';
 
-/**
- * Screen 6: each template shown as its own cover page, in its own colours, fonts and decorations,
- * made from the creator's photos and title (the prototype's mini covers), so the choice is about
- * the look.
- */
-export function ChooseTemplate({ tripKey, creator }: { tripKey: string; creator: Creator }) {
+// The same sample trip in every template, as in the prototype: the choice is about the look, and
+// the creator sees their own photos in it on the next screen, Preview (founder, 12 Nov).
+const SAMPLE = { ...goaTrip, title: 'Three days in Goa' };
+
+/** Screen 6: each template shown as its own cover page, in its own colours, fonts and decorations. */
+export function ChooseTemplate({ tripKey }: { tripKey: string }) {
   const { key, document, setDocument } = useDraft();
-  const preview = usePreviewTrip(creator);
-  if (key !== tripKey || !document || !preview) return <LostDraft />;
+  if (key !== tripKey || !document) return <LostDraft />;
   const live = Object.values(templates).filter((template) => template.status === 'live');
 
   return (
@@ -30,7 +28,7 @@ export function ChooseTemplate({ tripKey, creator }: { tripKey: string; creator:
         <div role="radiogroup" aria-label="Template" className="flex flex-col gap-4">
           {live.map((template) => {
             const selected = document.templateId === template.id;
-            const [cover] = template.CarouselFrames({ trip: { ...preview.trip, templateId: template.id } });
+            const [cover] = template.CarouselFrames({ trip: { ...SAMPLE, templateId: template.id } });
             return (
               <button
                 key={template.id}

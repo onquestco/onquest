@@ -796,6 +796,12 @@ button.scrap:focus-visible {
 .playerDots i[data-on] {
   opacity: 1;
 }
+.playerHint {
+  margin: 0;
+  font: italic 400 1.1rem/1.3 var(--font-serif);
+  color: var(--ink);
+  opacity: 0.6;
+}
 
 /* Full screen: only the Quest and the app's controls. Also the fallback where the Fullscreen API
    can't take a div (iPhone Safari). */

@@ -10,8 +10,7 @@ export function FollowsView({ kind, profile, people, me }: Props) {
   return (
     <>
       <TopBar title={kind === 'followers' ? 'Followers' : 'Following'} fallback={`/@${profile.handle}`} />
-      <main className="mx-auto flex max-w-lg flex-col gap-4 px-4 py-4">
-        <p className="text-label font-normal text-ink-muted">@{profile.handle}</p>
+      <main className="mx-auto flex min-h-svh max-w-lg flex-col gap-4 bg-surface-page px-4 py-4">
         <FollowList kind={kind} people={people} me={me} />
       </main>
     </>

@@ -29,10 +29,16 @@
   --color-on-night-muted: #ffffffcc;
   --color-accent-blue: #3b82f6;
   --color-accent-green: #22c55e;
+  --color-avatar-1: #3c8dbc;
+  --color-avatar-2: #7cb342;
+  --color-avatar-3: #5f7f63;
+  --color-avatar-4: #d9534f;
+  --color-avatar-5: #c25000;
   --color-danger: #b91c1c;
   --color-success: #15803d;
 
   --font-sans: var(--font-inter), Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-handwritten: var(--font-caveat), Caveat, "Segoe Print", cursive;
 
   --text-display: 72px;
   --text-display--line-height: 1.1;

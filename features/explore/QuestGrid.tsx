@@ -26,7 +26,7 @@ export function QuestGrid({ quests, showLikes = false }: { quests: QuestCard[]; 
               </span>
             )}
             <span className="absolute inset-x-3 bottom-3 flex flex-col text-on-night">
-              <span className="line-clamp-2 text-label font-semibold">{quest.title}</span>
+              <span className="line-clamp-2 text-body font-bold">{quest.title}</span>
               <span className="truncate text-caption text-on-night-muted">@{quest.owner.handle}</span>
             </span>
           </Link>
