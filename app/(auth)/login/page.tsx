@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/features/account/getCurrentUser';
 import { Contour } from '@/design-system/components/Contour';
 import { Logo } from '@/design-system/components/Logo';
+import { DeletedNotice } from '@/features/account/DeletedNotice';
 import { LoginForm } from '@/features/account/LoginForm';
 import { signInTitle } from '@/features/account/signInCopy';
 import { readSignInReturn, withSignInReturn } from '@/lib/auth/next';
@@ -41,6 +42,7 @@ export default async function LoginPage({ searchParams }: Props) {
           }
         />
       </div>
+      <DeletedNotice />
     </main>
   );
 }

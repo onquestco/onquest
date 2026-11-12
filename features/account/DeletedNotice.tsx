@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Toast } from '@/design-system/components/Toast';
 
-/** "Your account was deleted." on the landing page after ?deleted=1 (the page itself is static). */
+/** "Your account was deleted." on the sign-in page after ?deleted=1. */
 export function DeletedNotice() {
   const [shown, setShown] = useState(false);
   useEffect(() => {
