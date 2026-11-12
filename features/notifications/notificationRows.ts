@@ -10,7 +10,10 @@ const RowSchema = z.object({
   saved_at: z.string(),
   unread: z.boolean(),
   like_count: z.number().int().optional(),
-  actor: z.object({ handle: z.string(), name: z.string(), avatar_url: z.string().nullable() }).optional(),
+  // The database leaves avatar_url out when there is none (null fields are stripped).
+  actor: z
+    .object({ handle: z.string(), name: z.string(), avatar_url: z.string().nullable().optional() })
+    .optional(),
   quest: z
     .object({
       key: z.uuid(),
