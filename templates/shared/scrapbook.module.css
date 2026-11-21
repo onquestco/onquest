@@ -58,6 +58,14 @@
     0 26px 50px color-mix(in srgb, var(--ink) 22%, transparent);
   background: var(--sky);
 }
+/* Instagram export: the page at the frame's fixed width, not the screen's. */
+.exportFit > .stage {
+  width: 100%;
+}
+/* Nothing to tap in a picture. */
+.exportFit .openButton {
+  display: none;
+}
 /* Set by the client only for cards below the fold, so the first screen is never hidden. */
 .stage[data-pending] .scrap,
 .stage[data-pending] .text {

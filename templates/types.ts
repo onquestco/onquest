@@ -37,6 +37,6 @@ export type Template = {
   TripPage: (props: { trip: TripData; controls?: ReactNode }) => ReactNode;
   /** Instagram story, 1080 × 1920 px, with the Quest's link as text (spec B §3.7). */
   StoryFrame: (props: { trip: TripData }) => ReactNode;
-  /** Instagram carousel: the cover, then up to 5 pages, 1080 × 1350 px each. */
+  /** Instagram carousel: the cover, then every photo page (up to 20 slides), 1080 × 1350 px each. */
   CarouselFrames: (props: { trip: TripData }) => ReactNode[];
 };
