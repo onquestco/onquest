@@ -132,7 +132,7 @@ export function ExploreView({ chips: placeChips, trending, guides, travellers }:
           )}
           {trending.length > 0 && (
             <Section title="Trending Quests">
-              <QuestGrid quests={trending} showLikes />
+              <QuestGrid quests={trending} />
             </Section>
           )}
           {guides.length > 0 && (
