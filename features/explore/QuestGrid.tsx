@@ -8,7 +8,7 @@ import type { QuestCard } from '@/lib/trip/cards';
  */
 export function QuestGrid({ quests, showLikes = false }: { quests: QuestCard[]; showLikes?: boolean }) {
   return (
-    <ul className="grid grid-cols-2 gap-3">
+    <ul className="grid grid-cols-2 gap-3 md:grid-cols-3">
       {quests.map((quest) => (
         <li key={quest.key}>
           <Link

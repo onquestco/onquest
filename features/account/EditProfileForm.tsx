@@ -102,8 +102,10 @@ export function EditProfileForm({ initial }: { initial: Initial }) {
       });
       if (!result.ok) throw new Error(result.error);
       if (!result.data.saved) return setError(ERRORS[result.data.error] ?? "Couldn't save. Try again.");
-      router.push(`/@${cleanHandle}`);
-      router.refresh();
+      // A full page load, not a client navigation: pages the browser already has (the profile, Home's
+      // greeting, the bottom bar's link) can't show the old name, photo or handle (OQ-4).
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- a full load is the point
+      window.location.assign(`/@${cleanHandle}`);
     } catch {
       setError("Couldn't save. Check your connection and try again.");
     } finally {

@@ -74,9 +74,55 @@ export function ManageQuestSheet({ quest, onClose, onChange, onDeleted }: Props)
     const result = await deleteQuest({ key: quest.key }).catch(() => null);
     setBusy(false);
     setConfirming(false);
-    if (!result?.ok || !result.data.deleted) return setMessage("Couldn't delete the Quest. Try again.");
+    if (!result?.ok || !result.data.deleted)
+      return setMessage(
+        quest.status === 'draft'
+          ? "Couldn't delete the draft. Try again."
+          : "Couldn't delete the Quest. Try again.",
+      );
     onDeleted();
   }
+
+  const draft = quest.status === 'draft';
+  const confirm = (
+    <ConfirmDialog
+      open={confirming}
+      title={draft ? 'Delete this draft?' : 'Delete this Quest?'}
+      message={
+        draft
+          ? "This can't be undone. Its photos are deleted too."
+          : "This can't be undone. Its link will say the Quest was removed."
+      }
+      confirmLabel={busy ? 'Deleting…' : draft ? 'Delete draft' : 'Delete Quest'}
+      busy={busy}
+      onConfirm={() => void remove()}
+      onCancel={() => setConfirming(false)}
+    />
+  );
+
+  // A draft has nothing to share or set yet: carry on with it, or delete it (OQ-2).
+  if (draft)
+    return (
+      <>
+        <Sheet open={!confirming} title={quest.title} onClose={onClose}>
+          <Link
+            href={`/quests/${quest.key}/review`}
+            className={buttonClassName({ variant: 'secondary', block: true })}
+          >
+            Continue editing
+          </Link>
+          {message && (
+            <p role="alert" className="text-label text-danger">
+              {message}
+            </p>
+          )}
+          <Button variant="danger" block onClick={() => setConfirming(true)}>
+            Delete draft
+          </Button>
+        </Sheet>
+        {confirm}
+      </>
+    );
 
   return (
     <>
@@ -139,15 +185,7 @@ export function ManageQuestSheet({ quest, onClose, onChange, onDeleted }: Props)
           Delete Quest
         </Button>
       </Sheet>
-      <ConfirmDialog
-        open={confirming}
-        title="Delete this Quest?"
-        message="This can't be undone. Its link will say the Quest was removed."
-        confirmLabel={busy ? 'Deleting…' : 'Delete Quest'}
-        busy={busy}
-        onConfirm={() => void remove()}
-        onCancel={() => setConfirming(false)}
-      />
+      {confirm}
     </>
   );
 }

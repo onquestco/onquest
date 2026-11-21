@@ -13,7 +13,7 @@ export function ProfileView({ profile }: { profile: Profile }) {
     <ProfileViewerProvider profileKey={profile.key}>
       <ProfileTopBar handle={profile.handle} />
       <ProfileHeader profile={profile} />
-      <main className="mx-auto flex max-w-lg flex-col gap-3 px-4 pt-3 pb-28">
+      <main className="mx-auto flex max-w-lg md:max-w-3xl flex-col gap-3 px-4 pt-3 pb-28">
         {profile.places.length > 0 && (
           <ul aria-label="Places" className="flex flex-wrap gap-1.5">
             {profile.places.map((place) => (
@@ -35,7 +35,7 @@ export function ProfileView({ profile }: { profile: Profile }) {
           {profile.quests.length === 0 ? (
             <p className="text-body text-ink-muted">No public Quests yet.</p>
           ) : (
-            <ul className="grid grid-cols-2 gap-3">
+            <ul className="grid grid-cols-2 gap-3 md:grid-cols-3">
               {profile.quests.map((quest) => (
                 <li key={quest.key}>
                   <QuestTile

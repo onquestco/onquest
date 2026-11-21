@@ -14,7 +14,7 @@ type Props = {
 /** Screen 11: the banner, your Quests, the feed and suggestions. */
 export function HomeView({ name, yourQuests, feed, suggested }: Props) {
   return (
-    <main className="mx-auto flex max-w-lg flex-col gap-8 px-4 py-4">
+    <main className="mx-auto flex max-w-lg md:max-w-3xl flex-col gap-8 px-4 py-4">
       <HomeBanner firstName={name?.split(' ')[0]} />
       <YourQuestsRow initial={yourQuests} />
       <HomeFeed first={feed} suggested={suggested} />

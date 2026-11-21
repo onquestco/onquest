@@ -34,7 +34,7 @@ export function YourQuestsView({ initial, manage }: { initial: QuestCard[]; mana
   const open = quests.find((quest) => quest.key === managing);
 
   return (
-    <main className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-4">
+    <main className="mx-auto flex max-w-lg md:max-w-3xl flex-col gap-6 px-4 py-4">
       <Link
         href="/quests/new?source=quests_tab"
         className="flex items-center gap-4 rounded-lg border-2 border-dashed border-brand-strong bg-brand-wash p-4"
@@ -72,7 +72,7 @@ export function YourQuestsView({ initial, manage }: { initial: QuestCard[]; mana
       {shown.length === 0 ? (
         <p className="text-body text-ink-muted">{EMPTY[filter]}</p>
       ) : (
-        <ul className="grid grid-cols-2 gap-3">
+        <ul className="grid grid-cols-2 gap-3 md:grid-cols-3">
           {shown.map((quest) => (
             <li key={quest.key}>
               <QuestTile
@@ -101,7 +101,7 @@ export function YourQuestsView({ initial, manage }: { initial: QuestCard[]; mana
           onDeleted={() => {
             setQuests((list) => list.filter((quest) => quest.key !== open.key));
             setManaging(undefined);
-            setNotice('Quest deleted.');
+            setNotice(open.status === 'draft' ? 'Draft deleted.' : 'Quest deleted.');
           }}
         />
       )}

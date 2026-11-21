@@ -15,19 +15,28 @@ type Props = {
 
 export function Sheet({ open, onClose, title, children }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
+  // Closing because `open` turned false isn't the person closing it: don't report it. Otherwise a
+  // sheet that hides itself to show a confirm step (Delete Quest, OQ-1) would close the whole flow.
+  const closingFromProp = useRef(false);
 
   useEffect(() => {
     const element = dialog.current;
     if (!element) return;
     if (open && !element.open) element.showModal();
-    if (!open && element.open) element.close();
+    if (!open && element.open) {
+      closingFromProp.current = true;
+      element.close();
+    }
   }, [open]);
 
   return (
     <dialog
       ref={dialog}
       aria-label={title}
-      onClose={onClose}
+      onClose={() => {
+        if (closingFromProp.current) closingFromProp.current = false;
+        else onClose();
+      }}
       // A tap on the backdrop lands on the dialog itself, not on its content.
       onClick={(event) => event.target === event.currentTarget && onClose()}
       className="m-0 mt-auto w-full max-w-none rounded-t-lg bg-surface p-0 text-ink backdrop:bg-night/50 sm:m-auto sm:max-w-md sm:rounded-lg"

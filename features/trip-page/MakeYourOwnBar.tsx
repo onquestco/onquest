@@ -31,9 +31,11 @@ export function MakeYourOwnBar() {
         viewerKnown || waited ? '' : 'invisible'
       }`}
     >
-      <Link href={href} className={`${buttonClassName({ block: true })} mx-auto max-w-lg`}>
-        Make your own Quest
-      </Link>
+      <div className="mx-auto max-w-lg">
+        <Link href={href} className={buttonClassName({ block: true })}>
+          Make your own Quest
+        </Link>
+      </div>
     </div>
   );
 }
