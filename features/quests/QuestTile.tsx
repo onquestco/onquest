@@ -43,7 +43,7 @@ export function QuestTile({ quest, meta, onManage }: Props) {
           {tag}
         </span>
       )}
-      {!draft && onManage && (
+      {onManage && (
         <button
           type="button"
           aria-label={`Manage ${quest.title}`}

@@ -64,7 +64,7 @@ export function ExploreView({ chips: placeChips, trending, guides, travellers }:
   const empty = results && results.quests.length + results.people.length + results.guides.length === 0;
 
   return (
-    <main className="mx-auto flex max-w-lg flex-col gap-4 px-4 py-4">
+    <main className="mx-auto flex max-w-lg md:max-w-3xl flex-col gap-4 px-4 py-4">
       {/* The prototype's search band: icon, rounded field, Clear while there's text. */}
       <div className="sticky top-14 z-10 -mx-4 -mt-4 flex items-center gap-2 border-b border-line bg-surface px-4 py-2.5 text-ink-muted">
         <SearchIcon />

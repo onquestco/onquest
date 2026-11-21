@@ -8,7 +8,7 @@ import type { Person } from '@/lib/social/schema';
 /** Travellers to follow, and People in search, each with Follow. */
 export function PeopleList({ people, source }: { people: Person[]; source: 'explore' | 'search' }) {
   return (
-    <ul className="flex flex-col gap-3">
+    <ul className="grid gap-3 md:grid-cols-2">
       {people.map((person) => (
         <li
           key={person.key}

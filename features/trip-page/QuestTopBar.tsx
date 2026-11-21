@@ -26,7 +26,7 @@ export function QuestTopBar() {
   return (
     // Zero height: it floats over the Quest instead of pushing it down.
     <div className="pointer-events-none sticky top-0 z-30 h-0">
-      <div className="flex items-center justify-between px-4 pt-3">
+      <div className="mx-auto flex max-w-lg items-center justify-between px-4 pt-3">
         <button type="button" className={`${round} pointer-events-auto`} aria-label="Back" onClick={back}>
           <BackIcon size={20} />
         </button>

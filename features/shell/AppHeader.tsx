@@ -13,7 +13,7 @@ export function AppHeader() {
   const title = TITLES[pathname];
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-surface">
-      <div className="mx-auto flex min-h-14 max-w-lg items-center justify-between px-4 py-1">
+      <div className="mx-auto flex min-h-14 max-w-lg md:max-w-3xl items-center justify-between px-4 py-1">
         {title ? (
           <h1 className="text-title text-ink">{title}</h1>
         ) : (

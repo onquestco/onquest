@@ -48,7 +48,8 @@
 .stage {
   position: relative;
   container-type: inline-size;
-  width: min(94vw, 540px);
+  /* On a desktop the page fits the window's height (OQ-5); phones are limited by width as before. */
+  width: min(94vw, 540px, max(300px, calc((100svh - 190px) * 9 / 14)));
   aspect-ratio: 9 / 14;
   overflow: hidden;
   border-radius: 6px;

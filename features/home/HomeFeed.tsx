@@ -42,9 +42,12 @@ export function HomeFeed({ first, suggested }: Props) {
         {items.length === 0 && !failed && (
           <p className="text-body text-ink-muted">Follow travellers to see their Quests here.</p>
         )}
-        {items.map((item) => (
-          <FeedCard key={item.key} quest={item} />
-        ))}
+        {/* Two columns on a desktop (OQ-5); one on phones. */}
+        <div className="grid gap-4 md:grid-cols-2">
+          {items.map((item) => (
+            <FeedCard key={item.key} quest={item} />
+          ))}
+        </div>
         {failed && (
           <p role="alert" className="text-body text-ink-muted">
             Couldn&apos;t load the feed. Try again in a moment.
@@ -59,9 +62,11 @@ export function HomeFeed({ first, suggested }: Props) {
       {suggested.length > 0 && (
         <section className="flex flex-col gap-4" aria-label="Suggested for you">
           <h2 className="text-lead font-semibold text-ink">Suggested for you</h2>
-          {suggested.map((quest) => (
-            <FeedCard key={quest.key} quest={quest} />
-          ))}
+          <div className="grid gap-4 md:grid-cols-2">
+            {suggested.map((quest) => (
+              <FeedCard key={quest.key} quest={quest} />
+            ))}
+          </div>
         </section>
       )}
     </>

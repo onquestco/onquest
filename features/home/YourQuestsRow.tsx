@@ -23,7 +23,7 @@ export function YourQuestsRow({ initial }: { initial: QuestCard[] }) {
         )}
       </div>
       {/* The prototype's 2-column grid; "+ Create a Quest" fills the gap until something is published. */}
-      <ul className="grid grid-cols-2 gap-3">
+      <ul className="grid grid-cols-2 gap-3 md:grid-cols-3">
         {quests.slice(0, 4).map((quest) => (
           <li key={quest.key}>
             <QuestTile

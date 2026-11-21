@@ -4,7 +4,7 @@ import type { GuideCard } from '@/lib/social/schema';
 /** Guides on Explore and in search, as the prototype's rows: picture, "Guide · 4 min read", title. */
 export function GuideCards({ guides }: { guides: GuideCard[] }) {
   return (
-    <ul className="flex flex-col gap-3">
+    <ul className="grid gap-3 md:grid-cols-2">
       {guides.map((guide) => (
         <li key={guide.slug}>
           <Link

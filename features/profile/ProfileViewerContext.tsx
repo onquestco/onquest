@@ -28,7 +28,7 @@ export function ProfileTopBar({ handle }: { handle: string }) {
   if (viewer?.isSelf)
     return (
       <header className="sticky top-0 z-20 border-b border-line bg-surface">
-        <div className="mx-auto grid max-w-lg grid-cols-3 items-center px-2 py-1">
+        <div className="mx-auto grid max-w-lg grid-cols-3 items-center px-2 py-1 md:max-w-3xl">
           <span />
           <p className="truncate text-center text-body font-semibold text-ink">@{handle}</p>
           <Link
