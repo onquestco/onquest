@@ -2,16 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { charactersLeft, likeLabel, toggledLike } from './likeCopy';
 
 describe('likeLabel', () => {
-  it('invites the first like instead of showing a zero', () => {
-    expect(likeLabel(0, false)).toBe('Be the first to like this');
+  it('says Like when nobody has liked it yet', () => {
+    expect(likeLabel(0)).toBe('Like');
   });
-  it('hides the count at 1 and 2 likes', () => {
-    expect(likeLabel(1, true)).toBe('Liked');
-    expect(likeLabel(2, false)).toBe('Like');
-  });
-  it('shows the number from 3 likes, for owners and viewers alike', () => {
-    expect(likeLabel(3, false)).toBe('3 likes');
-    expect(likeLabel(24, true)).toBe('24 likes');
+  it('shows the real count from the first like', () => {
+    expect(likeLabel(1)).toBe('1 like');
+    expect(likeLabel(2)).toBe('2 likes');
+    expect(likeLabel(24)).toBe('24 likes');
   });
 });
 

@@ -6,14 +6,14 @@ import { likeLabel } from './likeCopy';
 import { signInPath, type LikeSource } from './socialActions';
 import { useQuestSocial } from './useQuestSocial';
 
-// The prototype's like: a round outlined heart, and the count (or "Be the first…") beside it.
+// The prototype's like: a round outlined heart, and the count beside it.
 const circle =
   'flex size-11 shrink-0 items-center justify-center rounded-pill border-2 border-line-control text-brand-strong transition-transform active:scale-90 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-brand-strong';
 
 /** Signed out, the heart is a sign-in link that comes back here and counts the like (M10). */
 export function LikeButton({ source }: { source: LikeSource }) {
   const { viewer, liked, likeCount, toggleLike, path, tripKey } = useQuestSocial();
-  const label = likeLabel(likeCount, liked);
+  const label = likeLabel(likeCount);
 
   return (
     <div className="flex min-w-0 items-center gap-2.5">

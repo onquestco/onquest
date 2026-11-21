@@ -1,14 +1,9 @@
-// What the like button says. The count stays hidden below 3 so a new Quest doesn't look ignored
-// (PRD S3). 1–2 likes follows the recommended answer to F-B1: a filled heart and "Liked" for the
-// person who liked it, no number for anyone.
+// What the like button says: the real count from the first like (Swati, 21 Nov 2026 — replaces
+// the PRD S3 rule that hid counts below 3).
 
-export const SHOW_COUNT_FROM = 3;
-
-export function likeLabel(likeCount: number, liked: boolean): string {
-  if (likeCount >= SHOW_COUNT_FROM) return `${likeCount} ${likeCount === 1 ? 'like' : 'likes'}`;
-  if (liked) return 'Liked';
-  if (likeCount === 0) return 'Be the first to like this';
-  return 'Like';
+export function likeLabel(likeCount: number): string {
+  if (likeCount === 0) return 'Like';
+  return `${likeCount} ${likeCount === 1 ? 'like' : 'likes'}`;
 }
 
 /** The new state after a tap, before the server answers (rolled back if it fails). */

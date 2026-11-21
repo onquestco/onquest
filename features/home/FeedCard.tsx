@@ -6,7 +6,7 @@ import { ChatIcon, HeartIcon, ShareIcon } from '@/design-system/components/icons
 import { QuestCardView, questCardMeta } from '@/design-system/components/QuestCardView';
 import { timeAgo } from '@/features/notifications/notificationText';
 import { setLike } from '@/features/trip-page/actions';
-import { SHOW_COUNT_FROM, toggledLike } from '@/features/trip-page/likeCopy';
+import { toggledLike } from '@/features/trip-page/likeCopy';
 import type { FeedItem } from '@/lib/social/schema';
 import type { QuestCard } from '@/lib/trip/cards';
 
@@ -58,7 +58,7 @@ export function FeedCard({ quest }: { quest: FeedItem | QuestCard }) {
       meta={questCardMeta(quest.pageCount, quest.photoCount)}
       actions={
         <>
-          {/* Icons with counts, as in the prototype. Likes stay hidden below 3 (PRD S3). */}
+          {/* Icons with counts, as in the prototype. */}
           <button
             type="button"
             className={`${pill} ${like.liked ? 'text-brand-strong' : ''}`}
@@ -67,7 +67,7 @@ export function FeedCard({ quest }: { quest: FeedItem | QuestCard }) {
             onClick={toggle}
           >
             <HeartIcon size={20} filled={like.liked} />
-            {like.likeCount >= SHOW_COUNT_FROM && like.likeCount}
+            {like.likeCount > 0 && like.likeCount}
           </button>
           <Link href={`${path}#comments`} className={pill} aria-label="Comments">
             <ChatIcon />

@@ -1,8 +1,10 @@
 import type { TripData } from '@/lib/trip/types';
 import { carouselFrames, StoryFrame as SharedStoryFrame, type FrameLook } from '../shared/ExportFrames';
-import { tapes, theme } from './theme';
+import { CoverCard } from './OpeningSpread';
+import { PhotoPage } from './PhotoPage';
+import { theme } from './theme';
 
-const look: FrameLook = { theme, tapes, titleFont: 'script' };
+const look: FrameLook = { theme, Cover: CoverCard, Page: PhotoPage };
 
 export function StoryFrame({ trip }: { trip: TripData }) {
   return <SharedStoryFrame trip={trip} look={look} />;

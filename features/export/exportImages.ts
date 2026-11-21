@@ -22,6 +22,8 @@ async function toJpeg(frame: FrameToSave): Promise<File> {
 async function ready(frames: FrameToSave[]) {
   await document.fonts.ready;
   const images = frames.flatMap((frame) => Array.from(frame.node.querySelectorAll('img')));
+  // Quest pages lazy-load their photos; off-screen export frames would otherwise never load them.
+  for (const image of images) image.loading = 'eager';
   await Promise.all(images.map((image) => image.decode().catch(() => undefined)));
 }
 
