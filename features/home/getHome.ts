@@ -5,6 +5,7 @@ import type { QuestCard } from '@/lib/trip/cards';
 
 export const FEED_PAGE_SIZE = 10;
 const SUGGESTIONS = 6;
+const SIGNED_OUT_SUGGESTIONS = 10; // the most the function returns: it's the whole page signed out
 
 /**
  * One page of the Home feed (spec C §3.4). `now` is fixed by the first page and passed back by
@@ -22,21 +23,22 @@ export async function getFeedPage(now: string, offset: number): Promise<FeedPage
   return { items, nextOffset: items.length === FEED_PAGE_SIZE ? offset + items.length : null, now };
 }
 
-async function getSuggestions(): Promise<QuestCard[]> {
+async function getSuggestions(limit: number): Promise<QuestCard[]> {
   const supabase = await createServerSupabase();
-  const { data, error } = await supabase.rpc('list_suggested_quests', { p_limit: SUGGESTIONS });
+  const { data, error } = await supabase.rpc('list_suggested_quests', { p_limit: limit });
   if (error) throw new Error('Could not load suggestions');
   return toQuestCards(data);
 }
 
 /**
  * Home (screen 11): the first feed page and "Suggested for you". Either failing leaves the rest
- * of Home working: the feed says it couldn't load, suggestions are left out.
+ * of Home working: the feed says it couldn't load, suggestions are left out. Signed out there's
+ * no one followed, so no feed, only suggestions (OQ-16).
  */
-export async function getHome(): Promise<{ feed: FeedPage | null; suggested: QuestCard[] }> {
+export async function getHome(signedIn: boolean): Promise<{ feed: FeedPage | null; suggested: QuestCard[] }> {
   const [feed, suggested] = await Promise.allSettled([
-    getFeedPage(new Date().toISOString(), 0),
-    getSuggestions(),
+    signedIn ? getFeedPage(new Date().toISOString(), 0) : Promise.resolve(null),
+    getSuggestions(signedIn ? SUGGESTIONS : SIGNED_OUT_SUGGESTIONS),
   ]);
   return {
     feed: feed.status === 'fulfilled' ? feed.value : null,

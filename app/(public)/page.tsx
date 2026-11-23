@@ -2,9 +2,9 @@ import { redirect } from 'next/navigation';
 
 type Props = { searchParams: Promise<Record<string, string | undefined>> };
 
-// No landing page yet: onquest.in opens on the prototype's first screen, sign-in. Signed-in
-// people go straight on to Home from there. `?deleted=1` rides along for the deleted-account notice.
+// onquest.in opens on Home for everyone (OQ-16, Swati 23 Nov): look around signed out, sign in from
+// a popup when you like, comment, follow or create. `?deleted=1` still goes to sign-in for its notice.
 export default async function HomePage({ searchParams }: Props) {
   const { deleted } = await searchParams;
-  redirect(deleted === '1' ? '/login?deleted=1' : '/login');
+  redirect(deleted === '1' ? '/login?deleted=1' : '/home');
 }

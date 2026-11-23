@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { appFontClassName } from '@/design-system/fonts';
 import { color } from '@/design-system/tokens';
+import { SignInSheet } from '@/features/account/SignInSheet';
 import { Pageviews } from '@/lib/analytics/Pageviews';
 import { SITE_NAME, SITE_URL } from '@/lib/site';
 import './globals.css';
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={appFontClassName}>
       <body className="text-ink antialiased">
         {children}
+        <SignInSheet />
         <Pageviews />
       </body>
     </html>

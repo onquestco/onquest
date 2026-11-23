@@ -1,11 +1,9 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { getCurrentUser } from '@/features/account/getCurrentUser';
 
 export const metadata: Metadata = { robots: { index: false } };
 
-export default async function AppLayout({ children }: { children: ReactNode }) {
-  if (!(await getCurrentUser())) redirect('/login');
+// Signed-in pages are in (signed-in), which checks. Home and Explore are open to everyone (OQ-16).
+export default function AppLayout({ children }: { children: ReactNode }) {
   return children;
 }

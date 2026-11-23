@@ -102,10 +102,11 @@ export function EditProfileForm({ initial }: { initial: Initial }) {
       });
       if (!result.ok) throw new Error(result.error);
       if (!result.data.saved) return setError(ERRORS[result.data.error] ?? "Couldn't save. Try again.");
-      // A full page load, not a client navigation: pages the browser already has (the profile, Home's
-      // greeting, the bottom bar's link) can't show the old name, photo or handle (OQ-4).
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- a full load is the point
-      window.location.assign(`/@${cleanHandle}`);
+      // saveProfile's updateTag clears the browser's cached pages, so a client navigation shows the
+      // new name, photo and handle at once; refresh also redraws the bottom bar's link. Faster than
+      // the full page load OQ-4 first used (Alok, 23 Nov: "the speed is lil too slow").
+      router.push(`/@${cleanHandle}`);
+      router.refresh();
     } catch {
       setError("Couldn't save. Check your connection and try again.");
     } finally {

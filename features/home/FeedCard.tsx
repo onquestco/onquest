@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { ChatIcon, HeartIcon, ShareIcon } from '@/design-system/components/icons';
 import { QuestCardView, questCardMeta } from '@/design-system/components/QuestCardView';
+import { askToSignIn } from '@/features/account/signInPrompt';
 import { timeAgo } from '@/features/notifications/notificationText';
 import { setLike } from '@/features/trip-page/actions';
 import { toggledLike } from '@/features/trip-page/likeCopy';
@@ -24,8 +25,11 @@ async function shareQuest(title: string, path: string) {
   }
 }
 
-/** A Quest in the feed (M21): like it from here; comments open the Quest at its comments. */
-export function FeedCard({ quest }: { quest: FeedItem | QuestCard }) {
+/**
+ * A Quest in the feed (M21): like it from here; comments open the Quest at its comments. Signed
+ * out, Like opens the sign-in popup, which comes back on the Quest with the like done (OQ-16).
+ */
+export function FeedCard({ quest, signedIn = true }: { quest: FeedItem | QuestCard; signedIn?: boolean }) {
   const [like, setLikeState] = useState({
     liked: 'likedByMe' in quest ? quest.likedByMe : false,
     likeCount: quest.likeCount,
@@ -33,6 +37,7 @@ export function FeedCard({ quest }: { quest: FeedItem | QuestCard }) {
   const path = quest.path ?? '/home';
 
   function toggle() {
+    if (!signedIn) return askToSignIn({ intent: 'like', next: path, ref: quest.key });
     const before = like;
     const after = toggledLike(before);
     setLikeState(after);
