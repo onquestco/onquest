@@ -10,7 +10,13 @@ import { GuideCards } from './GuideCards';
 import { PeopleList } from './PeopleList';
 import { QuestGrid } from './QuestGrid';
 
-type Props = { chips: string[]; trending: QuestCard[]; guides: GuideCard[]; travellers: Person[] };
+type Props = {
+  signedIn: boolean;
+  chips: string[];
+  trending: QuestCard[];
+  guides: GuideCard[];
+  travellers: Person[];
+};
 
 const PAUSE_MS = 500; // search after a typing pause (the search_performed trigger)
 const MIN = 2;
@@ -27,7 +33,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 /** Screen 13: place chips, trending, guides and travellers; search replaces them while typing. */
-export function ExploreView({ chips: placeChips, trending, guides, travellers }: Props) {
+export function ExploreView({ signedIn, chips: placeChips, trending, guides, travellers }: Props) {
   const chips = placeChips.length >= 3 ? placeChips : STARTER_CHIPS;
   const [text, setText] = useState('');
   const [results, setResults] = useState<SearchResults | null>(null);
@@ -110,7 +116,7 @@ export function ExploreView({ chips: placeChips, trending, guides, travellers }:
           )}
           {results && results.people.length > 0 && (
             <Section title="People">
-              <PeopleList people={results.people} source="search" />
+              <PeopleList people={results.people} source="search" signedIn={signedIn} />
             </Section>
           )}
           {results && results.guides.length > 0 && (
@@ -142,7 +148,7 @@ export function ExploreView({ chips: placeChips, trending, guides, travellers }:
           )}
           {travellers.length > 0 && (
             <Section title="Travellers to follow">
-              <PeopleList people={travellers} source="explore" />
+              <PeopleList people={travellers} source="explore" signedIn={signedIn} />
             </Section>
           )}
           {trending.length === 0 && guides.length === 0 && travellers.length === 0 && (

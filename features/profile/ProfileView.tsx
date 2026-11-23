@@ -1,10 +1,8 @@
 import { PinIcon } from '@/design-system/components/icons';
-import { questCardMeta } from '@/design-system/components/QuestCardView';
-import { QuestTile } from '@/features/quests/QuestTile';
 import { SiteFooter } from '@/features/shell/SiteFooter';
 import type { ProfileView as Profile } from './getProfile';
 import { ProfileHeader } from './ProfileHeader';
-import { PublishedAgo } from './PublishedAgo';
+import { ProfileQuestGrid } from './ProfileQuestGrid';
 import { OwnProfileNote, ProfileTopBar, ProfileViewerProvider } from './ProfileViewerContext';
 
 /** Screen 15: who they are, their numbers, places, and their public Quests (M15, M22). */
@@ -35,22 +33,7 @@ export function ProfileView({ profile }: { profile: Profile }) {
           {profile.quests.length === 0 ? (
             <p className="text-body text-ink-muted">No public Quests yet.</p>
           ) : (
-            <ul className="grid grid-cols-2 gap-3 md:grid-cols-3">
-              {profile.quests.map((quest) => (
-                <li key={quest.key}>
-                  <QuestTile
-                    quest={quest}
-                    meta={
-                      quest.publishedAt ? (
-                        <PublishedAgo iso={quest.publishedAt} />
-                      ) : (
-                        questCardMeta(quest.pageCount, quest.photoCount)
-                      )
-                    }
-                  />
-                </li>
-              ))}
-            </ul>
+            <ProfileQuestGrid initial={profile.quests} />
           )}
           <OwnProfileNote />
         </section>

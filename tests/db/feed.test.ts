@@ -93,6 +93,20 @@ describe('list_feed', () => {
     expect(keys(people)).toEqual([NEWCOMER]);
   });
 
+  it('suggests Quests and travellers to signed-out visitors too (OQ-16)', async () => {
+    const suggested = await db.one<{ key: string; owner: { key: string } }[]>(
+      undefined,
+      'select public.list_suggested_quests(10) as result',
+    );
+    expect(suggested.length).toBeGreaterThan(0);
+    expect(keys(suggested)).not.toContain(samUnlisted);
+    const people = await db.one<{ key: string }[]>(
+      undefined,
+      'select public.list_travellers_to_follow(10) as result',
+    );
+    expect(people.length).toBeGreaterThan(0);
+  });
+
   it('lists trending public Quests and common towns to anyone', async () => {
     const trending = await db.one<{ key: string }[]>(
       undefined,

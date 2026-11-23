@@ -5,8 +5,16 @@ import { Avatar } from '@/design-system/components/Avatar';
 import { FollowButton } from '@/features/profile/FollowButton';
 import type { Person } from '@/lib/social/schema';
 
-/** Travellers to follow, and People in search, each with Follow. */
-export function PeopleList({ people, source }: { people: Person[]; source: 'explore' | 'search' }) {
+/** Travellers to follow, and People in search, each with Follow (signed out: the sign-in popup). */
+export function PeopleList({
+  people,
+  source,
+  signedIn,
+}: {
+  people: Person[];
+  source: 'explore' | 'search';
+  signedIn: boolean;
+}) {
   return (
     <ul className="grid gap-3 md:grid-cols-2">
       {people.map((person) => (
@@ -27,7 +35,7 @@ export function PeopleList({ people, source }: { people: Person[]; source: 'expl
           <FollowButton
             targetKey={person.key}
             following={person.following ?? false}
-            signedIn
+            signedIn={signedIn}
             returnPath={`/@${person.handle}`}
             source={source}
           />

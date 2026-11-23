@@ -20,6 +20,9 @@ const EXPECTED: Record<string, string[]> = {
   list_trending_quests: PUBLIC_PAGES,
   list_place_chips: PUBLIC_PAGES,
   search_public: PUBLIC_PAGES,
+  // Home and Explore signed out (OQ-16, migration 15).
+  list_suggested_quests: PUBLIC_PAGES,
+  list_travellers_to_follow: PUBLIC_PAGES,
 
   is_handle_available: SIGNED_IN,
   save_profile: SIGNED_IN,
@@ -43,8 +46,6 @@ const EXPECTED: Record<string, string[]> = {
   list_my_comment_trip_keys: SIGNED_IN,
   save_profile_settings: SIGNED_IN,
   list_feed: SIGNED_IN,
-  list_suggested_quests: SIGNED_IN,
-  list_travellers_to_follow: SIGNED_IN,
 
   geocode_cache_get: SERVER,
   geocode_cache_put: SERVER,

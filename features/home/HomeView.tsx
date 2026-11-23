@@ -5,6 +5,7 @@ import { HomeFeed } from './HomeFeed';
 import { YourQuestsRow } from './YourQuestsRow';
 
 type Props = {
+  signedIn: boolean;
   name: string | null;
   yourQuests: QuestCard[];
   feed: FeedPage | null;
@@ -12,12 +13,12 @@ type Props = {
 };
 
 /** Screen 11: the banner, your Quests, the feed and suggestions. */
-export function HomeView({ name, yourQuests, feed, suggested }: Props) {
+export function HomeView({ signedIn, name, yourQuests, feed, suggested }: Props) {
   return (
     <main className="mx-auto flex max-w-lg md:max-w-3xl flex-col gap-8 px-4 py-4">
       <HomeBanner firstName={name?.split(' ')[0]} />
-      <YourQuestsRow initial={yourQuests} />
-      <HomeFeed first={feed} suggested={suggested} />
+      {signedIn && <YourQuestsRow initial={yourQuests} />}
+      <HomeFeed signedIn={signedIn} first={feed} suggested={suggested} />
     </main>
   );
 }
