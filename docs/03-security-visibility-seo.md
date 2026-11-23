@@ -23,9 +23,10 @@ Companion to `01-hld.md` and `02-lld.md`. Part A: who can see what. Part B: keep
 - **The URL is fixed at first publish.** Changing visibility never changes it (MVP PRD M28: "its link still works"), so a Quest made unlisted after being public keeps its guessable URL. Deleted Quests' URLs show "This Quest was removed." Old handles redirect to the new one.
 - **`get_trip_status`** tells anyone that a private or deleted Quest exists at a URL (it returns only the word, never content). Accepted.
 - **Usernames are never reused**, even after account deletion, so an old shared link can't be taken over; a deleted account's Quest links say "This Quest was removed."
-- **Retention** (MVP spec A C-A12): archived likes, comments and follows 90 days; archived Quests, drafts and profiles 180 days; tombstones and handle claims kept.
+- **Retention** (MVP spec A C-A12, decision 0001 amendment 1): archived likes, comments and follows 90 days; archived Quests, drafts, profiles and blogs 180 days; archived blog drafts 30 days (autosave archives on every save); tombstones and handle claims kept.
 - **Likes** are anonymous to viewers and to the creator (count only). **View counts** are for the OnQuest team only (PostHog), never stored in our database.
-- **Profiles** are always public. A profile with no public trips is `noindex`.
+- **Profiles** are always public. A profile with no public Quest and no public blog is `noindex`.
+- **Blogs** (`docs/specs/blogs.md`) follow the same table: URL `/@handle/blog/slug`, the same random suffix when first posted as unlisted, fixed after the first Post. The owner sees a private blog at `/blogs/[key]`; anyone else gets "This blog is private." or "This blog was removed." and nothing else. A blog never makes its linked Quest more visible: a public blog shows the Quest card only for a public Quest; an unlisted Quest's card shows only on an unlisted blog (D12).
 
 ### A.2 Photos: the one honest trade-off
 
@@ -57,7 +58,7 @@ Later: a private bucket with signed URLs for private trips (all storage code is 
 ### B.2 Rules for the code
 
 1. Every table has RLS on. Policies are owner-only.
-2. Public data comes only from security-definer functions that return published public/unlisted data: `get_trip`, `get_profile`, `list_sitemap_trips`, and in the MVP `get_trip_social`, `get_trip_status`, `resolve_handle`, `list_trending_quests`, `list_place_chips`, `search_public`, `list_quest_cards`, `list_sitemap_profiles` (specs B and C §4). Search, feeds and lists only ever include `public` Quests.
+2. Public data comes only from security-definer functions that return published public/unlisted data: `get_trip`, `get_profile`, `list_sitemap_trips`, and in the MVP `get_trip_social`, `get_trip_status`, `resolve_handle`, `list_trending_quests`, `list_place_chips`, `search_public`, `list_quest_cards`, `list_sitemap_profiles` (specs B and C §4), and for blogs `get_blog`, `get_blog_status`, `get_blog_quest`, `get_blog_social`, `list_sitemap_blogs`, `list_explore_blogs` and `list_home_feed` (signed in) (blogs spec §4.3). Search, feeds and lists only ever include `public` Quests and only public blogs.
 3. All writes go through server actions using `lib/action.ts` (zod + signed-in check).
 4. Server code uses `supabase.auth.getUser()`, not `getSession()`, to decide who the user is.
 5. Browser uses the **publishable** key; server admin tasks use the **secret** key. Don't use the legacy anon/service_role keys (retiring end of 2026).
@@ -100,13 +101,17 @@ CSP stays report-only during the friends test, then gets enforced once the repor
 | Page | Index? |
 |---|---|
 | `/`, `/demo` | ✓ |
-| `/@handle` with ≥ 1 public trip | ✓ |
+| `/@handle` with ≥ 1 public Quest **or blog** (blogs D9) | ✓ |
 | Public trip with ≥ 80 words | ✓ |
 | Public trip with < 80 words, empty profiles | `noindex, follow` (thin pages hurt the whole site) |
 | Unlisted trips | `noindex, nofollow` |
 | Private and removed Quest messages | `noindex` |
+| Public blog with ≥ 80 words (title + text) | ✓ |
+| Public blog with < 80 words | `noindex, follow` |
+| Unlisted blogs | `noindex, nofollow` |
+| Private and removed blog messages | `noindex` |
 | `/guides/[slug]` | ✓ |
-| App pages (`/quests/*`, `/home`, `/explore`, `/notifications`, `/welcome`, `/login`, `/settings`, `/onboarding`, followers/following lists) | `noindex` + disallowed in robots |
+| App pages (`/quests/*`, `/blogs/*`, `/home`, `/explore`, `/notifications`, `/welcome`, `/login`, `/settings`, `/onboarding`, followers/following lists) | `noindex` + disallowed in robots |
 
 ### C.2 Must-haves
 
@@ -129,6 +134,7 @@ CSP stays report-only during the friends test, then gets enforced once the repor
 Standard schema.org, generated in `features/trip-page/jsonLd.ts`:
 
 - **Trip page:** `BlogPosting` with `headline`, `datePublished`, `dateModified`, `image`, `author` (`Person` + profile URL), `contentLocation` (`Place`, destination), and `about` → `Trip` with an `itinerary` list of `TouristAttraction`s (name + geo).
+- **Blog page** (`features/blogs/jsonLd.ts`): `BlogPosting` with `headline`, `datePublished`, `dateModified`, `author` (`Person` + profile URL), `image` (cover), `contentLocation` (`Place` name) and `wordCount`, plus `BreadcrumbList` (Home → @handle → title).
 - **Profile:** `ProfilePage` with `mainEntity: Person` (name, `@handle` as `alternateName`, image, description).
 - **Landing:** `WebSite` + `Organization`.
 - **All:** `BreadcrumbList` (Home → @swati → My Goa Trip).

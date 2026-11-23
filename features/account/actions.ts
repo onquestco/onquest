@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { action, type ActionResult } from '@/lib/action';
 import { readSignInReturn, withSignInReturn } from '@/lib/auth/next';
 import { HandleSchema, isReservedHandle } from '@/lib/handles';
-import { profileTag, profileUrlTag, tripSocialTag, tripUrlTag } from '@/lib/cacheTags';
+import { blogUrlTag, profileTag, profileUrlTag, tripSocialTag, tripUrlTag } from '@/lib/cacheTags';
 import { absoluteUrl } from '@/lib/site';
 import { avatarUrl } from '@/lib/storage';
 import { VisibilitySchema } from '@/lib/trip/schema';
@@ -114,8 +114,8 @@ export const saveProfile = action(SaveProfileSchema, async (input, { user, db })
 });
 
 /**
- * The profile page under its old and new handle; every Quest page under both (old ones start
- * redirecting); and, when the name, handle or photo changed, the comment lists that show them.
+ * The profile page under its old and new handle; every Quest and blog page under both (old ones
+ * start redirecting); and, when the name, handle or photo changed, the comment lists that show them.
  */
 async function refreshAfterProfileSave(
   db: Awaited<ReturnType<typeof createServerSupabase>>,
@@ -126,12 +126,17 @@ async function refreshAfterProfileSave(
   updateTag(profileTag(userKey));
   for (const handle of new Set(handles)) updateTag(profileUrlTag(handle));
   if (!shownChanged) return;
-  const [{ data: trips }, { data: commented }] = await Promise.all([
+  const [{ data: trips }, { data: blogs }, { data: commented }] = await Promise.all([
     db.from('trips').select('slug').eq('owner_key', userKey).not('published_at', 'is', null),
+    // Before migration 16 this read fails and nothing is refreshed: there are no blogs yet.
+    db.from('blogs').select('slug').eq('owner_key', userKey).not('published_at', 'is', null),
     db.rpc('list_my_comment_trip_keys'),
   ]);
   for (const { slug } of (trips ?? []) as { slug: string }[]) {
     for (const handle of new Set(handles)) updateTag(tripUrlTag(handle, slug));
+  }
+  for (const { slug } of (blogs ?? []) as { slug: string }[]) {
+    for (const handle of new Set(handles)) updateTag(blogUrlTag(handle, slug));
   }
   for (const tripKey of (commented as string[] | null) ?? []) updateTag(tripSocialTag(tripKey));
 }

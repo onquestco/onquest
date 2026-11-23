@@ -12,6 +12,9 @@ const ResultSchema = z.object({
   follow_profile_keys: z.array(z.uuid()),
   own_trips: z.array(z.object({ key: z.uuid(), slug: z.string() })),
   handles: z.array(z.string()),
+  // Blogs (migrations 16 and 17). Defaults, so code and migration can deploy in either order.
+  own_blogs: z.array(z.object({ key: z.uuid(), slug: z.string() })).default([]),
+  liked_or_commented_blog_keys: z.array(z.uuid()).default([]),
 });
 
 const AUTH_DELETE_ATTEMPTS = 3;

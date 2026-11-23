@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Accepted, not yet implemented. The current schema still updates rows in place (see "Current gaps") |
+| Status | Accepted and implemented (spec A, migrations 8 and 9; blogs from migration 16). Amendment 1 (retention) added 23 Nov 2026 |
 | Decided by | CTO, 2026-11-06 |
 | Applies to | Every table that holds user or product data (profiles, trips, photos, places, and anything added later) |
 
@@ -30,20 +30,24 @@ We never update a row in place. Every record has one permanent key; every change
 - Fits how we already treat photos (immutable files, new photo id per replacement).
 - One key per record keeps lookups simple: nothing has to be re-pointed when a record changes, and shared links never break. No version counter to maintain: the timestamp already orders history and catches conflicts.
 
-## Open questions (CTO to settle in the first spec)
+## Open questions (settled)
 
-- **Where archived rows live:** a separate archive table per data table (live tables hold only current rows, one per key; queries, unique constraints and RLS stay simple) or flags on the same table (`archived_at`, filtered everywhere, and the one-row-per-key rule needs a partial unique index). Recommended: separate archive tables.
-- **How big a "document" is:** archive each table separately, or treat a trip (its content, places and photo metadata) as one document saved as a whole. Archiving many child rows on every reorder or caption edit is expensive; one trip document is closer to the document-store model.
-- **Drafts:** archive a row on every autosave in the editor, or keep one working draft and archive only on publish and on explicit saves. Archiving every autosave can create dozens of archive rows per trip.
-- **Retention:** how long archived drafts are kept (archived published rows kept until the user deletes the trip).
+- **Where archived rows live:** separate archive tables, one per data table (spec A).
+- **How big a "document" is:** a Quest is one document (content, photos and places on the row), as is a blog (spec A, blogs spec).
+- **Drafts:** settled by spec A. Each Quest and blog has one working draft row; every autosave archives the draft row it replaces, and readers only see changes on Publish/Post. Archive growth is handled by retention (Amendment 1).
+- **Retention:** settled by Amendment 1 below.
 
-## Current gaps (to fix in the migration spec)
+## Amendment 1: retention (CTO, 23 Nov 2026)
 
-- RLS policies are `for all` (include update) on profiles, trips, photos and places: `supabase/migrations/20261031000002_rls.sql`.
-- Grants include `update`: `supabase/migrations/20261031000006_table_grants.sql`.
-- `trips_touch_updated_at` trigger updates rows in place: `supabase/migrations/20261031000001_tables.sql`.
-- Tables use `id` and have no `saved_at`/`saved_by`/reason: rename `id` to `key`, add those columns, and rename references to keys (`photos.trip_key`, `places.trip_key`, `trips.cover_photo_key`). Archive tables don't exist yet.
-- `features/account/actions.ts` saves the profile with `.upsert()`.
-- `unique (owner_id, slug)` and `get_trip` assume one row per trip.
+- Archived rows are kept for a fixed time, then deleted by `run_retention_cleanup` (weekly, Sunday 03:00 UTC).
+- The ages: archived Quests, Quest drafts, profiles and blogs 180 days; archived blog drafts 30 days (autosave while typing makes about ten times more rows, blogs spec D5); archived likes, comments and follows 90 days; archived notification reads 180 days; notifications 365 days; archived feature access 180 days.
+- URL tombstones (`removed_trip_urls`, `removed_blog_urls`) and handle claims are kept forever, so links never get reused.
+- User deletes stay immediate (rule 7): a trip, blog or account deletion removes the live rows, every archived row and the files at once, whatever the ages above.
+
+## Current gaps
+
+Fixed by spec A (migrations 8 and 9): keys and save metadata on every table, archive tables, save functions with the `saved_at` conflict check, update grants revoked, the `updated_at` trigger dropped, and the `.upsert()` profile save replaced.
+
+One leftover: the old `for all` RLS policies on the legacy `photos` and `places` tables (`supabase/migrations/20261031000002_rls.sql`) were never dropped. They grant nothing, because those tables' insert, update and delete grants are revoked (migration 9) and nothing writes to them any more. Drop them in a later contract migration.
 
 There are no real users yet, so this is the cheapest moment to change the schema.

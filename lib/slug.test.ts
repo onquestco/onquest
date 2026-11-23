@@ -20,4 +20,16 @@ describe('reserved slugs', () => {
     expect(slugify('Following!')).toBe('following-trip');
     expect(slugify('Followers of Goa')).toBe('followers-of-goa');
   });
+
+  it("keeps /@handle/blog free: a new Quest titled Blog isn't given that slug", () => {
+    expect(slugify('Blog')).toBe('blog-trip');
+    expect(slugify('Blog from Goa')).toBe('blog-from-goa');
+  });
+});
+
+describe('fallback', () => {
+  it('uses the fallback when nothing is left', () => {
+    expect(slugify('गोवा', 70, 'blog')).toBe('blog');
+    expect(slugify('Goa', 70, 'blog')).toBe('goa');
+  });
 });
