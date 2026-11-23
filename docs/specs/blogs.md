@@ -7,10 +7,10 @@
 | Build mode | Backend + Frontend split: 2 backend tasks, then 3 frontend tasks (5 PRs, batched for the Vercel deploy cap) |
 | Tracker IDs | OQ-11 (feature row); task rows BL-01 to BL-05 to be added at `7. Ready to build` after approval |
 
-**Readiness check: passes, with notes.** The PRD has a problem, a primary metric (blogs published), Must stories with testable ACs, edge cases (empty, offline, errors), out of scope, a UX test plan and a rollout. Four answers here contradict the PRD's current wording, so the PRD owner (Alok) must confirm them and the PRD text must change before the CTO approves (§14, questions 1, 2, 4 and 10): B5's "likes below 3" copy, the two-tab "later save wins", the B4 link format for unlisted blogs, and the unlisted linked Quest edge case. The design doesn't depend on which way they go, except question 10, which changes one condition in `get_blog_quest`.
+**Readiness check: passes, with notes.** The PRD has a problem, a primary metric (blogs published), Must stories with testable ACs, edge cases (empty, offline, errors), out of scope, a UX test plan and a rollout. Four answers here differed from the PRD's original wording: B5's "likes below 3" copy, the two-tab "later save wins", the B4 link format for unlisted blogs, and the unlisted linked Quest edge case. All were decided on 23 Nov and recorded in the PRD's "Changes after tech review" section (§14). The founder's source doc still needs the same edits.
 
 **Context the PRD doesn't have, and how this spec handles it.**
-- **Likes (21 Nov, founder):** the real count from the first like ("Like", "1 like", "2 likes"). Blogs reuse `likeLabel()` in `features/trip-page/likeCopy.ts`. B5's "Be the first to like this" is not built (founder question 1).
+- **Likes (21 Nov, founder):** the real count from the first like ("Like", "1 like", "2 likes"). Blogs reuse `likeLabel()` in `features/trip-page/likeCopy.ts`. B5's "Be the first to like this" is not built (decided 23 Nov, §14 item 1).
 - **Email:** Resend isn't set up yet, so notifications go to the bell only. Blog likes and comments go through the same `notifyByEmail()` path as Quests. It returns `not_configured` today and starts sending once the `docs/runbooks/email.md` steps are done, with no further code (§3.6).
 - **OQ-16 (merged 23 Nov, PR #19):** signed-out visitors get a view-only Home feed, and every action opens a sign-in popup. Signed-in routes live under `app/(app)/(signed-in)/`. Blog pages and cards never require sign-in to read. Like, comment, follow, "Write your own" and the card actions call `askToSignIn()` with the same `next` / `intent` / `ref` return the Quest page uses. `/blogs/*` links are added to `NEEDS_ACCOUNT` so they open the popup too (§6.4).
 - **Deploy cap (Vercel, 300 a month):** 5 task PRs, each a coherent batch. Two migrations in total.
@@ -39,7 +39,7 @@ Technically, blogs copy the Quest document model from decision 0001: a `blogs` l
 | B8 Signed-out reader on 4G sees title and text, no sign-in prompt | Cached server-rendered `/b/[handle]/[slug]` page; text in HTML; first photo eager, rest lazy | `metadata.test.ts`; Playwright step 3 (signed-out, throttled) |
 | B9 View Quest opens Quest; Back returns to the same spot | `LinkedQuestCard` is a plain `<Link>`; App Router restores scroll; no scroll-jacking in the gallery | Playwright step 3 (scroll position within 50 px after Back) |
 | B9 Linked Quest made private or deleted → card gone for others; writer sees "Your linked Quest isn't visible to readers" | `get_blog_quest` returns null for private/deleted; cache tag `blog-quests:{ownerKey}` refreshed by every Quest publish/visibility/delete; `get_my_blog_state.linked_quest_hidden` for the owner | `blogAccess.test.ts`; `refreshTrip.test.ts` (tag added) |
-| Edge + privacy: linked Quest is unlisted | Proposed default (founder question 10): on a **public** blog, readers see the card only for a **public** Quest. An unlisted Quest's card shows to readers of an **unlisted** blog, and always to the owner, with "Your linked Quest isn't visible to readers" on a public blog | `blogAccess.test.ts` (public blog + unlisted Quest → null; unlisted blog + unlisted Quest → card; owner `/me` → card + hidden flag) |
+| Edge + privacy: linked Quest is unlisted | Decided 23 Nov (PRD "Changes after tech review" point 4): on a **public** blog, readers see the card only for a **public** Quest. An unlisted Quest's card shows to readers of an **unlisted** blog, and always to the owner, with "Your linked Quest isn't visible to readers" on a public blog | `blogAccess.test.ts` (public blog + unlisted Quest → null; unlisted blog + unlisted Quest → card; owner `/me` → card + hidden flag) |
 | B10 Signed-out like → sign in → back on blog, like counted | OQ-16 popup (`askToSignIn()`) with `next=/@h/blog/s&intent=like&ref={blogKey}`; `readQuestIntent`/`intentStep` reused; `setBlogLike` source `after_sign_in` | `questIntent.test.ts` (unchanged, reused); Playwright step 4 |
 | B11 Deleted blog → old link says "This blog was removed." | `delete_blog` writes `removed_blog_urls` under every handle; `get_blog_status` → `removed` | `blogDelete.test.ts` |
 | B11 Comments off → comments hidden, "Comments are off for this blog." | `set_blog_comments`; `get_blog_social` returns `comments_on=false`, no comments, count 0 | `blogSocial.test.ts` |
@@ -98,7 +98,7 @@ Blogs and Quests share the storage folder pattern `{userId}/{key}/`, so a blog k
 2. B's next save is based on `s1`, so `save_blog_draft` fails with OQ409.
 3. B stops autosaving and shows "This draft was changed somewhere else. Reload." Reload loads `s2`.
 
-Nothing that was saved is ever overwritten. The most recent successful save is what's kept, and the tab that is behind is told. B's unsaved text is lost when it reloads, as the PRD's "the later save wins" implies (founder question 2). Post from a stale tab fails the same way, because `publish_blog` checks the draft's `saved_at` too.
+Nothing that was saved is ever overwritten. The most recent successful save is what's kept, and the tab that is behind is told. B's unsaved text is lost when it reloads, as decided on 23 Nov (§14 item 2, PRD change point 2; decision 0001 rule 4). Post from a stale tab fails the same way, because `publish_blog` checks the draft's `saved_at` too.
 
 **Archive volume.** One archived draft row per save, about 10 KB at most. A 20-minute session is roughly 60 to 120 rows, around 1 MB. Blog draft archives are kept 30 days instead of the 180 for Quests (decision for the CTO, §13 D5).
 
@@ -119,7 +119,7 @@ To keep `/@h/blog` free for a future "all blogs" page, `blog` is added to `RESER
 BL-01 includes a read-only check on production: `select count(*) from public.trips where slug = 'blog'`. If the count is not 0, those Quests simply keep their URL, and the future index page would need a different path. The result goes in the PR.
 
 **Blog slugs.**
-- Made at first publish: `firstPublishSlug(title, visibility)` with fallback `blog` instead of `trip` (titles in non-Latin scripts slugify to nothing). Unlisted blogs get the same random 6-character suffix as unlisted Quests (docs/03 §A.1; founder question 4).
+- Made at first publish: `firstPublishSlug(title, visibility)` with fallback `blog` instead of `trip` (titles in non-Latin scripts slugify to nothing). Unlisted blogs get the same random 6-character suffix as unlisted Quests (docs/03 §A.1; decided 23 Nov, §14 item 4).
 - Unique per owner among live blogs and among removed blog URLs under every handle the owner has had. Duplicates get `-2`, `-3` (PRD edge case).
 - The slug never changes after the first publish, whatever happens to the title or visibility.
 - Old handles redirect (`resolve_handle`, the same as Quests): `/@old/blog/s` returns a 308 to `/@new/blog/s`.
@@ -163,7 +163,7 @@ BL-01 includes a read-only check on production: `select count(*) from public.tri
   - Results are ranked by trigram similarity on `lower(title || ' ' || place name)`, then by score. Similarity against 10,000 characters of body text is meaningless, so the body only decides whether a blog matches, not its rank.
   - `%` and `_` are escaped as today. Unlisted, private and draft blogs never match. The search text is never logged or tracked (existing rule).
 - Explore: `list_explore_blogs(p_limit default 6)`. Public published blogs, the last 30 days first, then older, each by `quest_score(likes, comments, published_at)` (the founder's ranking from spec C §3.4, reused). Cached with the rest of public Explore under tag `explore`, 5 minutes.
-- "Stories and guides" shows the guides as today, followed by blog rows "Blog · 4 min read · by @username" (founder question 6). Search groups `guides` and `blogs` under "Stories".
+- "Stories and guides" shows the guides as today, followed by blog rows "Blog · 4 min read · by @username" (decided 23 Nov). Search groups `guides` and `blogs` under "Stories".
 - Place chips (`list_place_chips`) stay Quest-only. Blog places don't add chips in this release (Later).
 
 ### 3.6 Notifications and email
@@ -234,7 +234,7 @@ Scroll percentages vary with screen height and font size, and `scroll` events be
   - `/blogs/new` is under `app/(app)/(signed-in)/`, so a signed-out visitor is sent to sign-in by that layout before `has_feature_access` (granted to `authenticated` only) is ever called. Signed in without access, it redirects to `/create`.
   - `/create` reads the flag only when there is a user. Signed out, it passes `blogsEnabled = false` and never calls `has_feature_access`.
   - `create_blog` raises OQ403 without access, so the database enforces it too.
-  - Editing, managing and deleting your own blogs, and reading, liking and commenting on anyone's, are not gated. Only flagged people can create blogs, so everything else stays empty until they post (founder question 7).
+  - Editing, managing and deleting your own blogs, and reading, liking and commenting on anyone's, are not gated. Only flagged people can create blogs, so everything else stays empty until they post (decided 23 Nov).
 - Rollout:
   1. `select public.grant_feature_access('blogs', '<founder handle>')` for each founder.
   2. Grant each friends-test user.
@@ -366,7 +366,8 @@ export const BlogViewerSchema = ViewerStateSchema.extend({
   savedAt: z.string().optional(),          // owner only: conflict token for ⋯ actions
   visibility: VisibilitySchema.optional(), // owner only
   linkedQuestHidden: z.boolean().default(false),       // owner only: "Your linked Quest isn't visible to readers"
-  ownLinkedQuest: QuestCardSchema.optional(),          // owner only: the private linked Quest's card
+  ownLinkedQuest: QuestCardSchema.optional(),          // owner only: the linked Quest's card whenever readers can't see it
+                                                       // (private Quest, or an unlisted Quest on a public blog)
 });
 // features/trip-page/socialActions.ts
 LikeSource unchanged; blogs use 'blog_page' | 'feed' | 'after_sign_in' (BlogLikeSource in features/blogs/socialActions.ts)
@@ -438,11 +439,12 @@ Error codes as today: OQ401 not signed in, OQ403 not allowed (no access, comment
 | `delete_blog` | authenticated | `(p_key) → jsonb {handles text[], slug text\|null}` | Hard delete (0001 rule 7). Tombstones if ever published. Then drafts archive, draft, blogs archive, blog. Migration 17 replaces it to delete child rows first |
 | `get_blog` | anon, authenticated | `(p_handle text, p_slug text) → jsonb \| null` | Published, public or unlisted. Explicit field list (§4.1). Never returns `linked_trip_key`, `search_text`, `started_at`, `published_draft_saved_at`, `saved_by` or `save_reason`. It does return `saved_at` (as `dateModified`, the same as `get_trip`) and the owner's public profile key (as `get_profile` does) |
 | `get_blog_status` | anon, authenticated | `(p_handle, p_slug) → 'private' \| 'removed' \| null` | The word only, never a key |
-| `get_blog_quest` | anon, authenticated | `(p_blog_key uuid) → jsonb \| null` | `quest_card_json(t)` when the blog is published public/unlisted, its `linked_trip_key` is a published trip **of the same owner**, and the Quest's visibility allows it on this blog: a **public** blog shows only a **public** Quest, and an **unlisted** blog shows a public or unlisted Quest. This is the proposed default in founder question 10; if Alok keeps the PRD wording, it becomes "public or unlisted Quest on any public/unlisted blog". Private Quests: never (owner only, through `get_my_blog_state`) |
+| `get_blog_quest` | anon, authenticated | `(p_blog_key uuid) → jsonb \| null` | `quest_card_json(t)` when the blog is published public/unlisted, its `linked_trip_key` is a published trip **of the same owner**, and the Quest's visibility allows it on this blog: a **public** blog shows only a **public** Quest, and an **unlisted** blog shows a public or unlisted Quest. A private blog has no readers but its writer. Private Quests never show to readers. The writer always sees the card, whatever either visibility is, through `get_my_blog_state` (PRD "Changes after tech review" point 4) |
 | `list_sitemap_blogs` | anon, authenticated | `() → table (handle, slug, saved_at)` | Public, ≥ 80 words |
 | `blog_url_hash` | none (helper) | `(handle, slug) → text` | `sha256(lower(handle) || '/blog/' || lower(slug))` |
 | `archive_blog`, `insert_blog`, `archive_blog_draft`, `blog_document_problem` | none (helpers) | | Same pattern as `archive_trip` / `insert_trip` |
-| `delete_account_data`, `list_pending_deletions` | service_role (replaced) | Same arguments | Also delete blog rows, archives and blog tombstones (tombstones are **kept**, like Quest ones). Return `own_blogs: [{key, slug}]` in addition. **Must ship in migration 16**: the deferred `blogs.owner_key` FK would otherwise make account deletion fail |
+| `delete_account_data`, `list_pending_deletions` | service_role (replaced) | Same arguments | Based on the migration 12 definitions. `delete_account_data` also deletes blog rows and archives, but **keeps** blog tombstones (like Quest ones) and writes them for every published blog under every handle. It returns `own_blogs: [{key, slug}]` in addition. `list_pending_deletions` also checks `blogs`, `blogs_archive` and `blog_drafts` for the user, so a half-finished deletion of a blogs-only user stays on the daily job. **Must ship in migration 16**: the deferred `blogs.owner_key` FK would otherwise make account deletion fail |
+| `create_trip` | authenticated (replaced) | Same arguments `(uuid, text)` | Also raises OQ410 if the key is in `blogs` or `blogs_archive` (§3.1). Based on the migration 9 definition. Grant unchanged |
 | `run_retention_cleanup` | service_role (replaced) | Same | + `blog_drafts_archive` 30 days, `blogs_archive` 180 days, `feature_access_archive` 180 days |
 
 **Migration 17: blog social and discovery**
@@ -451,10 +453,11 @@ Error codes as today: OQ401 not signed in, OQ403 not allowed (no access, comment
 |---|---|---|---|
 | `can_see_blog` | none (helper) | `(p_blog_key, p_user_key) → boolean` | Published public/unlisted, or owner |
 | `set_blog_like` | authenticated | `(p_blog_key uuid, p_liked boolean) → jsonb {liked, notified, like_count}` | Copy of `set_like` (advisory lock, first-like-ever notification) |
-| `post_blog_comment` | authenticated | `(p_blog_key, p_body) → jsonb {key, saved_at}` | Copy of `post_comment`. Rate limit counts `comments` + `blog_comments` |
+| `post_blog_comment` | authenticated | `(p_blog_key, p_body) → jsonb {key, saved_at}` | Copy of `post_comment`. Rate limit counts `comments` + `blog_comments` (5 a minute per person, both tables together) |
+| `post_comment` | authenticated (replaced) | Same arguments `(uuid, text)`, same result | Based on migration 10. The only change: the rate limit also counts `blog_comments`, so the limit holds both ways. Same advisory lock key `comment/{user}` in both functions, so they serialise each other. Grant unchanged |
 | `delete_blog_comment` | authenticated | `(p_comment_key) → uuid blog_key` | Blog owner only, archived |
 | `get_blog_social` | anon, authenticated | `(p_blog_key) → jsonb` | Same shape as `get_trip_social` (`QuestSocialSchema` parses it) |
-| `get_my_blog_state` | authenticated | `(p_blog_key) → jsonb {liked, is_owner, saved_at?, visibility?, comments_on?, linked_quest_hidden?, own_linked_quest?}` | Owner-only fields only when `is_owner` |
+| `get_my_blog_state` | authenticated | `(p_blog_key) → jsonb {liked, is_owner, saved_at?, visibility?, comments_on?, linked_quest_hidden?, own_linked_quest?}` | Owner-only fields only when `is_owner`. `linked_quest_hidden` is true when the blog has a linked Quest that `get_blog_quest` wouldn't show readers (deleted, private, or unlisted on a public blog). `own_linked_quest` is that Quest's card when it still exists |
 | `list_my_blogs` | authenticated | `() → jsonb BlogCard rows` | Own blogs, drafts included. Title, excerpt and cover from the draft. Status, path and counts from live. Newest `draft.saved_at` first |
 | `list_my_comment_blog_keys` | authenticated | `() → uuid[]` | Profile-save refresh |
 | `blog_card_json` | none (helper) | `(b blogs) → jsonb` | Card shape (§4.1, snake_case) |
@@ -472,14 +475,20 @@ Error codes as today: OQ401 not signed in, OQ403 not allowed (no access, comment
 |---|---|---|---|---|---|
 | `/@handle/blog/slug` → `app/(public)/b/[handle]/[slug]/page.tsx` | Server page (cached after first visit, `generateStaticParams = () => []`), client islands for social, viewer, read-end, gallery | `getBlog`, `getBlogStatus`, `getLinkedQuest`, `getBlogSocial`, `getMovedHandle` | `blogMetadata()`, `unavailableBlogMetadata()` | §3.7 | `list_sitemap_blogs` |
 | `app/(public)/b/[handle]/[slug]/opengraph-image.tsx` | Server | `getBlog`, `getBlogStatus`, `previewCoverUrl` | — | — | — |
-| `/blogs/new?source=create\|write_your_own` | Server page (flag check, redirect `/create` without access) + client composer | `getMyQuestsForLinking` (published own Quests), `getMyProfile` (default visibility) | `noindex` | noindex, robots disallow `/blogs` | No |
-| `/blogs/[key]/edit` | Server + client composer | `getBlogDraft(key)` (owner RLS read), `getMyQuestsForLinking` | `noindex` | noindex | No |
-| `/blogs/[key]/share` | Server | `getBlogDraft(key)` (needs live slug + visibility) | `noindex` | noindex | No |
-| `/blogs/[key]` (owner view of the posted blog, any visibility; drafts redirect to edit) | Server, never cached | `getOwnBlog(key)` (RLS), `getBlogSocial` | `noindex` | noindex | No |
-| `/create` (existing) | Server reads `has_feature_access('blogs')` | — | — | — | — |
-| `/quests` (existing, Quests tab) | Adds Blogs switch | + `getMyBlogs()` | — | — | — |
+| `/blogs/new?source=create\|write_your_own` → `app/(app)/(signed-in)/(create)/blogs/new/page.tsx` | Server page (inside the signed-in layout; flag check, redirect `/create` without access) + client composer | `getMyQuestsForLinking` (published own Quests), `getMyProfile` (default visibility) | `noindex` | noindex, robots disallow `/blogs` | No |
+| `/blogs/[key]/edit` → `app/(app)/(signed-in)/(create)/blogs/[key]/edit/page.tsx` | Server + client composer | `getBlogDraft(key)` (owner RLS read), `getMyQuestsForLinking` | `noindex` | noindex | No |
+| `/blogs/[key]/share` → `app/(app)/(signed-in)/(create)/blogs/[key]/share/page.tsx` | Server | `getBlogDraft(key)` (needs live slug + visibility) | `noindex` | noindex | No |
+| `/blogs/[key]` → `app/(app)/(signed-in)/blogs/[key]/page.tsx` (owner view of the posted blog, any visibility; drafts redirect to edit) | Server, never cached | `getOwnBlog(key)` (RLS), `getBlogSocial` | `noindex` | noindex | No |
+| `/create` (existing) → `app/(app)/(signed-in)/create/page.tsx` | Server reads `has_feature_access('blogs')` (signed in only) | — | — | — | — |
+| `/quests` (existing, Quests tab) → `app/(app)/(tabs)/quests/page.tsx` | Adds Blogs switch | + `getMyBlogs()` | — | — | — |
 
-`next.config.ts`: add the rewrite (§3.3) before `/@:handle/:slug`. `proxy.ts` matcher: add `'/blogs/:path*'` and `'/create'`. `robots.ts`: disallow `/blogs` and `/b/` (the `/b/` path is internal; canonical is `/@…`).
+Wiring:
+- `next.config.ts`: add the rewrite (§3.3) before `/@:handle/:slug`.
+- `proxy.ts` matcher: add `'/blogs/:path*'` and `'/create'`, so the session stays fresh on these routes.
+- `app/robots.ts`: disallow `/blogs` and `/b/`. The `/b/` path is internal; the canonical URL is `/@…`.
+- `features/account/signInPrompt.ts`: add `/^\/blogs(\/|$)/` to `NEEDS_ACCOUNT` (BL-03). Signed-out taps on `/blogs/…` links (a feed card's edit link, "Continue editing" on a shared phone) then open the OQ-16 popup instead of a server redirect.
+
+All `/blogs/*` routes are in the `(signed-in)` group, so its layout redirects signed-out visitors to `/login`. The composer routes are also in `(create)`, for its layout and loading screen.
 
 ## 5. Database and storage
 
@@ -554,7 +563,8 @@ Account deletion: `deleteUserFiles` already removes everything under `{uid}/`, s
 - `blogSave.test.ts`:
   - create → save → publish → update, including archive rows per action.
   - OQ409 on a stale draft and on stale live.
-  - `create_blog` without access → OQ403. Reused key → OQ410.
+  - `create_blog` without access → OQ403. Reused blog key → OQ410.
+  - `create_blog` with a key of one of the writer's Quests (live, and only in `trips_archive`) → OQ410. `create_trip` with a blog key (live, and only in `blogs_archive`) → OQ410.
   - 11 photos, 101-character title, 10,001-character body → OQ422. Empty post → OQ422.
   - Slug `-2` for a duplicate title, and for a slug that belongs to a removed blog under an old handle.
   - A linked Quest of another user is dropped. The own published Quest is kept.
@@ -563,11 +573,12 @@ Account deletion: `deleteUserFiles` already removes everything under `{uid}/`, s
   - anon and stranger can't select any blog table.
   - `get_blog` returns public and unlisted, not private or draft, and only the listed fields (no `linked_trip_key`, `search_text`).
   - `get_blog_status` words. `get_blog_quest` hides private, deleted and other-owner Quests.
+  - Linked-Quest visibility matrix: public blog + public Quest → card; public blog + unlisted Quest → null; unlisted blog + unlisted Quest → card; unlisted blog + public Quest → card; any blog + private Quest → null. In every hidden case, `get_my_blog_state` gives the owner `linked_quest_hidden = true` and `own_linked_quest`, and gives a stranger neither.
   - `list_my_blogs` lists own drafts only. The owner reads their private blog by RLS.
 - `blogDelete.test.ts`: every row and archive gone, tombstones under old and new handle, notifications gone, `get_blog_status` → `removed`.
 - `blogSocial.test.ts` (migration 17):
   - like/unlike idempotent, one notification on the first like ever.
-  - comment rate limit shared with Quests.
+  - comment rate limit both ways: 5 Quest comments, then a blog comment → OQ429; 5 blog comments, then a Quest comment → OQ429.
   - comments off hides comments and blocks new ones. Owner deletes a comment, a stranger can't.
   - likes on a private blog → OQ404.
 - `blogDiscovery.test.ts`:
@@ -610,11 +621,12 @@ Design system rules (decision 0002):
   - Copy as in PRD B3. Rows show cover, title, places and a visibility tag, newest first, with a single choice. Private rows show "Only you can see this one".
   - Empty state: "You haven't published a Quest yet." with "Create a Quest". It flushes the save, then goes to `/quests/new?source=blog_link`.
   - After a choice, the row becomes a small card with Remove. `blog_quest_linked` fires.
+  - Unlisted Quests can be chosen, with no extra copy in the sheet. If the blog is posted as Public, readers don't see the card (§4.3 `get_blog_quest`), and the writer sees "Your linked Quest isn't visible to readers" on the blog page.
 - `PlaceRow.tsx`: "Add a place" with a pin icon, then a search sheet backed by `searchBlogPlaces`. Once chosen, it shows "Goa" with Change.
 - `postRules.ts`: `canPost(document, photos)` and the message "Add a title and some text or a photo." while no upload is pending.
 - `PostSheet.tsx` (first post only): "Who can see this blog?" with the three options and the PRD copy, defaulting to the Settings "New Quests start as" value. Then the primary "Post".
-- Update (already posted): Post flushes, runs `publishBlog` with visibility null, then goes to the blog page with Toast "Blog updated." (founder question 3).
-- Preview: a client-side mode rendering `BlogArticle` from the in-memory document with local previews. "Back to edit" and Post. Works offline.
+- Update (already posted): Post flushes, runs `publishBlog` with visibility null, then goes to the blog page with Toast "Blog updated." (decided 23 Nov). Until BL-04 adds the public page, BL-03 goes to `/blogs/[key]/share` instead, and BL-04 switches the destination.
+- Preview: a client-side mode rendering `BlogArticle` from the in-memory document with local previews. `BlogArticle`, `BlogBody` and `BlogGallery` (§6.2) are **built in BL-03**, in `features/blogs/`, with `blogBody.test.ts` and `BlogArticle.test.tsx`. BL-04 builds the page around them. "Back to edit" and Post. Works offline.
 - Close:
   - Empty document: `discardBlogDraft` if a row exists, then back.
   - Otherwise: Toast "Saved as a draft." and back to where the composer was opened (`history.back()`, else `/quests`).
@@ -625,9 +637,11 @@ Design system rules (decision 0002):
   - Offline: status text.
 - `ShareScreen` for blogs (`/blogs/[key]/share`): "Your blog is live!", the link, "Copy link" and "Share to WhatsApp". It reuses `features/shell/ShareLinkButton.tsx` and the Quest share screen's layout.
 - `CreateChooser.tsx`:
-  - Takes `blogsEnabled`. When on, "Write a blog" is a link to `/blogs/new?source=create` with icon, title and sub-copy, without the pill or toast, and "Create a Quest" stays the larger highlighted option.
+  - Takes `blogsEnabled` and `source` (`create` | `write_your_own`), read by `/create` from `?source=`, default `create`. When on, "Write a blog" is a link to `/blogs/new?source={source}` with icon, title and sub-copy, without the pill or toast, and "Create a Quest" stays the larger highlighted option.
   - When off, it renders unchanged.
-  - `create_option_tapped{option: 'blog', available}` as today, plus `blog_create_started{source}` when it's available.
+  - Analytics: `create_option_tapped` isn't fired anywhere today. BL-03 adds it on both options: `{option: 'quest' | 'blog', available}`, with `available` false for the "Releasing soon" blog tap.
+  - `blog_create_started{blog_id, source}` fires when the composer opens on `/blogs/new` with its new key, not in the chooser, because the key doesn't exist there yet. A resumed unsent draft (`oq_blog_draft:new`) doesn't fire it again.
+  - The blog page's "Write your own" card links to `/create?source=write_your_own`.
 
 ### 6.2 Blog page (`features/blogs/`)
 
@@ -638,16 +652,16 @@ Design system rules (decision 0002):
   - `BlogGallery` (client): swipe with CSS scroll-snap, counter "1 / 4", tap for full screen (`BlogPhotoViewer` dialog). Absent with no photos.
   - `BlogBody`: paragraphs and line breaks. Links become `<a>`. No `dangerouslySetInnerHTML`.
   - The read-end marker.
-  - `LinkedQuestCard` under "From this trip": cover, title, "5 pages · 15 photos" and "View Quest". Absent when null. For the owner it also shows "Your linked Quest isn't visible to readers" or their private card, from `/me`.
+  - `LinkedQuestCard` under "From this trip": cover, title, "5 pages · 15 photos" and "View Quest". Absent when null. For the owner, when readers can't see the card (deleted, private, or unlisted on a public blog), it shows the owner's card if the Quest still exists, with "Your linked Quest isn't visible to readers", from `/me`.
   - Social block, then the `WriteYourOwnCard`.
-- `BlogArticle.tsx`: the pure part (title, gallery, body, place) shared by the page, the owner view and Preview.
+- `BlogArticle.tsx`: the pure part (title, gallery, body, place) shared by the page, the owner view and Preview. It is built in BL-03 together with `BlogBody` and `BlogGallery`; BL-04 adds the full-screen viewer and everything else in this section.
 - Social:
   - `LiveBlogSocialProvider` wraps `QuestSocialProvider` with `subject="blog"`, blog actions and `useBlogViewer(blogKey, ownerKey)`.
   - Like label from `likeLabel()` ("Like", "1 like", "2 likes"…).
   - Comments are newest last, with "Add a comment". When comments are off: "Comments are off for this blog."
 - Owner ⋯ menu (`ManageBlogSheet.tsx`): Edit (`/blogs/[key]/edit`), Share link, Who can see it, Comments on/off, Delete (`ConfirmDialog` "Delete this blog? This can't be undone."). It is opened from the top bar on your own blog, the owner view, your profile list and the Quests tab. Each action fires `blog_managed`. On conflict it reloads the viewer state and shows the existing conflict toast copy.
 - `BlogUnavailable.tsx`: "This blog is private." or "This blog was removed.", and nothing else. Owners of a private blog get "Open your blog" from `/api/unavailable-blog`, the same pattern as `UnavailableActions`.
-- `useReadEnd.ts` (§3.8). `blog_viewed` fires on mount with `view_id`.
+- `useReadEnd.ts` (§3.8). `blog_viewed` fires on mount with `view_id`. The same `view_id` goes on `blog_read_end` and `blog_quest_opened`.
 
 ### 6.3 Blogs elsewhere
 
@@ -658,17 +672,18 @@ Design system rules (decision 0002):
   - Empty (own only): "No blogs yet. Write about a trip." with "Write a blog".
   - The count row is unchanged, and profiles without blogs render exactly as today.
 - **Quests tab** (`features/quests/YourQuestsView.tsx`): the same Quests · Blogs switch above the current content (shown when there is access or any blog). Blogs list from `getMyBlogs()`. Drafts show "Continue editing", posted ones the ⋯ menu.
-- **Home feed** (S2): `getFeedPage` switches to `list_home_feed`. `HomeFeed.tsx` renders `BlogFeedCard` for `type: 'blog'`: writer row, a "Blog" tag, title, two-line excerpt, cover if any, then like, comment and share. Like in the feed uses `setBlogLike` with source `feed`.
+- **Home feed** (S2): BL-02 switches `getFeedPage` to `list_home_feed` and makes `HomeFeed.tsx` drop `type: 'blog'` items, on both the first page and "Load more" pages. Quest items render exactly as today, so Home works with only BL-02 deployed. BL-05 removes the filter and renders `BlogFeedCard` for `type: 'blog'`: writer row, a "Blog" tag, title, two-line excerpt, cover if any, then like, comment and share. Like in the feed uses `setBlogLike` with source `feed`.
 - **Explore** (S3): `getExplore` adds `blogs` from `list_explore_blogs`. `ExploreView` "Stories and guides" renders `GuideCards`, then `BlogStoryRows` ("Blog · 4 min read · by @username").
 - **Search:** `SearchResults.blogs` rendered under "Stories" with the guides.
-- **Notifications:** `notificationRows.ts` parses `blog`. `notificationText()`/`notificationHref()` use `item.blog ?? item.quest`, with fallbacks "your blog" and "{name} commented on your blog".
+- **Notifications (BL-02, so the bell is right from the first deploy):** `notificationRows.ts` parses `blog`. `notificationText()`/`notificationHref()` use `item.blog ?? item.quest`, with fallbacks "your blog" and "{name} commented on your blog". This is text and a link only, with no new UI, so it ships with the backend. Between BL-02 and BL-05, blog notifications already read correctly and open the blog page once BL-04 is live. Before BL-04, no production blog exists (§3.9 rollout rule).
 
 ### 6.4 Signed-out visitors and OQ-16
 
 - Every blog surface works signed out and view-only: the blog page, profile Blogs, Explore, search, and feed cards if OQ-16's signed-out feed ever includes them.
 - Like, comment, Follow, "Write your own" and card actions call OQ-16's sign-in popup with `{ next: <blog path>, intent: 'like' | 'comment', ref: blogKey }`. After sign-in the person lands back on the blog with `?intent=…`, which `readQuestIntent`/`intentStep` finish: the like is counted, or the comment box opens. The query is then removed (`withoutIntent`).
 - OQ-16 merged on 23 Nov (PR #19): signed-out actions use `askToSignIn()` from `features/account/signInPrompt.ts`, and any link to `/login?…` opens the popup (`SignInSheet`). Migration 15 is taken by OQ-16 (`15_open_home`), so blogs use 16 and 17.
-- Signed-out Home feed content: OQ-16 decides. This release adds blogs only to the signed-in "people you follow" feed (founder question 5).
+- `/blogs/*` is added to `NEEDS_ACCOUNT` (BL-03). A signed-out tap on any link to a `/blogs/…` app route opens the popup. The signed-in layout still redirects a direct visit.
+- Signed-out Home feed content: OQ-16 decides. This release adds blogs only to the signed-in "people you follow" feed (decided 23 Nov).
 
 ## 7. Security and privacy
 
@@ -682,12 +697,12 @@ Design system rules (decision 0002):
 | `supabase.auth.getUser()` on the server | Yes | `action()`, the `/api/blogs/*` route handlers, `/blogs/*` pages |
 | Don't log user text, emails or photo URLs | Yes | Actions log only error names (`action()`). Analytics carries no title, body, place or URL (`chars_bucket` only). Search text is never tracked |
 | Unlisted links unguessable | Yes | Random suffix on first publish as unlisted (docs/03 §A.1) |
-| A blog never makes a linked Quest more visible | Yes | `get_blog_quest` returns only public/unlisted Quests, so readers can reach an unlisted Quest only from a blog its own writer linked (PRD-accepted: "as they could by its link"). Private Quests are shown only to the owner, through `/me`. The linked key is never in `get_blog`. Unlisted Quest pages stay `noindex, nofollow`, even when linked from an indexed blog |
+| A blog never makes a linked Quest more visible | Yes | Decided 23 Nov (PRD "Changes after tech review" point 4). A **public** blog shows readers the card only for a **public** Quest. An unlisted Quest's card shows only on an **unlisted** blog, whose link is as hard to find as the Quest's own. So an unlisted Quest's URL never appears in a listed, indexed or sitemapped page. Private Quests are shown only to the writer, through `/me`. The linked key is never in `get_blog`. Changing a blog's visibility refreshes `blog-quests:{owner}`, so the card appears or disappears straight away |
 | Private blog keys don't leak | Yes | `get_blog_status` returns only the word. `/api/unavailable-blog` returns the key only to the owner (RLS) |
 | Referrer-Policy keeps unlisted URLs off other hosts | Yes | Existing header. Links in blog text open with `noopener` and the same policy |
 | Likes anonymous; view counts team-only | Yes | `get_blog_social` returns a count only. Like notifications carry no actor. Views exist only in PostHog |
 | Account deletion (DPDP, docs/03 §B.4) | Yes | §5. Files, rows, archives, likes and comments are gone. Tombstones and handle claims are kept (the same as Quests) |
-| Abuse | Partly | Comment rate limit shared with Quests (5 a minute). Reporting and blocking are out of scope (PRD), so the owner's one-tap comment delete is what exists |
+| Abuse | Partly | Comment rate limit of 5 a minute per person across Quest and blog comments, enforced both ways (`post_comment` replaced, §4.3). Reporting and blocking are out of scope (PRD), so the owner's one-tap comment delete is what exists |
 | Feature access can't be self-granted | Yes | `feature_access` has no client grants. `grant_*`/`revoke_*` are service role only. `create_blog` checks in the database |
 | Local draft backup | Yes | Only on the writer's own device, cleared on sign-out. Never sent anywhere but our own save action |
 
@@ -702,7 +717,8 @@ Design system rules (decision 0002):
 | Public functions and their zod schemas | Extended | `get_profile` + `blogs`, `search_public` + `blogs`, `list_my_notifications` + `blog`, `list_sitemap_profiles` more rows, `delete_account_data` more fields. App schemas use `.optional()`/`.default([])` for every new field, so code before or after the migration parses either output | `getProfile` parse test with old and new output |
 | Public URLs, slugs, handles, OG | New URLs only | Quest URLs unchanged, an existing Quest with slug `blog` still works (§3.3). New Quests can't take slug `blog`. No handle reserved | `slug.test.ts`; Playwright: `/@h/blog` Quest fixture still opens |
 | Existing trip rendering (jitter keys, defaults, templates) | None | Templates untouched | Existing |
-| Storage paths and variants | None | Same paths and variant names, new folders keyed by blog key | — |
+| Storage paths and variants | None | Same paths and variant names, new folders keyed by blog key. Blog and Quest keys can't overlap (`create_blog`/`create_trip` OQ410) | `blogSave.test.ts` |
+| Replaced `create_trip`, `post_comment` | Same arguments, results and grants | Only an extra OQ410 check, and the rate limit counting one more table | Existing `tripSave.test.ts`, `comments.test.ts` stay green; `grants.test.ts` unchanged entries |
 | Server actions, cache tags, env vars, analytics events | Extended | New actions and tags. `refreshQuestPages` adds one tag. No new env var. New events only, plus `quest_draft_created.source` gains `blog_link` and `notification_sent` gains optional `target` | `taxonomy.test.ts` regenerated from CSVs |
 | Notifications on the previous release (rollback) | Degraded, accepted | Old code parses blog notifications (same kinds, unknown `blog` field stripped) and shows "Someone liked your Quest", linking to `/home` | `notificationRows.test.ts` with a blog row through the old schema |
 | Blog links on the previous release (rollback) | Broken during rollback, accepted | The old `next.config.ts` has no blog rewrite, so `/@h/blog/s` returns a 404 until roll-forward. Only flagged users have blogs, so exposure is small | Noted for the CTO (R4) |
@@ -712,7 +728,11 @@ Design system rules (decision 0002):
 2. Migration 17, then BL-02 code. BL-02's reader schemas accept both outputs.
 3. Frontend BL-03, BL-04 and BL-05, in that order.
 
-No blog UI is reachable until someone is granted access (`feature_access` starts empty), so the backend can ship ahead of the frontend safely.
+No blog can be created until someone is granted access (`feature_access` starts empty), and the rule in §3.9 is that no production grant is made until BL-05 is live. The backend therefore ships ahead of the frontend safely. Each PR on its own also keeps every existing screen working: BL-02 filters blog items out of Home and words blog notifications correctly.
+
+**Who applies migrations (no runbook today).** The backend builder states in the PR which migration it adds. After the CTO approves the PR and before merging it, the CTO runs `supabase db push` against the preview project, checks the preview, then runs it against production and merges. The code deploy follows the merge. This gives migration-first ordering by hand. BL-01 writes these steps into `docs/runbooks/migrations.md`.
+
+**Deploy skew (accepted).** A tab still open on the previous build that loads more of the feed may fail to parse blog items in `/api/feed`. With no production grants before BL-05, there are no blog items to fail on.
 
 **Breaking changes accepted by the PRD.** None. The two rollback degradations above are for the CTO to accept.
 
@@ -729,22 +749,22 @@ No blog UI is reachable until someone is granted access (`feature_access` starts
 
 The events go in the OnQuest Taxonomy sheet first, then the CSVs are exported to `docs/analytics/` and `npm run analytics` regenerates `lib/analytics/taxonomy.ts`, in the BL-02 PR. No user text, titles, emails, photo links or exact locations.
 
-`blog_id` (the key) is added to every blog event, as `quest_id` is on every Quest event. `view_id` joins `blog_viewed` to `blog_read_end` (founder question 8).
+`blog_id` (the key) is added to every blog event, as `quest_id` is on every Quest event. `view_id` joins `blog_viewed` to `blog_read_end` and `blog_quest_opened` (decided 23 Nov).
 
 | Event | Type | When | Properties |
 |---|---|---|---|
-| `blog_create_started` | client | "Write a blog" tapped (available) | `source: create \| write_your_own` |
-| `blog_draft_saved` | server (`saveBlogDraft`) | At most once per calendar minute per blog | `blog_id`, `chars_bucket: 0 \| 1-500 \| 501-2000 \| 2001-5000 \| 5001-10000`, `photos` (0–10) |
+| `blog_create_started` | client | The composer opens on `/blogs/new` with a new key (after "Write a blog" is tapped); not again for a resumed unsent draft | `blog_id`, `source: create \| write_your_own` (passed through `/create?source=`) |
+| `blog_draft_saved` | server (`saveBlogDraft`) | At most once per calendar minute per blog: on the create save, or when the minute of `basedOn` differs from the minute of the new `savedAt` (`shouldTrackDraftSave`) | `blog_id`, `chars_bucket: 0 \| 1-500 \| 501-2000 \| 2001-5000 \| 5001-10000`, `photos` (0–10) |
 | `blog_quest_linked` | client | A Quest is linked or removed | `blog_id`, `action: link \| remove` |
 | `blog_previewed` | client | Preview tapped | `blog_id` |
 | `blog_published` | server (`publishBlog`, first publish only) | Post confirmed | `blog_id`, `visibility`, `photos`, `chars_bucket`, `has_quest`, `has_place`, `minutes_since_start` (from `startedAt`) |
 | `blog_viewed` | client | Blog page opens | `blog_id`, `view_id`, `signed_in`, `referrer: whatsapp \| instagram \| other \| none`, `has_quest` (whether the card rendered); `anon_id` (common) when signed out |
 | `blog_read_end` | client | §3.8 | `blog_id`, `view_id`, `seconds` |
-| `blog_quest_opened` | client | View Quest tapped | `blog_id` |
+| `blog_quest_opened` | client | View Quest tapped | `blog_id`, `view_id` |
 | `blog_liked` | server (`setBlogLike`) | Like or unlike saved | `blog_id`, `unlike: bool`, `source: blog_page \| feed \| after_sign_in` |
 | `blog_comment_posted` | server (`postBlogComment`) | Comment saved | `blog_id`, `length` (1–300, never the text) |
 | `blog_managed` | server (the ⋯ actions; `edit` = an update posted by `publishBlog`) | A change from the ⋯ menu | `blog_id`, `action: edit \| visibility \| comments \| delete`, `value: public \| unlisted \| private \| on \| off \| none` |
-| `create_option_tapped` (existing) | client | — | `available` = flag (meaning unchanged) |
+| `create_option_tapped` (in the taxonomy, **not fired today**) | client | BL-03 adds it to `CreateChooser`: an option is tapped | `option: quest \| blog`, `available` (false for the "Releasing soon" blog tap) |
 | `quest_draft_created.source` (existing) | server | — | + `blog_link` |
 | `notification_sent` (existing) | server | — | + optional `target: quest \| blog` |
 
@@ -763,10 +783,13 @@ Server events are the source of truth for counts, as in the PRD.
   - `notificationText.test.ts`, `notificationRows.test.ts`: blog rows, old-schema parse.
   - `lib/email/content.test.ts`, `notify.test.ts`: blog wording, `not_configured` path.
   - `deletionTags.test.ts`, `refreshTrip.test.ts`: new tags.
-  - `CreateChooser.test.tsx`: flag on/off.
+  - `CreateChooser.test.tsx`: flag on/off, `source` passed through, `create_option_tapped` fired for both options.
+  - `features/blog-editor/shouldTrackDraftSave.test.ts`: same minute → no, new minute → yes, create → yes.
+  - `features/home/HomeFeed.test.tsx` (BL-02): a page with Quest and blog items renders only the Quest cards.
 - **Database access (`tests/db/`):** §5 list.
 - **Backward compatibility:**
-  - `get_profile`/`search_public`/`list_my_notifications` outputs parsed by the **current** app schemas (copied as fixtures) after migrations 15 and 16.
+  - `get_profile`/`search_public`/`list_my_notifications` outputs parsed by the **current** app schemas (copied as fixtures) after migrations 16 and 17.
+  - The replaced `create_trip` and `post_comment` pass every existing `tripSave` and `comments` test unchanged.
   - `list_feed` output unchanged.
   - Seed data with an existing Quest slugged `blog` still returned by `get_trip`.
   - A blog document fixture with only `{ body: '' }` parses.
@@ -782,15 +805,15 @@ Server events are the source of truth for counts, as in the PRD.
 
 ## 12. Tasks
 
-Build mode: **Backend + Frontend split**. The backend lands first: BL-01 is the contract and core, BL-02 the social and discovery. The frontend can start BL-03 on fixtures once BL-01's contract files merge. Five PRs in total, sized as batches because of the deploy cap. They are larger than the usual ~400 lines, mostly SQL and tests. Each can still be tested on its own.
+Build mode: **Backend + Frontend split**. The backend lands first: BL-01 is the contract and core, BL-02 the social and discovery. The frontend can start BL-03 on fixtures once BL-01's contract files merge. The order is BL-01 → BL-02 → BL-03 → BL-04 → BL-05. BL-03 can start in parallel with BL-02 because it needs only BL-01. BL-04 builds on BL-03's `BlogArticle`. Every PR leaves every existing screen working on its own (T2), and no production access is granted until BL-05 is live (§3.9). Five PRs in total, sized as batches because of the deploy cap. They are larger than the usual ~400 lines, mostly SQL and tests. Each can still be tested on its own.
 
 | ID | Owner | Task | Touches | Covers ACs | Depends on | Done when |
 |---|---|---|---|---|---|---|
-| BL-01 | backend | Blog contract, data core and access flag | `lib/blog/*`, `lib/slug.ts`, `lib/cacheTags.ts`, migration 16, `tests/db/blog*.test.ts`, `featureAccess.test.ts`, `noUpdates`/`grants`/`accountDelete`/`retention` tests, `features/blog-editor/actions.ts`, `features/blogs/actions.ts` (draft, publish, visibility, comments, delete, places), loaders (`getBlog`, `getBlogStatus`, `getLinkedQuest`, `getBlogDraft`, `getOwnBlog`, `getOwnPrivateBlogKey`, `getMyQuestsForLinking`), `features/blogs/refreshBlog.ts`, `features/editor/refreshTrip.ts`, `features/account/{actions,deletionTags,accountDeletion}.ts`, `docs/runbooks/feature-access.md` | B2, B3, B4, B5 (server), B7, B9 (server), B11 delete, edge: slugs, two tabs (server) | — | Migration 16 runs on seed. All listed DB and unit tests pass. Contract files exactly as §4.1. Production `slug = 'blog'` count in the PR. CI green |
-| BL-02 | backend | Blog social, notifications, feed, Explore, search, profile, email, analytics | migration 17, `tests/db/{blogSocial,blogDiscovery}.test.ts` + `notifications`/`feed`/`accountDelete`/`retention`/`grants`/`noUpdates`, `features/blogs/socialActions` + actions (`setBlogLike`, `postBlogComment`, `deleteBlogComment`), `getBlogSocial`, `app/api/blogs/[key]/me`, `app/api/unavailable-blog`, `app/api/me/blogs`, `getMyBlogs`, `features/home/getHome.ts`, `features/explore/{getExplore,searchPublic}.ts`, `features/profile/getProfile.ts`, `features/notifications/notificationRows.ts`, `lib/social/{schema,cardRows}.ts`, `lib/email/*`, `docs/analytics/*.csv`, `lib/analytics/taxonomy.ts` | B10 (server), B11 comments, B12, B13, S1–S3 (server) | BL-01 | Migration 17 runs. Old-shape parse tests pass. Email path returns `not_configured` without Resend and builds blog wording with it. Taxonomy regenerated. CI green |
-| BL-03 | frontend | Composer: Create chooser, write, photos, place, Link a Quest, preview, post, share | `features/shell/CreateChooser.tsx`, `app/(app)/create/page.tsx`, `app/(app)/(create)/blogs/{new,[key]/edit,[key]/share}/*`, `features/blog-editor/*` (UI, store, saver, local draft), `design-system/components/TextField.tsx` (TextArea variant), `icons.tsx` if needed, `proxy.ts`, `robots.ts` | B1, B2, B3, B4, B5, B6, B7 (posting), edges: offline, upload failure, two tabs, close | BL-01 (BL-02 not needed) | All composer states work on a real phone preview. Unit tests listed in §11 pass. "Releasing soon" unchanged without access |
-| BL-04 | frontend | Blog page, owner view, ⋯ menu, SEO, OG, read-end | `next.config.ts` rewrite, `app/(public)/b/[handle]/[slug]/{page,opengraph-image}.tsx`, `app/(app)/blogs/[key]/page.tsx`, `features/blogs/*` (view, article, body, gallery, viewer, unavailable, manage sheet, metadata, jsonLd, useReadEnd, LiveBlogSocialProvider), `features/trip-page/useQuestSocial.tsx` + `LikeButton`/`Comment*` (`subject` prop, Quest default unchanged), `app/sitemap.ts`, `features/profile/metadata.ts` | B7, B8, B9, B10, B11, edges: text only, links, 10 photos + 10k chars | BL-01, BL-02 | Lighthouse mobile LCP < 2.5 s on preview. View source shows title and body. Sitemap lists a ≥ 80-word public blog. Quest page tests unchanged and green |
-| BL-05 | frontend | Blogs everywhere + Playwright | `features/profile/ProfileView.tsx` (+ `BlogRow`, `LetterTile`), `features/quests/YourQuestsView.tsx`, `features/home/{HomeFeed,BlogFeedCard}.tsx`, `features/explore/{ExploreView,BlogStoryRows}.tsx`, search results UI, `features/notifications/notificationText.ts`, `tests/e2e/blogs.spec.ts` | B5 (list), B12, B13 (UI), S2, S3; Playwright for B1–B11 | BL-02, BL-03, BL-04 | Profiles without blogs pixel-identical (screenshot test). Playwright `blogs.spec.ts` green at three viewports. Existing smoke green |
+| BL-01 | backend | Blog contract, data core and access flag | `lib/blog/*`, `lib/slug.ts`, `lib/cacheTags.ts`, migration 16, `tests/db/blog*.test.ts`, `featureAccess.test.ts`, `noUpdates`/`grants`/`accountDelete`/`retention` tests, `features/blog-editor/actions.ts`, `features/blogs/actions.ts` (draft, publish, visibility, comments, delete, places), loaders (`getBlog`, `getBlogStatus`, `getLinkedQuest`, `getBlogDraft`, `getOwnBlog`, `getOwnPrivateBlogKey`, `getMyQuestsForLinking`), `features/blogs/refreshBlog.ts`, `features/editor/refreshTrip.ts`, `features/account/{actions,deletionTags,accountDeletion}.ts`, `docs/runbooks/{feature-access,migrations}.md`, **docs checklist in Appendix A BL-01** (`docs/01-hld.md`, `docs/02-lld.md`, `docs/03-security-visibility-seo.md`, `docs/decisions/0001-no-in-place-updates.md` retention amendment, `CLAUDE.md`) | B2, B3, B4, B5 (server), B7, B9 (server), B11 delete, edges: slugs, two tabs (server), key reuse | — | Migration 16 runs on seed. All listed DB and unit tests pass. Contract files exactly as §4.1. Production `slug = 'blog'` count in the PR. Docs checklist done (CTO approves the CLAUDE.md and decision edits in review). CI green |
+| BL-02 | backend | Blog social, notifications, feed, Explore, search, profile, email, analytics | migration 17, `tests/db/{blogSocial,blogDiscovery}.test.ts` + `notifications`/`feed`/`accountDelete`/`retention`/`grants`/`noUpdates`, `features/blogs/socialActions` + actions (`setBlogLike`, `postBlogComment`, `deleteBlogComment`), `getBlogSocial`, `app/api/blogs/[key]/me`, `app/api/unavailable-blog`, `app/api/me/blogs`, `getMyBlogs`, `features/home/getHome.ts`, **`features/home/HomeFeed.tsx` (drop `type: 'blog'` items until BL-05)**, `features/explore/{getExplore,searchPublic}.ts`, `features/profile/getProfile.ts`, `features/notifications/{notificationRows,notificationText}.ts`, `lib/social/{schema,cardRows}.ts`, `lib/email/*`, `docs/analytics/*.csv`, `lib/analytics/taxonomy.ts`. Migration 17 replaces `post_comment` too | B10 (server), B11 comments, B12, B13 (incl. bell text), S1–S3 (server) | BL-01 | Migration 17 runs. Old-shape parse tests pass. Home renders exactly as today with blog items in the feed data (`HomeFeed.test.tsx`). Blog notifications read "…your blog" and link to the blog path. Email path returns `not_configured` without Resend and builds blog wording with it. Taxonomy regenerated. CI green |
+| BL-03 | frontend | Composer: Create chooser, write, photos, place, Link a Quest, preview, post, share | `features/shell/CreateChooser.tsx`, `app/(app)/(signed-in)/create/page.tsx`, `app/(app)/(signed-in)/(create)/blogs/{new,[key]/edit,[key]/share}/page.tsx`, `features/blog-editor/*` (UI, store, saver, local draft), **`features/blogs/{BlogArticle,BlogBody,BlogGallery}.tsx` + `blogBody.test.ts`, `BlogArticle.test.tsx`**, `features/account/signInPrompt.ts` (`NEEDS_ACCOUNT` + `/blogs`), `design-system/components/TextField.tsx` (TextArea variant), `icons.tsx` if needed, `proxy.ts`, `app/robots.ts` | B1, B2, B3, B4, B5, B6, B7 (posting), edges: offline, upload failure, two tabs, close, text only (article), links | BL-01 (BL-02 not needed) | All composer states work on a real phone preview (preview project grants only). Unit tests listed in §11 pass. "Releasing soon" unchanged without access. Signed out, a `/blogs/…` link opens the popup |
+| BL-04 | frontend | Blog page, owner view, ⋯ menu, SEO, OG, read-end | `next.config.ts` rewrite, `app/(public)/b/[handle]/[slug]/{page,opengraph-image}.tsx`, `app/(app)/(signed-in)/blogs/[key]/page.tsx`, `features/blogs/*` except BL-03's three components (view, writer row, photo viewer, linked Quest card, write-your-own, unavailable, manage sheet, metadata, jsonLd, useReadEnd, LiveBlogSocialProvider), `features/trip-page/useQuestSocial.tsx` + `LikeButton`/`Comment*` (`subject` prop, Quest default unchanged), `features/blog-editor/BlogComposer.tsx` (update destination → blog page), `app/sitemap.ts`, `features/profile/metadata.ts` | B7, B8, B9, B10, B11, edges: 10 photos + 10k chars | BL-01, BL-02, BL-03 | Lighthouse mobile LCP < 2.5 s on preview. View source shows title and body. Sitemap lists a ≥ 80-word public blog. Quest page tests unchanged and green |
+| BL-05 | frontend | Blogs everywhere + Playwright | `features/profile/ProfileView.tsx` (+ `BlogRow`, `LetterTile`), `features/quests/YourQuestsView.tsx`, `features/home/{HomeFeed,BlogFeedCard}.tsx`, `features/explore/{ExploreView,BlogStoryRows}.tsx`, search results UI, `tests/e2e/blogs.spec.ts` | B5 (list), B12, S2, S3; Playwright for B1–B11 | BL-02, BL-03, BL-04 | Profiles without blogs pixel-identical (screenshot test). Playwright `blogs.spec.ts` green at three viewports. Existing smoke green. Then the CTO may make the first production grant |
 
 The full issue texts are in Appendix A. They were not created on GitHub, as instructed.
 
@@ -809,28 +832,38 @@ The full issue texts are in Appendix A. They were not created on GitHub, as inst
 | D9 | Profiles with only public blogs | Stay `noindex` / become indexable and in the sitemap | Indexable | A profile with public writing isn't thin. The rule changes from "≥ 1 public Quest" to "≥ 1 public Quest or blog" | Yes (SEO rule in docs/03) |
 | D10 | Reserve `blog` | As a handle / as a new Quest slug / neither | New Quest slug only | Handles can't clash (`/@` prefix), and reserving one would block an existing owner's profile saves. The Quest slug keeps `/@h/blog` free for a future index page | No |
 | D11 | Read-through measure | Scroll % / end-marker visibility + 5 s visible time | Marker + 5 s | The same on every screen size and browser, and short blogs don't count as read on open | No |
+| D12 | Linked unlisted Quest on a public blog | (a) Show it (PRD's original edge case); (b) show it only on unlisted blogs; owner always sees it | (b) | A public blog is listed, indexed and in the sitemap, so (a) would publish an unlisted Quest's unguessable URL. (b) keeps "a blog never makes a linked Quest more visible" | Decided 23 Nov (PRD "Changes after tech review" point 4) |
+| D13 | Comment rate limit across Quests and blogs | (a) Count both only in `post_blog_comment`; (b) also replace `post_comment` | (b) | One limit for a person's comments, whichever page they're on. Same arguments and grant, one extra count | No |
+| D14 | Blog and Quest keys share `{uid}/{key}` storage folders | (a) A separate folder prefix for blogs (a new path pattern); (b) reject each other's keys at create | (b) | No new storage path or policy. A reused key would otherwise let a blog delete or sweep delete a Quest's photos | No |
 
 ## 14. Risks and open questions
 
 **Technical (for the CTO):**
 - **Signed off by the CTO (Swati), 23 Nov 2026:** D1, D2, D4, D5, D6, D8 and D9, and R4 (roll forward only after blogs exist). D5 also needs the 0001 retention amendment (C-A16), which `run_retention_cleanup` already depends on.
-- R1: Two migrations replace `delete_account_data`, `run_retention_cleanup`, `list_my_notifications`, `get_profile` and `search_public`. A parallel ticket (OQ-16) touching the same functions would conflict, so each migration must start from the latest definition. BL-01 and BL-02 rebase onto OQ-16 if it lands first.
+- R1: Two migrations replace `delete_account_data`, `list_pending_deletions`, `list_sitemap_profiles`, `run_retention_cleanup` (latest: migration 12), `get_profile` (migration 14), `search_public` (migration 13), `list_my_notifications`, `post_comment` (migration 10) and `create_trip` (migration 9). Migration 15 (OQ-16) changed only grants, so each replacement starts from the definition named here. A ticket that changes any of these before BL-01 or BL-02 merges must be rebased onto.
+- R6: BL-02 is large (migration 17 with about 20 functions, readers, email and taxonomy). Commit the migration 17 SQL and its DB tests separately inside the PR so review can go in two passes.
+- R7: Sign-out clears `oq_blog_draft:*` from localStorage, but pending photos stay in IndexedDB (`onquest-uploads`) until they upload, the same as Quests today. On a shared phone, the next user can't see them in the UI, but they are on the device. Accepted, as for Quests. Clearing IndexedDB at sign-out is Later.
 - R2: The 10,000-character body in `search_text` makes trigram indexes larger. That is fine at this scale. Revisit with full-text search (`tsvector`) if search slows (Later).
 - R3: resolved. OQ-16 merged on 23 Nov (PR #19); its migration is 15, so blogs use 16 and 17.
 - R4: Rolling back the app code after blogs exist 404s blog links and shows blog notifications as "your Quest" until roll-forward. Accept, or roll forward only.
 - R5: iOS Safari doesn't open the keyboard on `autoFocus` after a navigation. The cursor is in Title, but the keyboard may need a tap. UX test 1 checks it. There is no workaround without a user gesture.
-- CLAUDE.md's "Public pages read only via…" list and the HLD caching table need the new functions and tags (§16). CLAUDE.md is the CTO's to edit.
+- CLAUDE.md's "Public pages read only via…" list, the cache-tag rule and the HLD/LLD/docs/03 sections change. They are written as a concrete checklist in BL-01 (Appendix A) and ship with that PR. The CTO approves the CLAUDE.md and decision 0001 edits there.
+- Email at launch (review note): blogs notify through the bell only until Resend is set up (§3.6). The UX tester should not expect emails.
 
-**Product (for the founder),** each answerable in one line. Swati (CTO) is OK with all nine (23 Nov 2026); Alok to confirm as the PRD owner:
-1. Likes on blogs show the real count from the first like ("Like", "1 like", "2 likes"…), per your 21 Nov decision, instead of B5's "Be the first to like this". Confirm?
-2. Two tabs: the save that reached the server first is kept, and the tab that is behind shows "This draft was changed somewhere else. Reload." Its unsaved text is lost on reload. Is that what "the later save wins" means?
-3. Editing a posted blog: changes go live when you tap Post again (as with Quests), the visibility sheet is skipped, and you land on the blog with "Blog updated." OK, including that copy?
-4. Unlisted blogs get a random 6-character ending like unlisted Quests (`/@riya/blog/goa-on-15k-k3f9x2`), not the plain title link shown in B4. OK?
-5. This release adds blogs only to the signed-in feed ("people you follow"), not to the signed-out Home feed from OQ-16. OK?
-6. Explore's "Stories and guides": OnQuest guides first, then public blogs ranked by likes, comments and recency. OK?
-7. The flag gates only writing. Everyone can read, like and comment on blogs, and see Blogs on profiles (only flagged people's blogs exist). OK?
-8. Analytics: every blog event also carries the blog's id, and views carry a view id, so read-through can be matched per view (no user text). OK to add to the Taxonomy sheet?
-9. While photos are still uploading, Post stays greyed out with a progress ring and no message. OK, or do you want copy (e.g. "Uploading photos…")?
+**Product: all decided on 23 Nov 2026.** Swati (CTO) agreed every item, and the coordinator recorded them in the PRD's "Changes after tech review" section (`docs/prds/blogs.md`, points 1–5). The PRD text above that section still shows the original wording. Items 1, 2, 4 and 10 changed the PRD's wording: Alok, as PRD owner, should see them, and the founder's source doc should be edited to match. The spec doesn't wait on that.
+
+| # | Question | Decision (23 Nov) | Changed PRD wording? |
+|---|---|---|---|
+| 1 | Likes copy (B5) | The real count from the first like ("Like", "1 like", "2 likes"…). "Be the first to like this" is not shown | Yes: B5 (PRD change point 1) |
+| 2 | Two tabs | The first save that reaches the server is kept (decision 0001 rule 4). The tab that is behind shows "This draft was changed somewhere else. Reload." and its unsaved text is lost on reload | Yes: edge case "The later save wins" (point 2) |
+| 3 | Editing a posted blog | Changes go live on Post. The visibility sheet is skipped. The writer lands on the blog with "Blog updated." | No, it fills a gap (point 5) |
+| 4 | Unlisted link | Random 6-character ending, like unlisted Quests (`/@riya/blog/goa-on-15k-k3f9x2`). Public blogs keep the plain title link | Yes: B4 (point 3) |
+| 5 | Signed-out feed | Blogs are only in the signed-in "people you follow" feed | No (point 5) |
+| 6 | Explore order | OnQuest guides first, then public blogs by score | No (point 5) |
+| 7 | What the flag gates | Writing only | No (point 5) |
+| 8 | Analytics ids | `blog_id` on every blog event. `view_id` on `blog_viewed`, `blog_read_end` and `blog_quest_opened` | No (point 5) |
+| 9 | Post while uploading | Greyed out with a progress ring, no copy | No (point 5) |
+| 10 | Unlisted Quest linked from a public blog | A public blog shows the card only for a public Quest. An unlisted Quest's card shows on unlisted blogs (private blogs have only the writer as a reader), and always to the writer (D12) | Yes: edge case "Linked Quest is unlisted" and the privacy section (point 4) |
 
 ## 15. Later
 
@@ -844,25 +877,29 @@ The full issue texts are in Appendix A. They were not created on GitHub, as inst
 - Private bucket + signed URLs for private blogs (docs/03 §A.2, the same trade-off as Quests: making a blog private doesn't revoke photo URLs already seen; delete removes them).
 - Reporting and blocking for blogs and comments.
 
-## 16. Doc updates that belong in this spec PR
+## 16. Doc updates
 
-These were not written in this pass: the brief asked for the spec file only. The Tech Lead or CTO applies them before approval.
+The plan review (T7, T8) asked for these to ship with the first build PR. They are a concrete checklist in **BL-01** (Appendix A, "Docs checklist"), so the docs describe the code from the moment the blog tables exist. They are not edited in this spec PR. The CTO approves the `CLAUDE.md` and decision 0001 edits in BL-01's review.
 
-- `docs/01-hld.md`:
-  - §3.2: blogs tables.
-  - §5: a "Write and post a blog" flow.
-  - §6 caching table: add `/@handle/blog/slug` (tag `blog-url:{handle}/{slug}`), blog social (`blog-social:{key}`), linked Quest cards (`blog-quests:{ownerKey}`), and owner view `/blogs/[key]` (never cached).
-- `docs/02-lld.md`:
-  - §1: `features/blogs`, `features/blog-editor`, `lib/blog`.
-  - §3.1 and §3.3: blog tables and functions.
-  - §4: blog actions.
-  - §5.5: blog autosave and offline backup.
-- `docs/03-security-visibility-seo.md`:
-  - §A.1: add a Blogs column. The owner of a private blog sees it at `/blogs/[key]`.
-  - §C.1: blog index rules, and the profile rule from D9.
-- `CLAUDE.md` (CTO): the public read function list, and the cache tag rule (add `blog-url:` / `blog-social:` / `blog-quests:`).
+## 17. Changes after plan review round 1 (23 Nov)
 
----
+Review: `docs/reviews/2026-11-23-blogs-plan-review.md`.
+
+| Finding | Change |
+|---|---|
+| T1 routes and sign-in gate | All `/blogs/*` routes moved under `app/(app)/(signed-in)/`: the composer in `(create)/blogs/…`, the owner view in `blogs/[key]/`. `/create` is at `(signed-in)/create/page.tsx`. `/^\/blogs(\/|$)/` added to `NEEDS_ACCOUNT` (BL-03). `has_feature_access` is never called signed out (§3.9, §4.4). Other stale assumptions fixed: `FeedPageSchema` has two users (§4.1), `create_option_tapped` isn't fired today (§3.9, §6.1, §10), and the robots file is `app/robots.ts` |
+| T2 BL-02 on its own | BL-02 makes `HomeFeed.tsx` drop blog items and moves `notificationText` into BL-02. Rollout rule: no production `grant_feature_access` until BL-05 is live (§3.9, §6.3, §8) |
+| T3 component ownership | `BlogArticle`, `BlogBody` and `BlogGallery` and their tests moved to BL-03. BL-04 depends on BL-03, and BL-03's Update goes to the share screen until BL-04 |
+| T4 shared storage folder | `create_blog` rejects keys in `trips`/`trips_archive`. `create_trip` is replaced to reject blog keys. DB tests both ways (§3.1, §4.3, D14) |
+| T5 rate limit | Both ways: `post_comment` is replaced in migration 17 to count blog comments, with a shared lock key (§4.3, D13) |
+| T6 analytics | `view_id` on `blog_quest_opened`. `blog_create_started` fires in the composer with `blog_id`. `source=write_your_own` passed through `/create`. `create_option_tapped` added to `CreateChooser`. `blog_draft_saved` minute rule stated (`shouldTrackDraftSave`) |
+| T7, T8 docs and 0001 retention | A concrete docs checklist in BL-01 (Appendix A) |
+| T9 rebase | Done by the coordinator. Stale OQ-16 conditionals removed |
+| T10, T11 | Replacement bases named (R1). `list_pending_deletions` checks blog tables (§4.3, BL-01 ACs) |
+| T13 migrations | Who applies them and when (§8), plus `docs/runbooks/migrations.md` in BL-01 |
+| T14 wording | `get_blog` field wording made consistent (§4.3) |
+| T15, T16 | R6 (split commits in BL-02), R7 (IndexedDB on sign-out) |
+| Founder items, privacy | All decided 23 Nov (PRD "Changes after tech review"). §14 table. Linked-Quest rule D12 in `get_blog_quest`, tests, §6 and §7 |
 
 ## Appendix A. GitHub issue drafts
 
@@ -871,7 +908,7 @@ Not created (per instruction). Labels for each: `spec:blogs` plus the owner labe
 ### BL-01 · backend · Blogs: contract, data core and access flag
 
 **Spec:** `docs/specs/blogs.md` §3.1–3.3, §3.9, §4.1–4.3 (migration 16), §5
-**Depends on:** none. Rebase on OQ-16 first if it has merged a migration.
+**Depends on:** none (branch from `main`, which has OQ-16 and migration 15).
 
 **Build**
 - Contract files exactly as §4.1:
@@ -881,7 +918,9 @@ Not created (per instruction). Labels for each: `spec:blogs` plus the owner labe
 - `supabase/migrations/20261124100000_16_blogs.sql`:
   - Tables, RLS and grants (§5).
   - `has_feature_access`, `grant_/revoke_feature_access`, `create_blog`, `save_blog_draft`, `publish_blog`, `set_blog_visibility`, `set_blog_comments`, `delete_blog`, `get_blog`, `get_blog_status`, `get_blog_quest`, `list_sitemap_blogs`, and the helpers.
-  - Replaced `delete_account_data` (+ `own_blogs`), `list_pending_deletions` and `run_retention_cleanup`.
+  - Replaced `delete_account_data` (+ `own_blogs`), `list_pending_deletions` (also checks `blogs`, `blogs_archive`, `blog_drafts`) and `run_retention_cleanup`, each based on its migration 12 definition.
+  - Replaced `create_trip` (migration 9 base, same arguments and grant) to raise OQ410 for a key in `blogs`/`blogs_archive`. `create_blog` raises OQ410 for a key in `trips`/`trips_archive`.
+  - `get_blog_quest` with the D12 visibility rule.
 - Actions:
   - `features/blog-editor/actions.ts`: `saveBlogDraft` (create or save, `blog_draft_saved` at most once a minute), `discardBlogDraft`, `searchBlogPlaces`.
   - `features/blogs/actions.ts`: `publishBlog` (+ photo sweep in `after()`, `blog_published`, `blog_managed{edit}` on updates), `setBlogVisibility`, `setBlogComments`, `deleteBlog` (files first).
@@ -891,21 +930,54 @@ Not created (per instruction). Labels for each: `spec:blogs` plus the owner labe
   - `getLinkedQuest` (cached, `blog-quests:{owner}` tag).
   - `getBlogDraft`, `getOwnBlog`, `getOwnPrivateBlogKey`, `getMyQuestsForLinking`.
 - `features/blogs/refreshBlog.ts` (`refreshBlogPages`). `refreshQuestPages` + `blogQuestsTag`. `refreshAfterProfileSave` + own blog URLs. `deletionTags` + `ResultSchema` new fields (`.default([])`).
-- `docs/runbooks/feature-access.md`: grant and revoke founders, friends-test users and everyone.
+- `docs/runbooks/feature-access.md`: starts with the rule "no production grant until BL-05 is live; the CTO makes the first one". Then: grant and revoke founders, friends-test users and everyone, and how to check who has access.
+- `docs/runbooks/migrations.md`: the builder names the migration in the PR. The CTO runs `supabase db push` on preview, checks it, then on production, then merges (code deploys after). Rollback is roll-forward only (R4).
 - Run `select count(*) from public.trips where slug = 'blog'` on production (read-only) and post the number in the PR.
+
+**Docs checklist (ships in this PR; T7, T8)**
+- [ ] `docs/decisions/0001-no-in-place-updates.md`: add "Amendment 1: retention (CTO, 23 Nov 2026)". Content:
+  - Archived rows are kept for a fixed time, then deleted by `run_retention_cleanup` (weekly).
+  - The ages: Quests, drafts, profiles and blogs 180 days; blog drafts 30 days; likes, comments and follows 90 days; notification reads 180 days; notifications 365 days; feature access 180 days.
+  - Tombstones and handle claims are kept forever.
+  - User deletes stay immediate (rule 7).
+  - Close the "Retention" and "Drafts" open questions. Mark "Current gaps" as fixed by spec A.
+- [ ] `docs/01-hld.md`:
+  - §3.2 Postgres row: add `blogs`, `blog_drafts` (+ `_archive`), `blog_likes`, `blog_comments` (+ `_archive`), insert-only `removed_blog_urls`, `feature_access` (+ `_archive`), and `notifications.blog_key`.
+  - §5: a new "5.7 Write and post a blog" (composer → autosave → Post → cached page) and "5.8 Feature access" (DB flag, no deploy).
+  - §6 caching table: rows for `/@handle/blog/slug` (tag `blog-url:{handle}/{slug}`; refreshed on publish/update, visibility, delete, handle or name change), blog likes and comments (`blog-social:{blogKey}`), linked Quest cards (`blog-quests:{ownerKey}`; refreshed on any of the owner's Quest publish/visibility/delete and any blog publish/visibility). `/blogs/*` app routes are never cached. Add the line "Private blogs keep their URL; the owner sees them at `/blogs/[key]`".
+- [ ] `docs/02-lld.md`:
+  - §1 folders: `features/blogs/`, `features/blog-editor/`, `lib/blog/`.
+  - §3.1: the blog tables (copy the §5 table block of this spec).
+  - §3.2: the blog RLS rules.
+  - §3.3: a "Blog public reads" list: `get_blog`, `get_blog_status`, `get_blog_quest`, `get_blog_social`, `list_sitemap_blogs`, `list_explore_blogs`, plus `blogs` in `get_profile` and `search_public`.
+  - §3.4: blog photos use the same paths under `{userId}/{blogKey}/`, and keys never overlap with Quest keys.
+  - §4: the blog actions table (§4.2 of this spec).
+  - §5.5 Autosave: replace "Last write wins (one editor per trip)" with the 0001 conflict rule (`saved_at`, OQ409, "This draft was changed somewhere else. Reload."). Add the blog timing (2 s debounce, 10 s max) and the localStorage backup.
+- [ ] `docs/03-security-visibility-seo.md`:
+  - §A.1: add a "Blogs" note under the table. Same visibility rules and unlisted suffix as Quests. The owner sees a private blog at `/blogs/[key]`. A public blog shows a linked Quest card only for a public Quest (D12).
+  - §A.1 Retention bullet: add blog drafts 30 days and the 0001 amendment reference.
+  - §B.2 rule 2: add `get_blog`, `get_blog_status`, `get_blog_quest`, `get_blog_social`, `list_sitemap_blogs`, `list_explore_blogs`, `list_home_feed` (signed in), and "only public blogs".
+  - §C.1 table: public blog ≥ 80 words ✓; < 80 `noindex, follow`; unlisted blog `noindex, nofollow`; private/removed blog messages `noindex`; `/@handle` indexed with ≥ 1 public Quest **or blog** (D9); `/blogs/*` in the app-pages row.
+  - §C.3: blog page `BlogPosting` + `BreadcrumbList`.
+- [ ] `CLAUDE.md` (CTO approves in review):
+  - Data rules: "Public pages read only via `get_trip`, `get_profile`, `list_sitemap_trips`" becomes "…via the security-definer read functions listed in `docs/03` §B.2 (`get_trip`, `get_profile`, `get_blog`, …)".
+  - The cache-tag bullet adds `blog-url:{handle}/{slug}` (`blogUrlTag()`, old and new handle), `blog-social:{blogKey}` and `blog-quests:{ownerKey}`.
+  - "Where things go": add `features/blogs`, `features/blog-editor` to the features line.
 
 **Acceptance criteria**
 - With no access row, `create_blog` → OQ403. After `grant_feature_access('blogs', handle)`, it succeeds.
 - Autosave archives one draft row per save. A stale `basedOn` → `conflict`.
 - Publish: title only → `empty`. 11 photos, a 101-character title or a 10,001-character body → rejected. A duplicate title → `-2`. Unlisted gets a 6-character suffix. The slug never changes on update.
-- A linked Quest that isn't the writer's published Quest is dropped on publish. `get_blog_quest` returns null for private, deleted or another owner's Quests.
+- A linked Quest that isn't the writer's published Quest is dropped on publish. `get_blog_quest` returns null for private, deleted or another owner's Quests, and for an unlisted Quest on a public blog. It returns the card for an unlisted Quest on an unlisted blog.
+- A blog key equal to a Quest key, or a Quest key equal to a blog key (live or archived), is rejected with OQ410.
+- `list_pending_deletions` lists a half-deleted user who has only blog rows left.
 - `get_blog` returns only public/unlisted published blogs and only the §4.1 fields.
 - `delete_blog` removes every row and archive and writes tombstones under every handle. `get_blog_status` → `removed`. Private → `private`.
 - Account deletion removes blogs and archives and keeps tombstones.
 
 **Tests:** `tests/db/{blogSave,blogAccess,blogDelete,featureAccess}.test.ts`, extended `noUpdates`, `grants`, `accountDelete`, `retention`. Unit: `lib/blog/*.test.ts`, `lib/slug.test.ts`, `deletionTags.test.ts`, `refreshTrip.test.ts`.
 
-**Done when:** migration 16 runs on seed, all the tests above pass, CI is green, and the production `slug = 'blog'` count is in the PR.
+**Done when:** migration 16 runs on seed, all the tests above pass, the docs checklist is ticked, CI is green, and the production `slug = 'blog'` count is in the PR.
 
 ### BL-02 · backend · Blogs: likes, comments, notifications, feed, Explore, search, profile, email, analytics
 
@@ -917,13 +989,18 @@ Not created (per instruction). Labels for each: `spec:blogs` plus the owner labe
   - `blog_likes`, `blog_comments` and their archives (RLS, grants).
   - `notifications.blog_key` + check + index.
   - `set_blog_like`, `post_blog_comment` (rate limit across both comment tables), `delete_blog_comment`, `get_blog_social`, `get_my_blog_state`, `list_my_blogs`, `list_my_comment_blog_keys`, `blog_card_json`, `list_home_feed`, `list_explore_blogs`.
-  - Replaced `search_public`, `get_profile`, `list_sitemap_profiles`, `list_my_notifications`, `delete_blog`, `delete_account_data`, `list_pending_deletions` and `run_retention_cleanup`. Same arguments, every old field kept.
+  - Replaced `search_public`, `get_profile`, `list_sitemap_profiles`, `list_my_notifications`, `delete_blog`, `delete_account_data`, `list_pending_deletions` and `run_retention_cleanup`. Same arguments, every old field kept. Bases as named in §14 R1.
+  - Replaced `post_comment` (migration 10 base, same arguments, result and grant), whose rate limit now also counts `blog_comments`. Both functions use the lock key `comment/{user}`.
+  - Commit the migration SQL + DB tests separately from the app code (R6).
 - Actions `setBlogLike`, `postBlogComment`, `deleteBlogComment` (tags, `after()` email, server events).
 - `getBlogSocial`, `getMyBlogs`.
 - Route handlers `/api/blogs/[key]/me`, `/api/unavailable-blog`, `/api/me/blogs` (all `no-store`).
 - Readers:
   - `lib/social/{schema,cardRows}.ts`: `HomeFeedItem`, `blogs` in search, `blog` in notifications, `BlogViewer`.
   - `getFeedPage` → `list_home_feed`. `getExplore` + blogs. `searchPublic` + blogs. `getProfile` + blogs (optional). `notificationRows` + blog.
+- Keep Home and the bell right with this PR alone:
+  - `features/home/HomeFeed.tsx` drops `type: 'blog'` items from the first page and from "Load more" pages. Quest cards render exactly as today (BL-05 renders blog cards).
+  - `notificationText`/`notificationHref` use `item.blog ?? item.quest`, with fallbacks "your blog" and "{name} commented on your blog".
 - Email: `NotifyEvent.blogKey`, `NotifyDeps.blog`, `notifyBlogOwner`, blog wording in `content.ts`.
 - Analytics: add the §10 events to the Taxonomy sheet, export the CSVs, and run `npm run analytics`.
 
@@ -935,10 +1012,13 @@ Not created (per instruction). Labels for each: `spec:blogs` plus the owner labe
 - Search finds a public blog by a word in its body and by its place name.
 - Every field the current app reads from `get_profile`, `search_public`, `list_my_notifications` and `list_feed` is unchanged. The old schemas still parse them.
 - Without `RESEND_API_KEY`, blog notifications return `not_configured` and the bell still works. With Resend configured (test deps), the email says "your blog".
+- The comment rate limit holds both ways (5 Quest comments → a blog comment is refused, and the reverse).
+- With blog items in the feed data, Home shows the same Quest cards as before and no broken card.
+- A blog like or comment reads "Someone liked {blog title}" / "{name} commented on {blog title}: …" and links to the blog path.
 
-**Tests:** `tests/db/{blogSocial,blogDiscovery}.test.ts`, extended `notifications`, `feed`, `accountDelete`, `retention`, `grants`, `noUpdates`. Unit: `notificationRows`, `cardRows`, `lib/email/*`, `taxonomy.test.ts`.
+**Tests:** `tests/db/{blogSocial,blogDiscovery}.test.ts`, extended `notifications`, `feed`, `comments`, `accountDelete`, `retention`, `grants`, `noUpdates`. Unit: `notificationRows`, `notificationText`, `cardRows`, `HomeFeed.test.tsx`, `lib/email/*`, `taxonomy.test.ts`.
 
-**Done when:** migration 17 runs on seed, the old-shape parse tests pass, the taxonomy is regenerated, and CI is green.
+**Done when:** migration 17 runs on seed, the old-shape parse tests pass, Home and the bell are correct with this PR alone, the taxonomy is regenerated, and CI is green.
 
 ### BL-03 · frontend · Blogs: composer (write, photos, place, Link a Quest, preview, post, share)
 
@@ -946,59 +1026,68 @@ Not created (per instruction). Labels for each: `spec:blogs` plus the owner labe
 **Depends on:** BL-01 (it can start on fixtures from the BL-01 contract files)
 
 **Build**
-- `CreateChooser` with `blogsEnabled` (from `/create`'s server read of `has_feature_access`). It is unchanged without access.
-- Routes `/blogs/new` (redirect to `/create` without access, resume `oq_blog_draft:new`), `/blogs/[key]/edit`, `/blogs/[key]/share`. All `noindex`. `proxy.ts` matcher, `robots.ts`.
-- `features/blog-editor/`: `BlogComposer`, `TitleField`, `PhotoRow` (upload queue, reorder, 10 cap, Retry/Remove), `PlaceRow`, `LinkQuestSheet`, `PostSheet`, preview mode, `postRules`, `photoRules`, `blogDraftStore`, `blogDraftSaver`, `useBlogAutosave`, `localDraft`. Sign-out clears local drafts.
+- `CreateChooser` with `blogsEnabled` and `source` (from `app/(app)/(signed-in)/create/page.tsx`, which reads `has_feature_access` only when signed in and `?source=` defaulting to `create`). It is unchanged without access.
+- Routes in the signed-in group:
+  - `app/(app)/(signed-in)/(create)/blogs/new/page.tsx`: redirects to `/create` without access, and resumes `oq_blog_draft:new`.
+  - `app/(app)/(signed-in)/(create)/blogs/[key]/edit/page.tsx`.
+  - `app/(app)/(signed-in)/(create)/blogs/[key]/share/page.tsx`.
+  - All `noindex`. `proxy.ts` matcher + `/blogs/:path*`, `/create`. `app/robots.ts` disallows `/blogs` and `/b/`.
+- `features/account/signInPrompt.ts`: add `/^\/blogs(\/|$)/` to `NEEDS_ACCOUNT`.
+- `features/blog-editor/`: `BlogComposer`, `TitleField`, `PhotoRow` (upload queue, reorder, 10 cap, Retry/Remove), `PlaceRow`, `LinkQuestSheet`, `PostSheet`, preview mode, `postRules`, `photoRules`, `blogDraftStore`, `blogDraftSaver`, `useBlogAutosave`, `localDraft`, `shouldTrackDraftSave` (pure; used by BL-01's action if BL-01 hasn't added it). Sign-out clears local drafts.
+- `features/blogs/BlogArticle.tsx`, `BlogBody.tsx`, `BlogGallery.tsx` (swipe and counter; the full-screen viewer comes in BL-04), shared with BL-04's page.
+- Update of a posted blog goes to `/blogs/[key]/share` until BL-04 switches it to the blog page.
 - A `TextArea` variant in `design-system/components/TextField.tsx`. Icons only if missing. No new tokens.
-- Client events `blog_create_started`, `blog_quest_linked`, `blog_previewed`.
+- Client events: `create_option_tapped` (new firing, both options), `blog_create_started{blog_id, source}` on composer open, `blog_quest_linked`, `blog_previewed`.
 
 **Acceptance criteria**
-- PRD B1–B7 composer rows and the edge cases in §2 (offline, upload failure, two tabs, close empty, close with content).
+- PRD B1–B7 composer rows and the edge cases in §2 (offline, upload failure, two tabs, close empty, close with content, text only and links in Preview).
 - GPS from the worker never reaches the store or any request.
+- Signed out, tapping a link to `/blogs/…` opens the sign-in popup. A direct visit redirects to `/login`. `/create` signed out never calls `has_feature_access`.
 
-**Tests:** `postRules`, `photoRules`, `titleField`, `blogDraftSaver`, `localDraft`, `CreateChooser`, `BlogComposer` (preview keeps text), `LinkQuestSheet` (empty state). `noRawStyles.test.ts` green.
+**Tests:** `postRules`, `photoRules`, `titleField`, `blogDraftSaver`, `localDraft`, `shouldTrackDraftSave`, `CreateChooser`, `BlogComposer` (preview keeps text), `LinkQuestSheet` (empty state), `blogBody`, `BlogArticle` (no gallery without photos), `signInPrompt` (`/blogs` pattern). `noRawStyles.test.ts` green.
 
-**Done when:** the composer works end to end on the Vercel preview on a real phone (offline toggle included), CI is green, and "Releasing soon" shows for a user without access.
+**Done when:** the composer works end to end on the Vercel preview on a real phone (offline toggle included, preview-project grant only), CI is green, and "Releasing soon" shows for a user without access.
 
 ### BL-04 · frontend · Blogs: blog page, owner view, ⋯ menu, SEO, OG, read-end
 
 **Spec:** `docs/specs/blogs.md` §3.3, §3.7, §3.8, §6.2, §6.4
-**Depends on:** BL-01, BL-02. OQ-16's popup if merged (else the `signInPath()` fallback, switched once OQ-16 lands).
+**Depends on:** BL-01, BL-02, BL-03 (builds on its `BlogArticle`, `BlogBody`, `BlogGallery`).
 
 **Build**
 - `next.config.ts` rewrite `/@:handle/blog/:slug` → `/b/:handle/:slug`.
-- `app/(public)/b/[handle]/[slug]/page.tsx` (cached, old-handle 308, unavailable states) and `opengraph-image.tsx`. `app/(app)/blogs/[key]/page.tsx` (owner view).
-- `features/blogs/`: `BlogView`, `BlogArticle`, `BlogBody`, `BlogGallery`, `BlogPhotoViewer`, `WriterRow`, `LinkedQuestCard`, `WriteYourOwnCard`, `BlogUnavailable`, `ManageBlogSheet`, `LiveBlogSocialProvider`, `useBlogViewer`, `useReadEnd`, `metadata.ts`, `jsonLd.ts`.
+- `app/(public)/b/[handle]/[slug]/page.tsx` (cached, old-handle 308, unavailable states) and `opengraph-image.tsx`. `app/(app)/(signed-in)/blogs/[key]/page.tsx` (owner view).
+- `features/blogs/`: `BlogView`, `BlogPhotoViewer` (full screen, opened from BL-03's `BlogGallery`), `WriterRow`, `LinkedQuestCard` (owner note per D12), `WriteYourOwnCard` (→ `/create?source=write_your_own`), `BlogUnavailable`, `ManageBlogSheet`, `LiveBlogSocialProvider`, `useBlogViewer`, `useReadEnd`, `metadata.ts`, `jsonLd.ts`. Signed-out actions use `askToSignIn()` (OQ-16).
+- `features/blog-editor/BlogComposer.tsx`: Update now lands on the blog page with "Blog updated."
 - `QuestSocialProvider`, `LikeButton`, `CommentList` and `CommentComposer` gain `subject: 'quest' | 'blog'` (default `'quest'`; Quest behaviour unchanged).
 - `app/sitemap.ts` + `list_sitemap_blogs`. `features/profile/metadata.ts` index rule (D9).
-- Client events `blog_viewed`, `blog_read_end`, `blog_quest_opened`.
+- Client events `blog_viewed`, `blog_read_end`, `blog_quest_opened`, all with the same `view_id`.
 
 **Acceptance criteria**
 - PRD B7 (reader side), B8, B9 (both rows), B10, B11 (both rows).
-- Edge cases: text only, links, 10 photos + 10k chars.
+- Linked Quest card follows D12: a public blog + an unlisted Quest shows no card to readers, and the owner sees the card with "Your linked Quest isn't visible to readers".
+- Edge cases: 10 photos + 10k chars.
 - §3.7 index rules. JSON-LD escapes `<`. View source shows the title and body.
 
-**Tests:** `blogBody`, `metadata`, `jsonLd`, `useReadEnd`, `BlogArticle` (no gallery without photos). The existing Quest page tests stay unchanged and green.
+**Tests:** `metadata`, `jsonLd`, `useReadEnd`, `LinkedQuestCard` (owner note cases). The existing Quest page tests stay unchanged and green.
 
 **Done when:** Lighthouse mobile LCP < 2.5 s on preview, the sitemap lists a ≥ 80-word public blog, and CI is green.
 
 ### BL-05 · frontend · Blogs everywhere (profile, Quests tab, feed, Explore, search, bell) + Playwright
 
 **Spec:** `docs/specs/blogs.md` §6.3, §11 (Playwright)
-**Depends on:** BL-02, BL-03, BL-04, and OQ-16 merged (it touches the Home feed).
+**Depends on:** BL-02, BL-03, BL-04.
 
 **Build**
 - Profile Quests · Blogs switch (others: only with public blogs; own: with access or any blog), `BlogRow`, `LetterTile`, the own-profile list from `/api/me/blogs`, and the empty state copy.
 - `YourQuestsView`: the same switch, the Blogs list with "Continue editing" and ⋯.
-- `HomeFeed` renders `BlogFeedCard` (signed-out actions → OQ-16 popup).
+- `HomeFeed` removes BL-02's blog filter and renders `BlogFeedCard` (signed-out actions → `askToSignIn()`).
 - `ExploreView` "Stories and guides": guides, then `BlogStoryRows`. Search groups blogs under "Stories".
-- `notificationText`/`notificationHref` handle `blog`.
 - `tests/e2e/blogs.spec.ts` (§11), including `blog_read_end` at three viewports.
 
 **Acceptance criteria**
-- PRD B5 (list), B12, B13 (UI), S2, S3.
+- PRD B5 (list), B12, S2, S3.
 - A profile without blogs renders exactly as before (screenshot test).
 
-**Tests:** `notificationText`, a profile screenshot test, Playwright `blogs.spec.ts`. The existing smoke test stays green.
+**Tests:** a profile screenshot test, `HomeFeed.test.tsx` updated (blog cards render), Playwright `blogs.spec.ts`. The existing smoke test stays green.
 
-**Done when:** Playwright is green at three viewports, CI is green, and the PRD UX tests 1–5 (+ 6) are ready for the founder on preview.
+**Done when:** Playwright is green at three viewports, CI is green, and the PRD UX tests 1–5 (+ 6) are ready for the founder on preview. Only after this is live in production may the CTO make the first production `grant_feature_access` (§3.9).
