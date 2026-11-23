@@ -19,3 +19,12 @@ export const GUIDE_QUESTS_TAG = 'guide-quests';
  * that handle, and an old handle's page must start redirecting when it's changed.
  */
 export const profileUrlTag = (handle: string) => `profile-url:${handle}`;
+
+/** A blog page by URL, like tripUrlTag: a cached "not found" must clear when that URL is posted. */
+export const blogUrlTag = (handle: string, slug: string) => `blog-url:${handle}/${slug}`;
+
+/** A blog's likes and comments, cached apart from the page. */
+export const blogSocialTag = (blogKey: string) => `blog-social:${blogKey}`;
+
+/** Linked-Quest cards on a person's blogs: refreshed by any of their Quest publishes, visibility changes and deletes. */
+export const blogQuestsTag = (ownerKey: string) => `blog-quests:${ownerKey}`;

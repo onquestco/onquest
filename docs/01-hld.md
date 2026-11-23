@@ -81,7 +81,7 @@ One codebase, two kinds of pages:
 | Piece | Use |
 |---|---|
 | Auth | Google + email magic link. Session in httpOnly cookies (`@supabase/ssr`) |
-| Postgres | Live tables `profiles`, `trips` (one document: content, photos, places), `trip_drafts`, `likes`, `comments`, `follows`, `notifications`, `notification_reads`, each data table with an `_archive` twin; insert-only `handle_claims`, `removed_trip_urls`. Owner-only select RLS, no update anywhere; writes only through save functions. Public pages read through `get_*`/`list_*` functions (specs A–C §4) |
+| Postgres | Live tables `profiles`, `trips` (one document: content, photos, places), `trip_drafts`, `likes`, `comments`, `follows`, `notifications`, `notification_reads`, each data table with an `_archive` twin; insert-only `handle_claims`, `removed_trip_urls`. Blogs (`docs/specs/blogs.md`): `blogs`, `blog_drafts` (+ `_archive`), `blog_likes`, `blog_comments` (+ `_archive`), insert-only `removed_blog_urls`, `feature_access` (+ `_archive`), and `notifications.blog_key`. Owner-only select RLS, no update anywhere; writes only through save functions. Public pages read through `get_*`/`list_*` functions (specs A–C and blogs §4) |
 | Storage `photos` (public) | `thumb.webp` + `display.webp` for every photo, under random-UUID paths |
 | Storage `exports` (private) | `export.jpg` (high-res, for Instagram). Owner-only |
 | Keys | New **publishable** key in browser, **secret** key on server only (legacy anon/service_role keys retire end of 2026) |
@@ -161,6 +161,12 @@ All in the browser: load export images → render each frame at 1080×1350 / 108
 ### 5.6 Link previews
 Each trip and profile has an `opengraph-image.tsx` (1200×630 card). Cached with the page.
 
+### 5.7 Write and post a blog
+`docs/specs/blogs.md` §3.1–3.3. Composer (`/blogs/new`, the key made in the browser) → the first change with content runs `saveBlogDraft(basedOn: null)` → `create_blog` (both rows, one transaction) → autosave every 2–10 s runs `save_blog_draft` (archive + insert, `saved_at` conflict check), with a local backup while offline → Post runs `publish_blog` (copies the draft to the live `blogs` row; slug fixed at first Post, unlisted gets the random suffix) → refresh `blog-url`, `profile`, `blog-social`, `blog-quests`, `explore` → the cached page at `/@handle/blog/slug` (rewritten to `/b/[handle]/[slug]`). Draft saves never touch public caches. Photos use the Quest upload queue and the same `{userId}/{key}` folders; a blog key can never be a Quest key and the reverse.
+
+### 5.8 Feature access
+Writing a new blog is gated by the `feature_access` table (`has_feature_access`), checked by `/create`, `/blogs/new` and inside `create_blog`. The CTO grants and revokes in the SQL editor (`grant_feature_access`, `revoke_feature_access`), per handle or for everyone, with no deploy. Steps and the rollout rule: `docs/runbooks/feature-access.md`.
+
 ---
 
 ## 6. Caching
@@ -168,14 +174,18 @@ Each trip and profile has an `opengraph-image.tsx` (1200×630 card). Cached with
 | Page | Cached? | Refreshed when |
 |---|---|---|
 | `/@handle/slug` (public, unlisted) | Yes, tag `trip-url:{handle}/{slug}` | Publish, visibility change, delete, handle change (old and new handle) |
+| `/@handle/blog/slug` (public, unlisted) | Yes, tag `blog-url:{handle}/{slug}` | Post or update, visibility change, delete, handle or name change (old and new handle) |
+| Likes and comments on a blog | Yes, tag `blog-social:{blogKey}` | Like, unlike, comment, comment delete, comments on/off, Post |
+| Linked Quest cards on a writer's blogs | Yes, tag `blog-quests:{ownerKey}` | Any of the owner's Quest publish, visibility change or delete, and any blog Post or visibility change |
 | Likes and comments on a Quest page | Yes, tag `trip-social:{tripKey}` | Like, unlike, comment, comment delete, comments on/off |
 | `/@handle` | Yes, tag `profile:{ownerKey}` | Any public trip change, profile edit, follow/unfollow (both people) |
 | OG images | Yes, same tags | Same |
 | Explore lists | 5 minutes, tag `explore` | Time |
 | `/guides/[slug]` | Static; linked Quests tag `guide-quests`, 1 hour | Deploy / time |
-| App routes, feed, search, notifications | Never | — |
+| App routes (`/blogs/*` included), feed, search, notifications | Never | — |
 
 Private Quests keep their URL, which shows "This Quest is private." The owner sees them at `/quests/[key]/view`.
+Private blogs keep their URL; the owner sees them at `/blogs/[key]`.
 
 ---
 

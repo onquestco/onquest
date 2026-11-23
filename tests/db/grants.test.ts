@@ -23,6 +23,11 @@ const EXPECTED: Record<string, string[]> = {
   // Home and Explore signed out (OQ-16, migration 15).
   list_suggested_quests: PUBLIC_PAGES,
   list_travellers_to_follow: PUBLIC_PAGES,
+  // Blogs (migration 16).
+  get_blog: PUBLIC_PAGES,
+  get_blog_status: PUBLIC_PAGES,
+  get_blog_quest: PUBLIC_PAGES,
+  list_sitemap_blogs: PUBLIC_PAGES,
 
   is_handle_available: SIGNED_IN,
   save_profile: SIGNED_IN,
@@ -46,6 +51,13 @@ const EXPECTED: Record<string, string[]> = {
   list_my_comment_trip_keys: SIGNED_IN,
   save_profile_settings: SIGNED_IN,
   list_feed: SIGNED_IN,
+  has_feature_access: SIGNED_IN,
+  create_blog: SIGNED_IN,
+  save_blog_draft: SIGNED_IN,
+  publish_blog: SIGNED_IN,
+  set_blog_visibility: SIGNED_IN,
+  set_blog_comments: SIGNED_IN,
+  delete_blog: SIGNED_IN,
 
   geocode_cache_get: SERVER,
   geocode_cache_put: SERVER,
@@ -57,6 +69,8 @@ const EXPECTED: Record<string, string[]> = {
   mark_account_deleted: SERVER,
   delete_account_data: SERVER,
   list_pending_deletions: SERVER,
+  grant_feature_access: SERVER,
+  revoke_feature_access: SERVER,
 
   is_reserved_handle: NOBODY,
   trip_url_hash: NOBODY,
@@ -71,6 +85,13 @@ const EXPECTED: Record<string, string[]> = {
   quest_score: NOBODY,
   public_quests_scored: NOBODY,
   person_search_text: NOBODY,
+  blog_url_hash: NOBODY,
+  blog_document_problem: NOBODY,
+  blog_draft_row: NOBODY,
+  archive_blog: NOBODY,
+  insert_blog: NOBODY,
+  archive_blog_draft: NOBODY,
+  insert_blog_draft: NOBODY,
 };
 
 type GrantRow = { name: string; anon: boolean; authenticated: boolean; service_role: boolean };

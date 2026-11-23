@@ -3,7 +3,7 @@ import { createTestDatabase, STRANGER } from './testDatabase';
 
 // Decision 0001: rows never change. Nobody may update any live or archive table, and signed-in
 // users can't insert or delete directly either: every write goes through a save function.
-// Specs B and C add their tables here.
+// Specs B and C, and blogs (migration 16), add their tables here.
 
 // Each table with one of its own columns, for an update that would otherwise be valid.
 const TABLES: [string, string][] = [
@@ -30,6 +30,13 @@ const TABLES: [string, string][] = [
   ['follows', 'key'],
   ['follows_archive', 'key'],
   ['deleted_accounts', 'key'],
+  ['blogs', 'key'],
+  ['blogs_archive', 'key'],
+  ['blog_drafts', 'key'],
+  ['blog_drafts_archive', 'key'],
+  ['removed_blog_urls', 'url_hash'],
+  ['feature_access', 'key'],
+  ['feature_access_archive', 'key'],
 ];
 
 type Db = Awaited<ReturnType<typeof createTestDatabase>>;

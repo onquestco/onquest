@@ -51,6 +51,9 @@ features/                             one folder per product area
                steps/  TemplateStep.tsx PhotosStep.tsx DaysStep.tsx PlacesStep.tsx WordsStep.tsx PublishStep.tsx
   export/      ExportView.tsx  renderFrame.ts  share.ts
   account/     actions.ts  HandleForm.tsx  DeleteAccount.tsx
+  blogs/       blog page, owner view and ⋯ actions: actions.ts  getBlog.ts  getBlogStatus.ts
+               getLinkedQuest.ts  getOwnBlog.ts  refreshBlog.ts  (docs/specs/blogs.md)
+  blog-editor/ composer: actions.ts (saveBlogDraft, discardBlogDraft, searchBlogPlaces)  getBlogDraft.ts
 
 templates/
   types.ts                            Template, Theme
@@ -70,6 +73,7 @@ lib/
   geo.ts               search + reverseGeocode, one provider behind it
   dates.ts             formatDateRange
   slug.ts              slugify + unlisted suffix
+  blog/                limits.ts  schema.ts (BlogDocument, get_blog rows)  cards.ts  toBlogData.ts
   analytics.ts         typed track()
   demo-trip.ts         Goa sample data
 
@@ -316,6 +320,28 @@ alter table public.trips add foreign key (cover_photo_id) references public.phot
 
 Photo GPS is **never stored**. Only places the user confirms are saved.
 
+**Blogs** (migration 16, `docs/specs/blogs.md` §5). Decision 0001 from the start: no defaults on behaviour columns, every write is one function.
+
+```
+blogs: key uuid pk, owner_key uuid not null (deferred FK profiles), slug text null, status text check (draft|published),
+  visibility text check (public|unlisted|private), title text check (char_length <= 100), body text not null check (char_length <= 10000),
+  photos jsonb not null (array, <= 10), place jsonb null, linked_trip_key uuid null (no FK: a deleted Quest just stops showing),
+  comments_on boolean not null, search_text text not null, word_count int not null, published_at timestamptz,
+  published_draft_saved_at timestamptz, started_at timestamptz, saved_at timestamptz not null, saved_by uuid,
+  save_reason text not null check (create|publish|visibility|comments); unique (owner_key, slug)
+blog_drafts: key uuid pk (deferred FK blogs), owner_key, title, body, photos, place, linked_trip_key, started_at,
+  saved_at, saved_by, save_reason check (create|save)
+blogs_archive, blog_drafts_archive: same columns + archived_at, pk (key, saved_at)
+removed_blog_urls: url_hash text pk, blog_key uuid not null, saved_at, saved_by, save_reason check (= 'create')
+feature_access: key uuid pk, feature text check (in ('blogs')), user_key uuid null, saved_at, saved_by, save_reason (= 'create'),
+  unique nulls not distinct (feature, user_key)
+feature_access_archive: same + archived_at
+indexes: blogs_by_owner (owner_key, status, visibility, published_at desc), blogs_public (status, visibility, published_at desc),
+  blogs_search_text gin trigram (guarded)
+```
+
+Migration 17 adds `blog_likes`, `blog_comments` (+ `_archive`) and `notifications.blog_key`.
+
 ### 3.2 Access rules (`0002_rls.sql`)
 
 Owners can do everything with their own rows. **No one else can read tables directly.**
@@ -341,6 +367,8 @@ create policy "own places" on public.places for all to authenticated
   using      (exists (select 1 from public.trips t where t.id = trip_id and t.owner_id = (select auth.uid())))
   with check (exists (select 1 from public.trips t where t.id = trip_id and t.owner_id = (select auth.uid())));
 ```
+
+**Blogs.** RLS on every blog table. `blogs`, `blog_drafts` and both archives: `select` for `authenticated` where `owner_key = auth.uid()`. `blog_likes` (+ archive) by `user_key`, `blog_comments_archive` by `author_key`; `blog_comments` has no policy (read only through `get_blog_social`, like `comments`). `removed_blog_urls`, `feature_access` and `feature_access_archive`: no policies and no client grants. No insert, update or delete grant for any client role; no anonymous `select` policy anywhere.
 
 ### 3.3 Public reads (`0003_public_functions.sql`)
 
@@ -403,6 +431,8 @@ grant  execute on function public.get_trip, public.get_profile, public.list_site
 
 Handle availability is checked in the `setHandle` server action (reserved words list in code + a lookup with the admin client).
 
+**Blog public reads** (security definer, explicit field lists, published public or unlisted only): `get_blog`, `get_blog_status` (the word `private` or `removed` only), `get_blog_quest` (the linked Quest's card, only when the Quest is as visible as the blog: a public blog shows only a public Quest), `get_blog_social`, `list_sitemap_blogs`, `list_explore_blogs`, plus the `blogs` lists in `get_profile` and `search_public` (public blogs only).
+
 ### 3.4 Storage (`0004_storage.sql`)
 
 ```sql
@@ -427,6 +457,8 @@ photos/{userId}/{tripId}/{photoId}/display.webp    1600 px
 exports/{userId}/{tripId}/{photoId}/export.jpg     2160 px
 photos/{userId}/avatar/{uuid}.webp
 ```
+
+Blog photos use the same buckets, paths and variant names under `{userId}/{blogKey}/`. Blog keys and Quest keys never overlap: `create_blog` refuses a key in `trips`/`trips_archive` and `create_trip` refuses one in `blogs`/`blogs_archive`, so deleting one can't delete the other's photos.
 
 ```ts
 // lib/storage.ts (surface)
@@ -474,6 +506,19 @@ export function action<I, O>(schema: z.ZodType<I>, fn: (input: I, ctx: { user: U
 
 Cache refresh: tag pages with `trip:{id}` and `profile:{ownerId}` and refresh those tags from the actions (Next 16 `cacheTag` + `revalidateTag`/`updateTag`; check the current docs for exact signatures).
 
+**Blog actions** (`docs/specs/blogs.md` §4.2). All built with `action()`; domain errors come back in `data`.
+
+| Action | Input (zod) | Result data | Errors (`data.error`) | Cache tags refreshed |
+|---|---|---|---|---|
+| `saveBlogDraft` | `{ key, basedOn: string \| null, document: BlogDocumentSchema }` | `{ saved: true, savedAt, created }` | `conflict`, `not_found`, `too_many_photos`, `too_long`, `no_access` (create only), `exists` (key used) | None (draft only) |
+| `discardBlogDraft` | `{ key }` | `{ discarded: true }` | `not_found`, `published` | None |
+| `publishBlog` | `{ key, basedOnDraft, basedOnBlog, visibility \| null }` | `{ published: true, savedAt, slug, path, firstPublish }` | `conflict`, `not_found`, `empty`, `uploading` (client only), `invalid_visibility` | `blog-url`, `profile`, `blog-social`, `blog-quests`, `explore`; photo sweep in `after()` |
+| `setBlogVisibility` | `{ key, basedOn, visibility }` | `{ saved: true, savedAt }` | `conflict`, `not_found`, `not_published` | Same as publish |
+| `setBlogComments` | `{ key, basedOn, on }` | `{ saved: true, savedAt }` | `conflict`, `not_found` | `blog-social` |
+| `deleteBlog` | `{ key }` | `{ deleted: true }` | `not_found` | Same as publish, at every handle |
+| `searchBlogPlaces` | `{ key, text 2..60 }` | `{ found: true, places }` | `not_found` | None |
+| `setBlogLike`, `postBlogComment`, `deleteBlogComment` (migration 17) | see the spec | | | `blog-social` |
+
 ---
 
 ## 5. Editor internals
@@ -508,7 +553,9 @@ Group GPS points within ~1 km, take up to 10 groups in time order, reverse-geoco
 
 ### 5.5 Autosave
 
-`store.ts` (Zustand) holds the draft. Any change triggers `saveTrip` after 1 s of no typing. Last write wins (one editor per trip).
+`store.ts` (Zustand) holds the draft. Any change triggers `saveTrip` after 1 s of no typing. Every save passes the `saved_at` it was based on; if the draft changed elsewhere (another tab or device) the save fails with OQ409 and the editor shows "This draft was changed somewhere else. Reload." (decision 0001 rule 4). Nothing saved is ever overwritten.
+
+Blogs (`docs/specs/blogs.md` §3.2): saves 2 s after the last change and at least every 10 s while typing, straight away when the page is hidden, one save at a time. Every change is also kept in `localStorage['oq_blog_draft:{key}']` (at most every 500 ms) until its save succeeds, so offline writing isn't lost; sign-out clears these.
 
 ---
 
