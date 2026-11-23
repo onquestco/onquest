@@ -38,7 +38,7 @@ Next (week 2): editor + upload, publish, OG image. See `docs/02-lld.md` §11.
 
 ```
 app/         Routes only. Fetch data, render one feature component. No logic.
-features/    Product areas: trip-page, profile, editor, export, account.
+features/    Product areas: account, blog-editor, blogs, editor, explore, export, guides, home, legal, notifications, profile, quests, shell, trip-page.
              Each owns its components, server actions, helpers and tests.
 templates/   Scrapbook looks. shared/ = building blocks, beach/ mountain/ = templates.
 design-system/ App look: tokens.ts (the only colours, fonts, type styles, radii), generated tokens.css, fonts, Button/TextField/Logo.
@@ -68,11 +68,11 @@ Imports flow one way: `app → features → templates → lib`. Templates never 
 
 ## Data rules
 
-- **No in-place updates** (`docs/decisions/0001-no-in-place-updates.md`). Every record has one permanent `key` (no second id, no version number); a row, once written, never changes. Every save moves the current row to the archive and inserts the new one under the same key, in one Postgres function (one transaction). All lookups, references, URLs, cache tags and analytics use the `key`. No `.update()` or `.upsert()` on data tables, no update grants, policies or `updated_at` triggers. Saves pass the `saved_at` of the row they were based on and fail with a conflict if the live row has changed. The only real delete is a user's trip or account deletion, which removes the live row, its archived rows and the files. *The current schema doesn't follow this yet; new work must, and the migration spec will fix the rest.*
+- **No in-place updates** (`docs/decisions/0001-no-in-place-updates.md`). Every record has one permanent `key` (no second id, no version number); a row, once written, never changes. Every save moves the current row to the archive and inserts the new one under the same key, in one Postgres function (one transaction). All lookups, references, URLs, cache tags and analytics use the `key`. No `.update()` or `.upsert()` on data tables, no update grants, policies or `updated_at` triggers. Saves pass the `saved_at` of the row they were based on and fail with a conflict if the live row has changed. The only real delete is a user's trip or account deletion, which removes the live row, its archived rows and the files. *Implemented (spec A, migrations 8–9; blogs from 16). One leftover: the inert `for all` policies on legacy `photos`/`places` (decision 0001, Current gaps).*
 - All writes go through server actions built with `action()` from `lib/action.ts` (zod-validated, signed-in check, typed `{ ok, data | error }` result).
 - The browser talks to Supabase directly only to upload photo files.
-- Public pages read only via `get_trip`, `get_profile`, `list_sitemap_trips`. Never add an anonymous `select` policy to a table.
-- After any write that changes a public page, refresh its cache tags: `trip-url:{handle}/{slug}` (`tripUrlTag()` in `lib/cacheTags.ts`, keyed by URL so cached 404s clear too; refresh the old URL as well when a slug changes), `profile:{ownerId}`.
+- Public pages read only via the security-definer read functions listed in `docs/03-security-visibility-seo.md` §B.2 (`get_trip`, `get_profile`, `list_sitemap_trips`, `get_blog`, `get_blog_status`, `get_blog_quest`, …). Never add an anonymous `select` policy to a table.
+- After any write that changes a public page, refresh its cache tags: `trip-url:{handle}/{slug}` (`tripUrlTag()` in `lib/cacheTags.ts`, keyed by URL so cached 404s clear too; refresh the old URL as well when a slug changes), `profile:{ownerId}`. Blogs: `blog-url:{handle}/{slug}` (`blogUrlTag()`; every handle on a handle change or delete), `blog-social:{blogKey}` and `blog-quests:{ownerKey}` (linked-Quest cards, also refreshed by every Quest publish, visibility change and delete).
 - `toTripData()` is the only place that turns DB rows into `TripData` and applies defaults.
 
 ## Security rules (do not break)

@@ -16,6 +16,11 @@ describe('firstBlogSlug', () => {
     expect(firstBlogSlug('गोवा डायरी', 'unlisted')).toMatch(/^blog-[a-z0-9]{6}$/);
   });
 
+  it('keeps Quest page names plain: nothing is reserved under /@h/blog/', () => {
+    expect(firstBlogSlug('Blog', 'public')).toBe('blog');
+    expect(firstBlogSlug('Followers', 'public')).toBe('followers');
+  });
+
   it('fits what publish_blog accepts', () => {
     const slug = firstBlogSlug('a very long title '.repeat(10), 'unlisted');
     expect(slug.length).toBeLessThanOrEqual(77);

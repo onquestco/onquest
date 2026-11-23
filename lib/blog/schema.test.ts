@@ -20,6 +20,12 @@ describe('BlogDocumentSchema', () => {
     expect(BlogDocumentSchema.safeParse({ photos: photos(BLOG_MAX_PHOTOS + 1) }).success).toBe(false);
   });
 
+  it('counts an emoji as one character, like the database', () => {
+    expect(BlogDocumentSchema.safeParse({ title: '🌴'.repeat(BLOG_TITLE_MAX) }).success).toBe(true);
+    expect(BlogDocumentSchema.safeParse({ title: '🌴'.repeat(BLOG_TITLE_MAX + 1) }).success).toBe(false);
+    expect(BlogDocumentSchema.safeParse({ body: '🏔️'.repeat(10) }).success).toBe(true);
+  });
+
   it('never keeps coordinates, on a photo or a place', () => {
     const parsed = BlogDocumentSchema.parse({
       photos: [{ ...PHOTO, lat: 15.49, lng: 73.82, gps: { lat: 1, lng: 2 } }],

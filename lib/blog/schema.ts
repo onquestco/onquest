@@ -4,6 +4,13 @@ import { BLOG_BODY_MAX, BLOG_MAX_PHOTOS, BLOG_TITLE_MAX } from './limits';
 // Stored blog shapes (spec docs/specs/blogs.md §4.1). Fields only ever grow, and new ones are
 // optional or have defaults, so drafts and archived rows written today keep parsing.
 
+/**
+ * Up to `max` characters, counted as the database's char_length counts them: an emoji is one
+ * character, not two UTF-16 units (BL-01 review S1).
+ */
+const upTo = (max: number) =>
+  z.string().refine((text) => [...text].length <= max, { message: `At most ${max} characters` });
+
 export const BlogPhotoSchema = z.object({
   /** Also the storage folder name. */
   id: z.uuid(),
@@ -13,8 +20,8 @@ export const BlogPhotoSchema = z.object({
 
 /** A place the writer chose (geocoder search). Never coordinates, never photo GPS. */
 export const BlogPlaceSchema = z.object({
-  name: z.string().trim().min(1).max(60),
-  city: z.string().max(100).optional(),
+  name: z.string().trim().min(1).pipe(upTo(60)),
+  city: upTo(100).optional(),
   countryCode: z
     .string()
     .regex(/^[A-Z]{2}$/)
@@ -26,8 +33,8 @@ export const BlogPlaceSchema = z.object({
 /** The editable document, as stored in blog_drafts and copied to blogs on publish. */
 export const BlogDocumentSchema = z.object({
   /** Not trimmed while typing; trimmed on publish. */
-  title: z.string().max(BLOG_TITLE_MAX).optional(),
-  body: z.string().max(BLOG_BODY_MAX).default(''),
+  title: upTo(BLOG_TITLE_MAX).optional(),
+  body: upTo(BLOG_BODY_MAX).default(''),
   /** [0] is the cover. */
   photos: z.array(BlogPhotoSchema).max(BLOG_MAX_PHOTOS).default([]),
   place: BlogPlaceSchema.optional(),
