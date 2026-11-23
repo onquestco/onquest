@@ -246,3 +246,6 @@ Agreed by Swati (CTO) on 23 Nov 2026 after the Tech Lead's spec and the Reviewer
 3. **Unlisted links (B4):** an unlisted blog's link ends with a random 6-character code, like unlisted Quests (`onquest.in/@riya/blog/goa-on-15k-k3f9x2`). Public blogs keep the plain title link.
 4. **Linked Quest privacy (B9, privacy):** a public blog shows its linked Quest card only if that Quest is public. An unlisted Quest's card shows on unlisted or private blogs, and always to the writer. A blog never makes a Quest easier to find.
 5. **Spec §14 questions 3, 5–9:** accepted as proposed (edit goes live on Post with "Blog updated."; blogs in the signed-in feed only; guides before blogs in Explore; the flag gates writing only; blog id and view id on blog events; Post greyed out with a progress ring while photos upload).
+6. **UX test 1:** link a **public** Quest (an unlisted one wouldn't show its card on a public blog). The Link a Quest sheet marks unlisted Quests "Shown only on unlisted blogs".
+
+Founder (Alok) to confirm points 1–4 and 6, especially the new privacy rule in point 4.

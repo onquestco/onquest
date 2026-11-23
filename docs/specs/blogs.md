@@ -444,7 +444,7 @@ Error codes as today: OQ401 not signed in, OQ403 not allowed (no access, comment
 | `blog_url_hash` | none (helper) | `(handle, slug) → text` | `sha256(lower(handle) || '/blog/' || lower(slug))` |
 | `archive_blog`, `insert_blog`, `archive_blog_draft`, `blog_document_problem` | none (helpers) | | Same pattern as `archive_trip` / `insert_trip` |
 | `delete_account_data`, `list_pending_deletions` | service_role (replaced) | Same arguments | Based on the migration 12 definitions. `delete_account_data` also deletes blog rows and archives, but **keeps** blog tombstones (like Quest ones) and writes them for every published blog under every handle. It returns `own_blogs: [{key, slug}]` in addition. `list_pending_deletions` also checks `blogs`, `blogs_archive` and `blog_drafts` for the user, so a half-finished deletion of a blogs-only user stays on the daily job. **Must ship in migration 16**: the deferred `blogs.owner_key` FK would otherwise make account deletion fail |
-| `create_trip` | authenticated (replaced) | Same arguments `(uuid, text)` | Also raises OQ410 if the key is in `blogs` or `blogs_archive` (§3.1). Based on the migration 9 definition. Grant unchanged |
+| `create_trip` | authenticated (replaced) | Same arguments `(p_key uuid, p_template_id text default 'beach')`, default kept | Also raises OQ410 if the key is in `blogs` or `blogs_archive` (§3.1). Based on the migration 9 definition. Grant unchanged |
 | `run_retention_cleanup` | service_role (replaced) | Same | + `blog_drafts_archive` 30 days, `blogs_archive` 180 days, `feature_access_archive` 180 days |
 
 **Migration 17: blog social and discovery**
@@ -621,7 +621,7 @@ Design system rules (decision 0002):
   - Copy as in PRD B3. Rows show cover, title, places and a visibility tag, newest first, with a single choice. Private rows show "Only you can see this one".
   - Empty state: "You haven't published a Quest yet." with "Create a Quest". It flushes the save, then goes to `/quests/new?source=blog_link`.
   - After a choice, the row becomes a small card with Remove. `blog_quest_linked` fires.
-  - Unlisted Quests can be chosen, with no extra copy in the sheet. If the blog is posted as Public, readers don't see the card (§4.3 `get_blog_quest`), and the writer sees "Your linked Quest isn't visible to readers" on the blog page.
+  - Unlisted Quests can be chosen. Their row says "Shown only on unlisted blogs" (review r2 note). If the blog is posted as Public, readers don't see the card (§4.3 `get_blog_quest`), and the writer sees "Your linked Quest isn't visible to readers" on the blog page.
 - `PlaceRow.tsx`: "Add a place" with a pin icon, then a search sheet backed by `searchBlogPlaces`. Once chosen, it shows "Goa" with Change.
 - `postRules.ts`: `canPost(document, photos)` and the message "Add a title and some text or a photo." while no upload is pending.
 - `PostSheet.tsx` (first post only): "Who can see this blog?" with the three options and the PRD copy, defaulting to the Settings "New Quests start as" value. Then the primary "Post".
@@ -940,7 +940,7 @@ Not created (per instruction). Labels for each: `spec:blogs` plus the owner labe
   - The ages: Quests, drafts, profiles and blogs 180 days; blog drafts 30 days; likes, comments and follows 90 days; notification reads 180 days; notifications 365 days; feature access 180 days.
   - Tombstones and handle claims are kept forever.
   - User deletes stay immediate (rule 7).
-  - Close the "Retention" and "Drafts" open questions. Mark "Current gaps" as fixed by spec A.
+  - Close the "Retention" and "Drafts" open questions. Mark "Current gaps" as fixed by spec A, except one leftover: the old `for all` policies on photos and places were never dropped. They grant nothing because the update grants are revoked; note that, and drop them in a later contract migration.
 - [ ] `docs/01-hld.md`:
   - §3.2 Postgres row: add `blogs`, `blog_drafts` (+ `_archive`), `blog_likes`, `blog_comments` (+ `_archive`), insert-only `removed_blog_urls`, `feature_access` (+ `_archive`), and `notifications.blog_key`.
   - §5: a new "5.7 Write and post a blog" (composer → autosave → Post → cached page) and "5.8 Feature access" (DB flag, no deploy).
