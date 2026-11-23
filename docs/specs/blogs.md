@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | PRD | `docs/prds/blogs.md` (approved by the founder on 2026-11-23, QuestLog OQ-11; source: the Claude doc linked in its header) |
-| Status | Draft (Tech Lead, 23 Nov 2026), for Reviewer plan review then CTO approval |
+| Status | Draft (Tech Lead, 23 Nov 2026). CTO decisions signed off 23 Nov; Reviewer plan review next |
 | Build mode | Backend + Frontend split: 2 backend tasks, then 3 frontend tasks (5 PRs, batched for the Vercel deploy cap) |
 | Tracker IDs | OQ-11 (feature row); task rows BL-01 to BL-05 to be added at `7. Ready to build` after approval |
 
@@ -804,15 +804,15 @@ The full issue texts are in Appendix A. They were not created on GitHub, as inst
 ## 14. Risks and open questions
 
 **Technical (for the CTO):**
-- D1, D2, D4, D5, D6, D8 and D9 need sign-off. D5 also needs the 0001 retention amendment (C-A16), which `run_retention_cleanup` already depends on.
+- **Signed off by the CTO (Swati), 23 Nov 2026:** D1, D2, D4, D5, D6, D8 and D9, and R4 (roll forward only after blogs exist). D5 also needs the 0001 retention amendment (C-A16), which `run_retention_cleanup` already depends on.
 - R1: Two migrations replace `delete_account_data`, `run_retention_cleanup`, `list_my_notifications`, `get_profile` and `search_public`. A parallel ticket (OQ-16) touching the same functions would conflict, so each migration must start from the latest definition. BL-01 and BL-02 rebase onto OQ-16 if it lands first.
 - R2: The 10,000-character body in `search_text` makes trigram indexes larger. That is fine at this scale. Revisit with full-text search (`tsvector`) if search slows (Later).
-- R3: OQ-16's popup API isn't merged. BL-04 falls back to `signInPath()` and switches when OQ-16 lands. BL-05 waits for OQ-16 because it touches the feed.
+- R3: resolved. OQ-16 merged on 23 Nov (PR #19); its migration is 15, so blogs use 16 and 17.
 - R4: Rolling back the app code after blogs exist 404s blog links and shows blog notifications as "your Quest" until roll-forward. Accept, or roll forward only.
 - R5: iOS Safari doesn't open the keyboard on `autoFocus` after a navigation. The cursor is in Title, but the keyboard may need a tap. UX test 1 checks it. There is no workaround without a user gesture.
 - CLAUDE.md's "Public pages read only via…" list and the HLD caching table need the new functions and tags (§16). CLAUDE.md is the CTO's to edit.
 
-**Product (for the founder),** each answerable in one line:
+**Product (for the founder),** each answerable in one line. Swati (CTO) is OK with all nine (23 Nov 2026); Alok to confirm as the PRD owner:
 1. Likes on blogs show the real count from the first like ("Like", "1 like", "2 likes"…), per your 21 Nov decision, instead of B5's "Be the first to like this". Confirm?
 2. Two tabs: the save that reached the server first is kept, and the tab that is behind shows "This draft was changed somewhere else. Reload." Its unsaved text is lost on reload. Is that what "the later save wins" means?
 3. Editing a posted blog: changes go live when you tap Post again (as with Quests), the visibility sheet is skipped, and you land on the blog with "Blog updated." OK, including that copy?
