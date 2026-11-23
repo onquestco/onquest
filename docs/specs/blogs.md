@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | PRD | `docs/prds/blogs.md` (approved by the founder on 2026-11-23, QuestLog OQ-11; source: the Claude doc linked in its header) |
-| Status | Revised for plan review round 2 (Tech Lead, 23 Nov 2026). CTO decisions signed off 23 Nov. Round 1 review: `docs/reviews/2026-11-23-blogs-plan-review.md`; changes listed in §17 |
+| Status | **Approved** by the CTO (Swati) on 23 Nov 2026, after Reviewer plan review rounds 1–2 (`docs/reviews/2026-11-23-blogs-plan-review*.md`). Product changes confirmed by the founder on 23 Nov |
 | Build mode | Backend + Frontend split: 2 backend tasks, then 3 frontend tasks (5 PRs, batched for the Vercel deploy cap) |
 | Tracker IDs | OQ-11 (feature row); task rows BL-01 to BL-05 to be added at `7. Ready to build` after approval |
 
