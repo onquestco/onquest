@@ -4,7 +4,7 @@ Migrations live in `supabase/migrations/` and are applied by hand, before the co
 
 ## Steps
 
-1. **The builder names the migration in the PR** (for example `20261124100000_16_blogs.sql`), with the deploy order and anything risky to look at. CI runs every migration on the seed in PGlite (`tests/db/`).
+1. **The builder names the migration in the PR** (for example `20261123194231_16_blogs.sql`), with the deploy order and anything risky to look at. CI runs every migration on the seed in PGlite (`tests/db/`).
 2. **The CTO approves the PR.** Nothing is merged yet.
 3. **Preview first.** Link the Supabase CLI to the preview project and push:
    ```bash

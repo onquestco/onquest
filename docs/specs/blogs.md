@@ -494,7 +494,7 @@ All `/blogs/*` routes are in the `(signed-in)` group, so its layout redirects si
 
 **Migrations.** The numbers follow the latest (`20261123170844_15_open_home`, from OQ-16). If another migration lands first, the builder renumbers to keep the order.
 
-1. `supabase/migrations/20261124100000_16_blogs.sql`
+1. `supabase/migrations/20261123194231_16_blogs.sql`
    - Tables (columns below).
    - RLS, grants and the default-privilege rules from migration 11.
    - The functions in §4.3 (migration 16 part).
@@ -915,7 +915,7 @@ Not created (per instruction). Labels for each: `spec:blogs` plus the owner labe
   - `lib/blog/{limits,schema,cards,toBlogData}.ts`.
   - `lib/slug.ts` (`blog` reserved, `fallback` param).
   - `lib/cacheTags.ts` (3 new tags).
-- `supabase/migrations/20261124100000_16_blogs.sql`:
+- `supabase/migrations/20261123194231_16_blogs.sql`:
   - Tables, RLS and grants (§5).
   - `has_feature_access`, `grant_/revoke_feature_access`, `create_blog`, `save_blog_draft`, `publish_blog`, `set_blog_visibility`, `set_blog_comments`, `delete_blog`, `get_blog`, `get_blog_status`, `get_blog_quest`, `list_sitemap_blogs`, and the helpers.
   - Replaced `delete_account_data` (+ `own_blogs`), `list_pending_deletions` (also checks `blogs`, `blogs_archive`, `blog_drafts`) and `run_retention_cleanup`, each based on its migration 12 definition.
