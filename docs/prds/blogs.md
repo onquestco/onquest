@@ -236,3 +236,13 @@ These events are added to the OnQuest Taxonomy sheet in the same pass as the pro
 ## Rollout
 
 Behind a feature flag. The founders first, then friends-test users. The Create chooser shows "Write a blog" as active only for users with the flag; everyone else keeps the "Releasing soon" placeholder.
+
+## Changes after tech review (23 Nov 2026)
+
+Agreed by Swati (CTO) on 23 Nov 2026 after the Tech Lead's spec and the Reviewer's plan review (`docs/reviews/2026-11-23-blogs-plan-review.md`). These replace the PRD text above where they differ; the founder's doc should be updated to match.
+
+1. **Likes (B5):** the real count from the first like ("Like", "1 like", "2 likes"…), as on Quests since 21 Nov. "Be the first to like this" is not shown.
+2. **Two tabs (edge cases):** the first save that reaches the server is kept (decision 0001). The tab that is behind shows "This draft was changed somewhere else. Reload." and its unsaved text is lost on reload.
+3. **Unlisted links (B4):** an unlisted blog's link ends with a random 6-character code, like unlisted Quests (`onquest.in/@riya/blog/goa-on-15k-k3f9x2`). Public blogs keep the plain title link.
+4. **Linked Quest privacy (B9, privacy):** a public blog shows its linked Quest card only if that Quest is public. An unlisted Quest's card shows on unlisted or private blogs, and always to the writer. A blog never makes a Quest easier to find.
+5. **Spec §14 questions 3, 5–9:** accepted as proposed (edit goes live on Post with "Blog updated."; blogs in the signed-in feed only; guides before blogs in Explore; the flag gates writing only; blog id and view id on blog events; Post greyed out with a progress ring while photos upload).
