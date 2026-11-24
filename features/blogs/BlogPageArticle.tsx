@@ -20,14 +20,15 @@ type Props = Pick<
  * the last paragraph (spec §3.8).
  */
 export function BlogPageArticle({ writer, publishedAt, readMinutes, ...article }: Props) {
-  const { blogKey, viewId, trackReading } = useBlogPage();
+  const { blogKey, viewId, countsAsReader } = useBlogPage();
   const [openAt, setOpenAt] = useState<number | null>(null);
   const marker = useRef<HTMLDivElement>(null);
   const onReadEnd = useCallback(
     (seconds: number) => track('blog_read_end', { blog_id: blogKey, view_id: viewId, seconds }),
     [blogKey, viewId],
   );
-  useReadEnd(marker, onReadEnd, trackReading);
+  // Stops (and never fires) once the viewer turns out to be the writer (review S2).
+  useReadEnd(marker, onReadEnd, countsAsReader);
 
   return (
     <>

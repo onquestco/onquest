@@ -29,6 +29,8 @@ type Social = {
   likeCount: number;
   commentsOn: boolean;
   comments: Comment[];
+  /** Every comment, not just the newest 100 that are loaded (get_*_social's comment_count). */
+  commentCount: number;
   composerOpen: boolean;
   setComposerOpen: (open: boolean) => void;
   /** Optimistic: the heart changes at once and goes back if the server says no. */
@@ -74,6 +76,7 @@ export function QuestSocialProvider({
 }: Props) {
   const [like, setLikeState] = useState({ liked: viewer?.liked ?? false, likeCount: initial.likeCount });
   const [comments, setComments] = useState(initial.comments);
+  const [commentCount, setCommentCount] = useState(initial.commentCount);
   const [composerOpen, setComposerOpen] = useState(startComposerOpen);
   // The viewer arrives after the page: take their like from it once (the count already includes it).
   const [seenViewer, setSeenViewer] = useState(viewer);
@@ -102,13 +105,22 @@ export function QuestSocialProvider({
     ...like,
     commentsOn: initial.commentsOn,
     comments,
+    commentCount,
     composerOpen,
     setComposerOpen,
     toggleLike,
-    addComment: (comment) => setComments((list) => [...list, comment]),
-    dropComment: (key) => setComments((list) => list.filter((comment) => comment.key !== key)),
-    restoreComment: (comment, index) =>
-      setComments((list) => [...list.slice(0, index), comment, ...list.slice(index)]),
+    addComment: (comment) => {
+      setComments((list) => [...list, comment]);
+      setCommentCount((count) => count + 1);
+    },
+    dropComment: (key) => {
+      setComments((list) => list.filter((comment) => comment.key !== key));
+      setCommentCount((count) => Math.max(0, count - 1));
+    },
+    restoreComment: (comment, index) => {
+      setComments((list) => [...list.slice(0, index), comment, ...list.slice(index)]);
+      setCommentCount((count) => count + 1);
+    },
     actions,
   };
   return <SocialContext.Provider value={value}>{children}</SocialContext.Provider>;

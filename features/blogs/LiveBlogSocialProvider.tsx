@@ -8,6 +8,7 @@ import { track } from '@/lib/analytics/client';
 import type { BlogViewer, QuestSocial } from '@/lib/social/schema';
 import type { QuestCard } from '@/lib/trip/cards';
 import { blogReferrer } from './blogReferrer';
+import { countsAsReader } from './readerEvents';
 import { deleteBlogComment, postBlogComment, setBlogLike, type BlogLikeSource } from './socialActions';
 import { useBlogViewer } from './useBlogViewer';
 
@@ -53,6 +54,8 @@ type BlogPage = {
   reloadViewer: () => void;
   /** False on the writer's own view (/blogs/[key]): no reader events. */
   trackReading: boolean;
+  /** Reader events are on for this view: not the writer's own view, and not the writer (readerEvents.ts). */
+  countsAsReader: boolean;
 };
 
 const BlogPageContext = createContext<BlogPage | null>(null);
@@ -73,8 +76,10 @@ function useBlogViewed(page: BlogPage, readerQuest: QuestCard | null) {
   const sent = useRef(false);
   const { viewer, trackReading, blogKey, viewId } = page;
   useEffect(() => {
-    if (!trackReading || !viewer || sent.current) return;
+    if (!viewer || sent.current) return;
     sent.current = true;
+    // The writer reading their own blog isn't a read (review S2).
+    if (!countsAsReader(trackReading, viewer)) return;
     track('blog_viewed', {
       blog_id: blogKey,
       view_id: viewId,
@@ -111,7 +116,14 @@ export function LiveBlogSocialProvider({
   // Made in the browser only: the server render is cached and shared by every reader. Nothing
   // renders it, so the empty server value can't cause a hydration mismatch.
   const [viewId] = useState(() => (typeof window === 'undefined' ? '' : crypto.randomUUID()));
-  const page: BlogPage = { blogKey, viewId, viewer, reloadViewer: reload, trackReading };
+  const page: BlogPage = {
+    blogKey,
+    viewId,
+    viewer,
+    reloadViewer: reload,
+    trackReading,
+    countsAsReader: countsAsReader(trackReading, viewer),
+  };
   useBlogViewed(page, readerQuest);
 
   return (

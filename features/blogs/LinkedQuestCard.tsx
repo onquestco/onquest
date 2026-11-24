@@ -14,7 +14,7 @@ import { useBlogPage } from './LiveBlogSocialProvider';
  * nothing to show.
  */
 export function LinkedQuestCard({ readerQuest }: { readerQuest: QuestCard | null }) {
-  const { viewer, blogKey, viewId, trackReading } = useBlogPage();
+  const { viewer, blogKey, viewId, countsAsReader } = useBlogPage();
   const view = linkedQuestView(readerQuest, viewer);
   if (!view) return null;
   const { quest, hiddenNote } = view;
@@ -31,7 +31,7 @@ export function LinkedQuestCard({ readerQuest }: { readerQuest: QuestCard | null
         <Link
           href={quest.path}
           onClick={() => {
-            if (trackReading) track('blog_quest_opened', { blog_id: blogKey, view_id: viewId });
+            if (countsAsReader) track('blog_quest_opened', { blog_id: blogKey, view_id: viewId });
           }}
           className="flex flex-col overflow-hidden rounded-lg border border-line bg-surface focus-visible:outline-2 focus-visible:outline-brand-strong"
         >

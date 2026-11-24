@@ -11,8 +11,9 @@ import { useQuestSocial } from '@/features/trip-page/useQuestSocial';
  * comes from get_blog_social, never the cached page row (BL-01 review N1).
  */
 export function BlogSocial() {
-  const { commentsOn, comments } = useQuestSocial();
-  const count = comments.length;
+  // The total from get_blog_social, kept in step with posts and deletes here: only the newest
+  // 100 comments are loaded (review S1).
+  const { commentsOn, commentCount: count } = useQuestSocial();
 
   return (
     <section aria-label="Likes and comments" className="flex flex-col gap-3 border-t border-line pt-4">
