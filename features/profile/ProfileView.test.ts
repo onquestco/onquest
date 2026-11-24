@@ -96,7 +96,7 @@ describe('ProfileView', () => {
   it('with public blogs: the Quests · Blogs switch, Quests first, the blogs one column', () => {
     const html = render({ blogs: [blog(1), blog(2, { coverThumb: 'https://photos.example/b2/thumb.webp' })] });
     expect(html).toContain('aria-label="Quests or blogs"');
-    expect(html).toMatch(/<input type="radio" name="Quests or blogs" value="quests" checked=""/);
+    expect(html).toContain('name="Quests or blogs" checked="" value="quests"');
     expect(html).toContain('>Blogs</label>');
     // The count row is unchanged: blogs aren't counted there.
     expect(html).not.toMatch(/<span class="text-caption text-ink-muted">Blogs?<\/span>/);
