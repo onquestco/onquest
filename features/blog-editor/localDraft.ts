@@ -38,6 +38,15 @@ export function browserStorage(): LocalStorageLike | null {
   }
 }
 
+/** Unreadable text counts as no entry, so it's removed like any entry that isn't this user's. */
+function parseJson(raw: string): unknown {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 function attempt<T>(work: () => T, fallback: T): T {
   try {
     return work();
@@ -52,7 +61,7 @@ export function readLocalDraft(storage: LocalStorageLike | null, key: string, us
   return attempt(() => {
     const raw = storage.getItem(`${PREFIX}${key}`);
     if (!raw) return null;
-    const parsed = EntrySchema.safeParse(JSON.parse(raw));
+    const parsed = EntrySchema.safeParse(parseJson(raw));
     if (parsed.success && parsed.data.userId === userId) return parsed.data;
     storage.removeItem(`${PREFIX}${key}`);
     return null;
@@ -90,7 +99,7 @@ export function readNewBlogKey(storage: LocalStorageLike | null, userId: string)
   return attempt(() => {
     const raw = storage.getItem(NEW_KEY);
     if (!raw) return null;
-    const parsed = NewBlogSchema.safeParse(JSON.parse(raw));
+    const parsed = NewBlogSchema.safeParse(parseJson(raw));
     if (parsed.success && parsed.data.userId === userId) return parsed.data.key;
     storage.removeItem(NEW_KEY);
     if (parsed.success) storage.removeItem(`${PREFIX}${parsed.data.key}`);
