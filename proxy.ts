@@ -32,6 +32,8 @@ export const config = {
     '/explore',
     '/notifications',
     '/quests/:path*',
+    '/blogs/:path*',
+    '/create',
     '/settings/:path*',
     '/auth/:path*',
   ],

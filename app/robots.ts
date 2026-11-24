@@ -31,6 +31,9 @@ export default function robots(): MetadataRoute.Robots {
           '/home',
           '/explore',
           '/quests',
+          '/blogs',
+          // Blog pages' internal path; their address is always /@handle/blog/slug.
+          '/b/',
           '/notifications',
           '/welcome',
         ],
