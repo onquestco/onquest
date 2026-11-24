@@ -30,7 +30,7 @@ describe('search_public', () => {
   });
 
   it('treats % and _ as letters', async () => {
-    expect(await search('%%')).toEqual({ quests: [], people: [] });
+    expect(await search('%%')).toEqual({ quests: [], people: [], blogs: [] }); // blogs: migration 17
   });
 
   it('refuses text shorter than 2 or longer than 60 characters', async () => {
