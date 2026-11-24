@@ -9,7 +9,7 @@ import { ALEX, createTestDatabase, NEWCOMER, STRANGER } from './testDatabase';
 // public and bell function the app already calls returns exactly what it returned before the
 // migration, plus the new `blogs` keys only. list_feed doesn't change at all.
 
-const MIGRATION_17 = '20261124110000_17_blog_social.sql';
+const MIGRATION_17 = '20261124144017_17_blog_social.sql';
 const migrationsBefore17 = readdirSync(join(process.cwd(), 'supabase', 'migrations'))
   .filter((file) => file.endsWith('.sql'))
   .sort()
