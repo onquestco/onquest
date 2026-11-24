@@ -17,11 +17,12 @@ const getPublicExplore = unstable_cache(
       supabase.rpc('list_place_chips', { p_limit: 8 }),
       supabase.rpc('list_explore_blogs', { p_limit: 6 }),
     ]);
-    if (trending.error || chips.error || blogs.error) throw new Error('Could not load Explore');
+    if (trending.error || chips.error) throw new Error('Could not load Explore');
     return {
       trending: toQuestCards(trending.data),
       chips: (chips.data as string[] | null) ?? [],
-      blogs: toBlogCards(blogs.data),
+      // Blogs are extra: if they can't load, Explore still shows everything else (BL-02 review).
+      blogs: blogs.error ? [] : toBlogCards(blogs.data),
     };
   },
   // A new key for the new shape: entries cached by the previous release have no blogs.
