@@ -23,6 +23,8 @@ export type Published = { slug: string; path: string; visibility: Visibility };
 
 export type InitialBlogDraft = {
   key: string;
+  /** The signed-in writer: this device's backups are kept per account (localDraft.ts). */
+  ownerKey: string;
   photoFolder: string;
   /** The draft row's saved_at; null until the first save creates the rows. */
   draftSavedAt: string | null;

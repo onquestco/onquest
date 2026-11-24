@@ -4,6 +4,7 @@ import { createBlogDraftStore, type InitialBlogDraft } from './blogDraftStore';
 import { readLocalDraft, readNewBlogKey, type LocalStorageLike } from './localDraft';
 
 const KEY = '11111111-1111-4111-8111-111111111111';
+const RIYA = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 function memoryStorage(): LocalStorageLike {
   const items = new Map<string, string>();
@@ -21,7 +22,8 @@ function memoryStorage(): LocalStorageLike {
 function setup(initial: Partial<InitialBlogDraft> = {}) {
   const store = createBlogDraftStore({
     key: KEY,
-    photoFolder: `user/${KEY}`,
+    ownerKey: RIYA,
+    photoFolder: `${RIYA}/${KEY}`,
     draftSavedAt: 's1',
     blogSavedAt: 's1',
     status: 'draft',
@@ -109,14 +111,14 @@ describe('blogDraftSaver', () => {
     expect(store.getState().saveStatus).toBe('offline');
     await vi.advanceTimersByTimeAsync(MAX_WAIT_MS * 2);
     expect(save).not.toHaveBeenCalled();
-    expect(readLocalDraft(storage, KEY)?.document.body).toBe('typing on the train');
+    expect(readLocalDraft(storage, KEY, RIYA)?.document.body).toBe('typing on the train');
 
     setOnline(true);
     saver.online();
     await vi.advanceTimersByTimeAsync(0);
     expect(save).toHaveBeenCalledTimes(1);
     expect(store.getState().saveStatus).toBe('saved');
-    expect(readLocalDraft(storage, KEY)).toBeNull();
+    expect(readLocalDraft(storage, KEY, RIYA)).toBeNull();
   });
 
   it('retries every 5 s after a failure', async () => {
@@ -151,7 +153,7 @@ describe('blogDraftSaver', () => {
     type('first and second');
     finish({ ok: true, data: { saved: true, savedAt: 's2', created: false } });
     await vi.advanceTimersByTimeAsync(0);
-    expect(readLocalDraft(storage, KEY)).toMatchObject({ basedOn: 's2', document: { body: 'first and second' } });
+    expect(readLocalDraft(storage, KEY, RIYA)).toMatchObject({ basedOn: 's2', document: { body: 'first and second' } });
     expect(store.getState().version).toBeGreaterThan(store.getState().savedVersion);
   });
 
@@ -168,17 +170,17 @@ describe('blogDraftSaver', () => {
       const { type, calls, store, storage, onCreated } = setup(fresh);
       type('Goa');
       await vi.advanceTimersByTimeAsync(500);
-      expect(readNewBlogKey(storage)).toBe(KEY);
-      expect(readLocalDraft(storage, KEY)?.basedOn).toBeNull();
+      expect(readNewBlogKey(storage, RIYA)).toBe(KEY);
+      expect(readLocalDraft(storage, KEY, RIYA)?.basedOn).toBeNull();
       await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
       expect(calls[0]?.basedOn).toBeNull();
       expect(store.getState().draftSavedAt).toBe('s2');
       expect(store.getState().blogSavedAt).toBe('s2');
       expect(onCreated).toHaveBeenCalledTimes(1);
-      expect(readNewBlogKey(storage)).toBeNull();
+      expect(readNewBlogKey(storage, RIYA)).toBeNull();
     });
 
-    it('force creates the rows for an empty composer (place search, Create a Quest)', async () => {
+    it('force creates the rows for an empty composer (place search)', async () => {
       const { saver, calls } = setup(fresh);
       expect(await saver.saveNow({ force: true })).toBe('saved');
       expect(calls).toHaveLength(1);

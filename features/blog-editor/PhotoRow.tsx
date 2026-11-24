@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ChangeEvent, type PointerEvent } from 'react';
+import type { ChangeEvent } from 'react';
 import { useStore } from 'zustand';
 import { PlusIcon } from '@/design-system/components/icons';
 import { Toast } from '@/design-system/components/Toast';
@@ -9,12 +9,11 @@ import { photoUrls } from '@/lib/storage';
 import type { BlogDraftStore } from './blogDraftStore';
 import { PendingThumb, PhotoThumb } from './PhotoThumb';
 import { useBlogPhotos } from './useBlogPhotos';
+import { usePhotoDrag } from './usePhotoDrag';
 
-// "+ Add photos", then square thumbnails (PRD B2): drag one to reorder (the first is the cover),
-// × to remove, "4 of 10". Dragging uses pointer events, so it works with a finger or a mouse; the
-// move buttons on each photo do the same for keyboards and screen readers.
-
-type Drag = { from: number; over: number; pointerId: number };
+// "+ Add photos", then square thumbnails (PRD B2): press and hold one, then drag to reorder (the
+// first is the cover), × to remove, "4 of 10". A quick swipe over the photos scrolls the page
+// (usePhotoDrag). The move buttons on each photo do the same for keyboards and screen readers.
 
 export function PhotoRow({ store }: { store: BlogDraftStore }) {
   const photos = useStore(store, (state) => state.document.photos);
@@ -22,37 +21,12 @@ export function PhotoRow({ store }: { store: BlogDraftStore }) {
   const previews = useStore(store, (state) => state.previews);
   const folder = useStore(store, (state) => state.photoFolder);
   const { add, retry, removeWaiting, removeFromBlog, move, message, clearMessage } = useBlogPhotos(store);
-  const [drag, setDrag] = useState<Drag | null>(null);
+  const { drag, listRef, handlers } = usePhotoDrag(move);
   const count = photos.length + pending.length;
 
   function choose(event: ChangeEvent<HTMLInputElement>) {
     add(Array.from(event.target.files ?? []));
     event.target.value = ''; // so the same photo can be picked again after removing it
-  }
-
-  function indexUnder(event: PointerEvent): number | null {
-    const element = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-photo-index]');
-    const index = element instanceof HTMLElement ? Number(element.dataset.photoIndex) : Number.NaN;
-    return Number.isNaN(index) ? null : index;
-  }
-
-  function startDrag(event: PointerEvent<HTMLLIElement>, index: number) {
-    // The × and move buttons are taps, not drags.
-    if ((event.target as HTMLElement).closest('button')) return;
-    event.currentTarget.setPointerCapture(event.pointerId);
-    setDrag({ from: index, over: index, pointerId: event.pointerId });
-  }
-
-  function moveDrag(event: PointerEvent) {
-    if (!drag || event.pointerId !== drag.pointerId) return;
-    const over = indexUnder(event);
-    if (over !== null && over !== drag.over) setDrag({ ...drag, over });
-  }
-
-  function endDrag(event: PointerEvent) {
-    if (!drag || event.pointerId !== drag.pointerId) return;
-    if (drag.over !== drag.from) move(drag.from, drag.over);
-    setDrag(null);
   }
 
   return (
@@ -63,7 +37,7 @@ export function PhotoRow({ store }: { store: BlogDraftStore }) {
           {count} of {BLOG_MAX_PHOTOS}
         </span>
       </div>
-      <ul className="grid grid-cols-3 gap-2">
+      <ul ref={listRef} className="grid grid-cols-3 gap-2">
         <li>
           <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-sm border-2 border-dashed border-line-control bg-surface text-center text-caption font-semibold text-ink-muted has-focus-visible:outline-2 has-focus-visible:outline-brand-strong">
             <PlusIcon size={20} />
@@ -79,10 +53,7 @@ export function PhotoRow({ store }: { store: BlogDraftStore }) {
             src={previews[photo.id] ?? photoUrls(folder, photo.id).thumb}
             dragging={drag?.from === index}
             dropTarget={drag !== null && drag.over === index && drag.from !== index}
-            onPointerDown={(event) => startDrag(event, index)}
-            onPointerMove={moveDrag}
-            onPointerUp={endDrag}
-            onPointerCancel={() => setDrag(null)}
+            pointer={handlers}
             onMove={(to) => move(index, to)}
             onRemove={() => removeFromBlog(photo.id)}
           />

@@ -45,8 +45,9 @@ export function LinkQuestRow({
 
   async function createQuest() {
     setCreating(true);
-    // The blog is kept before leaving for the Quest flow (PRD B3).
-    await saver.saveNow({ force: store.getState().draftSavedAt === null });
+    // The blog is kept before leaving for the Quest flow (PRD B3). An empty composer has nothing
+    // to keep, so it leaves no "Untitled blog" behind.
+    await saver.saveNow();
     router.push('/quests/new?source=blog_link');
   }
 

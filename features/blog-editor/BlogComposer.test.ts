@@ -3,7 +3,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { BlogComposer } from './BlogComposer';
 import { createBlogDraftStore, type InitialBlogDraft } from './blogDraftStore';
-import { BlogPreview, countWords } from './BlogPreview';
+import { BlogPreview, countWords, HIDDEN_QUEST_NOTE, readersSeeLinkedQuest } from './BlogPreview';
+import type { QuestCard } from '@/lib/trip/cards';
+import type { Visibility } from '@/lib/trip/schema';
 
 // vi.mock is hoisted above the imports. Rendered outside Next.js and without a server, so the
 // router, links and server actions are stand-ins.
@@ -23,6 +25,7 @@ const writer = { handle: 'riya', name: 'Riya' };
 
 const initial = (change: Partial<InitialBlogDraft> = {}): InitialBlogDraft => ({
   key: KEY,
+  ownerKey: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   photoFolder: `user/${KEY}`,
   draftSavedAt: '2026-11-24 10:00:00+00',
   blogSavedAt: '2026-11-24 10:00:00+00',
@@ -40,6 +43,12 @@ describe('BlogComposer', () => {
     }
     expect(html).toContain('placeholder="Tell the story, share tips, what you&#x27;d do again…"');
     expect(html).toContain('We stayed in Anjuna.');
+    // The title and text keep a visible label, a readable placeholder and a focus outline.
+    expect(html).toMatch(/<label class="text-caption text-ink-muted" for="[^"]+">Title<\/label>/);
+    expect(html).toMatch(/<label class="text-caption text-ink-muted" for="[^"]+">Text<\/label>/);
+    expect(html).toContain('placeholder:text-ink-muted');
+    expect(html).toContain('focus:outline-brand-strong');
+    expect(html).not.toContain('placeholder:text-ink-subtle');
     const order = ['Goa on 15k', 'Add photos', 'We stayed in Anjuna.', 'Add a place', 'Link a Quest'].map((text) =>
       html.indexOf(text),
     );
@@ -70,6 +79,7 @@ describe('BlogComposer', () => {
         photoFolder: store.getState().photoFolder,
         previews: store.getState().previews,
         writer,
+        blogVisibility: 'public',
       }),
     );
     expect(html).toContain('Typed just now, not saved yet.');
@@ -91,6 +101,7 @@ describe('BlogComposer', () => {
         photoFolder: store.getState().photoFolder,
         previews: store.getState().previews,
         writer,
+        blogVisibility: 'public',
       }),
     );
     expect(html).toContain('src="blob:local-preview"');
@@ -106,5 +117,60 @@ describe('BlogComposer', () => {
     expect(store.getState().document.startedAt).toBeUndefined();
     store.getState().change({ title: 'G' });
     expect(store.getState().document.startedAt).toBe('2026-11-24T10:00:00.000Z');
+  });
+
+  describe('the linked Quest in Preview (spec D12)', () => {
+    const quest = (visibility: Visibility): QuestCard => ({
+      key: '33333333-3333-4333-8333-333333333333',
+      title: '3 days in Goa',
+      status: 'published',
+      visibility,
+      path: '/@riya/goa',
+      coverThumb: 'https://photos.example/goa/thumb.webp',
+      pageCount: 5,
+      photoCount: 15,
+      places: ['Goa'],
+      likeCount: 0,
+      commentCount: 0,
+      savedAt: '2026-11-20 10:00:00+00',
+      owner: { key: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', handle: 'riya', name: 'Riya' },
+    });
+    const preview = (questVisibility: Visibility, blogVisibility: Visibility) =>
+      renderToStaticMarkup(
+        createElement(BlogPreview, {
+          document: initial().document,
+          photoFolder: `user/${KEY}`,
+          previews: {},
+          writer,
+          linkedQuest: quest(questVisibility),
+          blogVisibility,
+        }),
+      );
+
+    it('readers see a public Quest, an unlisted one only on a blog that isn\'t public, a private one never', () => {
+      expect(readersSeeLinkedQuest('public', 'public')).toBe(true);
+      expect(readersSeeLinkedQuest('unlisted', 'public')).toBe(false);
+      expect(readersSeeLinkedQuest('unlisted', 'unlisted')).toBe(true);
+      expect(readersSeeLinkedQuest('private', 'unlisted')).toBe(false);
+    });
+
+    it('shows the card for a Quest readers will see, without a link that would leave the composer', () => {
+      const html = preview('public', 'public');
+      expect(html).toContain('From this trip');
+      expect(html).toContain('5 pages · 15 photos');
+      expect(html).not.toContain('href="/@riya/goa"');
+    });
+
+    it("shows only the writer's note when readers won't see the card", () => {
+      for (const [questVisibility, blogVisibility] of [
+        ['unlisted', 'public'],
+        ['private', 'public'],
+        ['private', 'unlisted'],
+      ] as const) {
+        const html = preview(questVisibility, blogVisibility);
+        expect(html).not.toContain('From this trip');
+        expect(html).toContain(HIDDEN_QUEST_NOTE.replace("'", '&#x27;'));
+      }
+    });
   });
 });

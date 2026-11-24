@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Button } from '@/design-system/components/Button';
 import { Sheet } from '@/design-system/components/Sheet';
 import { TextField } from '@/design-system/components/TextField';
+import { clearLocalDrafts } from '@/features/blog-editor/localDraft';
 import { deleteMyAccount } from './actions';
 
 /** Delete account (M26): type DELETE. Everything goes: Quests, photos, likes, comments, follows. */
@@ -19,6 +20,8 @@ export function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
     setFailed(false);
     const result = await deleteMyAccount({ confirm: 'DELETE' }).catch(() => null);
     if (result?.ok) {
+      // The account's unsent blog text goes with it (blogs PRD: deleting deletes drafts).
+      clearLocalDrafts();
       // Signed out now: refresh so nothing of the account stays on screen.
       router.replace('/?deleted=1');
       router.refresh();

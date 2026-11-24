@@ -5,8 +5,11 @@ import { BlogDocumentSchema, type BlogDocument } from '@/lib/blog/schema';
 // 500 ms), so closing the app, losing the connection or a failed save never loses text. Only on
 // this device, cleared on sign-out, and never sent anywhere but our own save action.
 //
-//   oq_blog_draft:{key}  → { basedOn, document, version }
-//   oq_blog_draft:new    → the key of a blog that hasn't reached the server yet
+//   oq_blog_draft:{key}  → { userId, basedOn, document, version }
+//   oq_blog_draft:new    → { userId, key } of a blog that hasn't reached the server yet
+//
+// Every entry names the account that wrote it. On a shared phone, another account never sees or
+// adopts it: reading someone else's entry removes it instead.
 //
 // Private browsing can refuse storage: every function here then quietly does nothing.
 
@@ -16,6 +19,8 @@ const NEW_KEY = `${PREFIX}new`;
 export type LocalStorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem' | 'key' | 'length'>;
 
 const EntrySchema = z.object({
+  /** The signed-in user who wrote it. */
+  userId: z.string().min(1),
   /** The draft saved_at this copy was based on; null before the blog's first save. */
   basedOn: z.string().nullable(),
   document: BlogDocumentSchema,
@@ -41,13 +46,16 @@ function attempt<T>(work: () => T, fallback: T): T {
   }
 }
 
-export function readLocalDraft(storage: LocalStorageLike | null, key: string): LocalDraft | null {
+/** This user's copy of a blog. Anything else under the key (another account's, or unreadable) is removed. */
+export function readLocalDraft(storage: LocalStorageLike | null, key: string, userId: string): LocalDraft | null {
   if (!storage) return null;
   return attempt(() => {
     const raw = storage.getItem(`${PREFIX}${key}`);
     if (!raw) return null;
     const parsed = EntrySchema.safeParse(JSON.parse(raw));
-    return parsed.success ? parsed.data : null;
+    if (parsed.success && parsed.data.userId === userId) return parsed.data;
+    storage.removeItem(`${PREFIX}${key}`);
+    return null;
   }, null);
 }
 
@@ -57,32 +65,63 @@ export function writeLocalDraft(storage: LocalStorageLike | null, key: string, e
 }
 
 /** After a save: the copy goes once the server has this version (or a later one). */
-export function removeLocalDraft(storage: LocalStorageLike | null, key: string, savedVersion?: number): void {
+export function removeLocalDraft(
+  storage: LocalStorageLike | null,
+  key: string,
+  saved?: { userId: string; version: number },
+): void {
   if (!storage) return;
-  if (savedVersion !== undefined) {
-    const entry = readLocalDraft(storage, key);
-    if (entry && entry.version > savedVersion) return;
+  if (saved) {
+    const entry = readLocalDraft(storage, key, saved.userId);
+    if (entry && entry.version > saved.version) return;
   }
   attempt(() => storage.removeItem(`${PREFIX}${key}`), undefined);
 }
 
-/** The blog being written on /blogs/new that hasn't been saved to the server yet. */
-export function readNewBlogKey(storage: LocalStorageLike | null): string | null {
+const NewBlogSchema = z.object({ userId: z.string().min(1), key: z.uuid() });
+
+/**
+ * The blog this user was writing on /blogs/new that hasn't been saved to the server yet. Another
+ * account's is removed, with its text: it must never be resumed, saved or have its photos
+ * uploaded under someone else's account.
+ */
+export function readNewBlogKey(storage: LocalStorageLike | null, userId: string): string | null {
   if (!storage) return null;
   return attempt(() => {
-    const key = storage.getItem(NEW_KEY);
-    return key && z.uuid().safeParse(key).success ? key : null;
+    const raw = storage.getItem(NEW_KEY);
+    if (!raw) return null;
+    const parsed = NewBlogSchema.safeParse(JSON.parse(raw));
+    if (parsed.success && parsed.data.userId === userId) return parsed.data.key;
+    storage.removeItem(NEW_KEY);
+    if (parsed.success) storage.removeItem(`${PREFIX}${parsed.data.key}`);
+    return null;
   }, null);
 }
 
-export function rememberNewBlogKey(storage: LocalStorageLike | null, key: string): void {
+export function rememberNewBlogKey(storage: LocalStorageLike | null, key: string, userId: string): void {
   if (!storage) return;
-  attempt(() => storage.setItem(NEW_KEY, key), undefined);
+  attempt(() => storage.setItem(NEW_KEY, JSON.stringify({ userId, key })), undefined);
 }
 
-export function forgetNewBlogKey(storage: LocalStorageLike | null, key: string): void {
-  if (!storage || readNewBlogKey(storage) !== key) return;
+export function forgetNewBlogKey(storage: LocalStorageLike | null, key: string, userId: string): void {
+  if (!storage || readNewBlogKey(storage, userId) !== key) return;
   attempt(() => storage.removeItem(NEW_KEY), undefined);
+}
+
+/**
+ * What /blogs/new opens with: this user's unsent blog (resumed, not a new start), or a new key.
+ * `saved` means the unsent blog did reach the server: open its edit page instead.
+ */
+export function startNewBlog(
+  storage: LocalStorageLike | null,
+  userId: string,
+  createKey: () => string,
+): { kind: 'saved'; key: string } | { kind: 'resumed'; key: string; document: BlogDocument } | { kind: 'new'; key: string } {
+  const unsentKey = readNewBlogKey(storage, userId);
+  const unsent = unsentKey ? readLocalDraft(storage, unsentKey, userId) : null;
+  if (unsentKey && unsent?.basedOn) return { kind: 'saved', key: unsentKey };
+  if (unsentKey && unsent) return { kind: 'resumed', key: unsentKey, document: unsent.document };
+  return { kind: 'new', key: createKey() };
 }
 
 /** Sign-out: nothing of anyone's writing stays on a shared phone. */

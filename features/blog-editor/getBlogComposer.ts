@@ -17,6 +17,7 @@ export async function getBlogComposer(key: string): Promise<{
   return {
     initial: {
       key: draft.key,
+      ownerKey: draft.ownerKey,
       photoFolder: draft.photoFolder,
       draftSavedAt: draft.draftSavedAt,
       blogSavedAt: draft.blogSavedAt,

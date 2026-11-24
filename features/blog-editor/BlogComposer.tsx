@@ -57,6 +57,7 @@ function ComposerScreen({ store, saver, quests, writer }: ScreenProps) {
   const published = useStore(store, (state) => state.published);
   const previews = useStore(store, (state) => state.previews);
   const photoFolder = useStore(store, (state) => state.photoFolder);
+  const blogVisibility = useStore(store, (state) => state.published?.visibility ?? state.visibility);
   const { post, posting, error, clearError } = usePostBlog(store, saver);
   const [choosing, setChoosing] = useState(false);
   const [toast, setToast] = useState<string>();
@@ -71,13 +72,13 @@ function ComposerScreen({ store, saver, quests, writer }: ScreenProps) {
   }
 
   async function close() {
-    const { key, document: current, pending: waiting, draftSavedAt, status } = store.getState();
+    const { key, ownerKey, document: current, pending: waiting, draftSavedAt, status } = store.getState();
     if (!hasContent(current) && waiting.length === 0 && status === 'draft') {
       // Close on an empty draft discards it (PRD B2). A posted blog is never discarded from here.
       saver.abandon();
       const storage = browserStorage();
       removeLocalDraft(storage, key);
-      forgetNewBlogKey(storage, key);
+      forgetNewBlogKey(storage, key, ownerKey);
       if (draftSavedAt !== null) await discardBlogDraft({ key }).catch(() => null);
       return goBack();
     }
@@ -137,6 +138,7 @@ function ComposerScreen({ store, saver, quests, writer }: ScreenProps) {
             previews={previews}
             writer={writer}
             linkedQuest={linkedQuest}
+            blogVisibility={blogVisibility}
           />
         ) : (
           <>

@@ -1,6 +1,6 @@
 'use client';
 
-import type { PointerEventHandler } from 'react';
+import type { MouseEventHandler, PointerEventHandler } from 'react';
 import { CloseIcon } from '@/design-system/components/icons';
 import { ProgressRing } from '@/design-system/components/ProgressRing';
 import type { PendingPhoto } from './blogDraftStore';
@@ -36,22 +36,28 @@ type Props = {
   src: string;
   dragging: boolean;
   dropTarget: boolean;
-  onPointerDown: PointerEventHandler<HTMLLIElement>;
-  onPointerMove: PointerEventHandler<HTMLLIElement>;
-  onPointerUp: PointerEventHandler<HTMLLIElement>;
-  onPointerCancel: PointerEventHandler<HTMLLIElement>;
+  /** From usePhotoDrag: press and hold, then drag. */
+  pointer: {
+    onPointerDown: PointerEventHandler<HTMLLIElement>;
+    onPointerMove: PointerEventHandler<HTMLLIElement>;
+    onPointerUp: PointerEventHandler<HTMLLIElement>;
+    onPointerCancel: PointerEventHandler<HTMLLIElement>;
+    onContextMenu: MouseEventHandler<HTMLLIElement>;
+  };
   onMove: (to: number) => void;
   onRemove: () => void;
 };
 
-/** A photo in the blog: drag to reorder; the first one is the cover. */
-export function PhotoThumb({ index, total, src, dragging, dropTarget, onMove, onRemove, ...pointer }: Props) {
+/** A photo in the blog: press and hold, then drag to reorder; the first one is the cover. */
+export function PhotoThumb({ index, total, src, dragging, dropTarget, onMove, onRemove, pointer }: Props) {
   const number = index + 1;
   return (
     <li
       data-photo-index={index}
       {...pointer}
-      className={`relative aspect-square touch-none rounded-sm select-none ${dragging ? 'opacity-50' : ''} ${
+      // No long-press image menu on iPhones while holding a photo to move it.
+      style={{ WebkitTouchCallout: 'none' }}
+      className={`relative aspect-square rounded-sm select-none ${dragging ? 'opacity-50' : ''} ${
         dropTarget ? 'outline-2 outline-offset-2 outline-brand-strong' : ''
       }`}
     >
@@ -59,7 +65,7 @@ export function PhotoThumb({ index, total, src, dragging, dropTarget, onMove, on
         src={src}
         alt={index === 0 ? `Photo 1 of ${total}, the cover` : `Photo ${number} of ${total}`}
         draggable={false}
-        className="h-full w-full rounded-sm bg-surface-page object-cover"
+        className="pointer-events-none h-full w-full rounded-sm bg-surface-page object-cover"
       />
       {index === 0 && (
         <span className="absolute bottom-1 left-1 rounded-pill bg-night/60 px-2 py-0.5 text-caption font-semibold text-on-night">

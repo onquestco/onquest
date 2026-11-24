@@ -37,7 +37,7 @@ export function useBlogAutosave(store: BlogDraftStore): BlogDraftSaver {
     if (state.draftSavedAt === null || state.blogSavedAt === null) return;
     const start = chooseStartingDraft(
       { draftSavedAt: state.draftSavedAt, blogSavedAt: state.blogSavedAt, document: state.document },
-      readLocalDraft(storage, state.key),
+      readLocalDraft(storage, state.key, state.ownerKey),
     );
     if (start.dropLocal) removeLocalDraft(storage, state.key);
     if (start.restored) {

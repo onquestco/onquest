@@ -60,9 +60,9 @@ type TextAreaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   /** The accessible name. Shown above the box unless `bare`. */
   label: string;
   /**
-   * A writing surface with no box and no visible label, where the screen itself is the form (the
-   * blog composer's title and body): the placeholder says what goes there, the label is still
-   * read by screen readers.
+   * A writing surface with no box, where the screen itself is the form (the blog composer's title
+   * and body). The label stays visible, small and muted above the text, and the field still shows
+   * a focus outline: the placeholder is never the only cue.
    */
   bare?: boolean;
   /** `title` for a large heading-sized field. Always at least 16px, so phones don't zoom. */
@@ -85,11 +85,11 @@ export function TextArea({ label, bare = false, size = 'body', counter, classNam
   const id = textarea.id ?? ownId;
   const text = size === 'title' ? 'text-title' : 'text-body';
   const box = bare
-    ? 'border-0 bg-transparent px-0 py-2 outline-none'
-    : 'rounded-sm border border-line-control bg-surface px-3 py-3 focus:border-brand-strong focus:outline-2 focus:outline-brand-strong';
+    ? 'rounded-sm border-0 bg-transparent px-0 py-1 placeholder:text-ink-muted focus:outline-2 focus:outline-offset-4 focus:outline-brand-strong'
+    : 'rounded-sm border border-line-control bg-surface px-3 py-3 placeholder:text-ink-subtle focus:border-brand-strong focus:outline-2 focus:outline-brand-strong';
   return (
     <div className={['flex flex-col gap-1', className].filter(Boolean).join(' ')}>
-      <label className={bare ? 'sr-only' : 'text-label text-ink-muted'} htmlFor={id}>
+      <label className={bare ? 'text-caption text-ink-muted' : 'text-label text-ink-muted'} htmlFor={id}>
         {label}
       </label>
       <textarea
@@ -103,7 +103,7 @@ export function TextArea({ label, bare = false, size = 'body', counter, classNam
           grow(event.currentTarget);
           onInput?.(event);
         }}
-        className={`block w-full resize-none overflow-hidden text-ink placeholder:text-ink-subtle ${text} ${box}`}
+        className={`block w-full resize-none overflow-hidden text-ink ${text} ${box}`}
       />
       {counter && (
         <p id={counterId} aria-live="polite" className="self-end text-caption text-ink-muted">

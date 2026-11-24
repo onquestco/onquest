@@ -72,10 +72,10 @@ export function createBlogDraftSaver({ store, save, isOnline, storage, onCreated
     clearTimeout(localTimer);
     localTimer = undefined;
     if (abandoned) return;
-    const { key, draftSavedAt, document, version, savedVersion } = store.getState();
+    const { key, ownerKey, draftSavedAt, document, version, savedVersion } = store.getState();
     if (version === savedVersion) return;
-    if (draftSavedAt === null) rememberNewBlogKey(storage, key);
-    writeLocalDraft(storage, key, { basedOn: draftSavedAt, document, version });
+    if (draftSavedAt === null) rememberNewBlogKey(storage, key, ownerKey);
+    writeLocalDraft(storage, key, { userId: ownerKey, basedOn: draftSavedAt, document, version });
   }
 
   async function runSave(force: boolean): Promise<SaveOutcome> {
@@ -100,12 +100,12 @@ export function createBlogDraftSaver({ store, save, isOnline, storage, onCreated
     if (data?.saved) {
       after.markSaved(data.savedAt, version, data.created);
       if (data.created) {
-        forgetNewBlogKey(storage, key);
+        forgetNewBlogKey(storage, key, state.ownerKey);
         onCreated?.();
       }
       // Newer typing keeps its copy, now based on this save.
       if (after.version > version) writeLocalNow();
-      else removeLocalDraft(storage, key, version);
+      else removeLocalDraft(storage, key, { userId: state.ownerKey, version });
       return 'saved';
     }
     const error = data && !data.saved ? data.error : null;
