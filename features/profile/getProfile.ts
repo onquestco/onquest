@@ -2,6 +2,7 @@ import { unstable_cache } from 'next/cache';
 import { z } from 'zod';
 import { profileTag, profileUrlTag } from '@/lib/cacheTags';
 import { HANDLE_PATTERN } from '@/lib/handles';
+import { toBlogCards } from '@/lib/social/cardRows';
 import { photoUrls } from '@/lib/storage';
 import { createPublicSupabase } from '@/lib/supabase/public';
 import type { QuestCard } from '@/lib/trip/cards';
@@ -41,6 +42,8 @@ const ProfileRowSchema = z.object({
   ),
   pins: z.array(z.object({ name: z.string(), lat: z.number(), lng: z.number(), trip_slug: z.string() })),
   places: z.array(z.string()),
+  /** Public posted blog cards (blog_card_json), migration 17; absent from older database code. */
+  blogs: z.array(z.unknown()).optional(),
 });
 
 function toProfileView(row: z.infer<typeof ProfileRowSchema>) {
@@ -79,6 +82,7 @@ function toProfileView(row: z.infer<typeof ProfileRowSchema>) {
     places: row.places,
     pins: row.pins,
     quests,
+    blogs: toBlogCards(row.blogs ?? []),
   };
 }
 
@@ -113,7 +117,8 @@ export async function getProfile(rawHandle: string): Promise<ProfileResult> {
     tags: [profileUrlTag(handle)],
   })();
   if (!located || 'movedTo' in located) return located;
-  const profile = await unstable_cache(() => fetchProfile(handle), ['profile', located.key, handle], {
+  // 'with-blogs': profiles cached by the previous release have no blogs list.
+  const profile = await unstable_cache(() => fetchProfile(handle), ['profile', 'with-blogs', located.key, handle], {
     tags: [profileTag(located.key), profileUrlTag(handle)],
   })();
   return profile ? { profile } : null;

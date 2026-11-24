@@ -11,6 +11,7 @@ import { ALEX, NEWCOMER, STRANGER } from './testDatabase';
 let db: Awaited<ReturnType<typeof createSocialDatabase>>;
 type Result = {
   liked_or_commented_trip_keys: string[];
+  liked_or_commented_blog_keys: string[];
   follow_profile_keys: string[];
   own_trips: { key: string; slug: string }[];
   own_blogs: { key: string; slug: string }[];
@@ -122,13 +123,23 @@ describe('deleting a writer of blogs (blogs spec §5)', () => {
   let test: Awaited<ReturnType<typeof createSocialDatabase>>;
   let blogs: ReturnType<typeof blogFunctions>;
   let posted: { key: string; slug: string };
+  let alexBlog: string;
   let deleted: Result;
 
   beforeAll(async () => {
     test = await createSocialDatabase();
     blogs = blogFunctions(test);
     await blogs.grant('riya');
+    await blogs.grant('alex');
     posted = await blogs.posted(NEWCOMER, { slug: 'riya-in-goa' });
+    // Riya reacts to Alex's blog (archived like too); Sam reacts to Riya's.
+    alexBlog = (await blogs.posted(ALEX, { slug: 'alex-in-goa' })).key;
+    await blogs.like(NEWCOMER, alexBlog);
+    await blogs.like(NEWCOMER, alexBlog, false);
+    await blogs.like(NEWCOMER, alexBlog);
+    await blogs.comment(NEWCOMER, alexBlog, 'Nice one');
+    await blogs.like(STRANGER, posted.key);
+    await blogs.comment(STRANGER, posted.key, 'Great read');
     // A second handle, an autosave archive and a draft that was never posted.
     await blogs.saveDraft(NEWCOMER, posted.key, (await blogs.tokens(NEWCOMER, posted.key)).draft, { body: 'edit' });
     await blogs.create(NEWCOMER, randomUUID());
@@ -151,6 +162,22 @@ describe('deleting a writer of blogs (blogs spec §5)', () => {
     expect(await test.count('select count(*) n from public.feature_access where user_key = $1', [NEWCOMER])).toBe(0);
   });
 
+  it("removes their likes and comments on anyone's blogs, and everyone's on theirs", async () => {
+    for (const [table, column] of [
+      ['blog_likes', 'user_key'],
+      ['blog_likes_archive', 'user_key'],
+      ['blog_comments', 'author_key'],
+    ]) {
+      expect(await test.count(`select count(*) n from public.${table} where ${column} = $1`, [NEWCOMER])).toBe(0);
+    }
+    expect(await test.count('select count(*) n from public.blog_likes where blog_key = $1', [posted.key])).toBe(0);
+    expect(await test.count('select count(*) n from public.blog_comments where blog_key = $1', [posted.key])).toBe(0);
+    expect(await test.count('select count(*) n from public.notifications where blog_key = $1', [posted.key])).toBe(0);
+    // Notifications they caused on Alex's blog go too; Alex's blog stays.
+    expect(await test.count('select count(*) n from public.notifications where blog_key = $1', [alexBlog])).toBe(0);
+    expect(await test.count('select count(*) n from public.blogs where key = $1', [alexBlog])).toBe(1);
+  });
+
   it('keeps tombstones under every handle they had, and says what to refresh', async () => {
     expect(await test.one(undefined, `select public.get_blog_status('riya', 'riya-in-goa') as result`)).toBe(
       'removed',
@@ -159,6 +186,7 @@ describe('deleting a writer of blogs (blogs spec §5)', () => {
       'removed',
     );
     expect(deleted.own_blogs).toEqual([posted]);
+    expect(deleted.liked_or_commented_blog_keys).toEqual([alexBlog]);
     expect(deleted.handles).toEqual(['riya', 'riya_two']);
   });
 

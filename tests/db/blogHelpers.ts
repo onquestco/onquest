@@ -96,6 +96,29 @@ export function blogFunctions(test: Test) {
       one<string | null>(undefined, 'select public.get_blog_status($1, $2) as result', [handle, slug]),
     linkedQuest: (blogKey: string, user?: string) =>
       one<Record<string, unknown> | null>(user, 'select public.get_blog_quest($1) as result', [blogKey]),
+    // Likes and comments (migration 17).
+    like: (user: string, blogKey: string, liked = true) =>
+      one<{ liked: boolean; notified: boolean; like_count: number }>(
+        user,
+        'select public.set_blog_like($1, $2) as result',
+        [blogKey, liked],
+      ),
+    comment: (user: string, blogKey: string, body: string) =>
+      one<{ key: string; saved_at: string }>(user, 'select public.post_blog_comment($1, $2) as result', [
+        blogKey,
+        body,
+      ]),
+    deleteComment: (user: string, commentKey: string) =>
+      one<string>(user, 'select public.delete_blog_comment($1) as result', [commentKey]),
+    social: (blogKey: string, user?: string) =>
+      one<{
+        like_count: number;
+        comment_count: number;
+        comments_on: boolean;
+        comments: { key: string; body: string; author: { handle: string } }[];
+      } | null>(user, 'select public.get_blog_social($1) as result', [blogKey]),
+    myState: (user: string, blogKey: string) =>
+      one<Record<string, unknown>>(user, 'select public.get_my_blog_state($1) as result', [blogKey]),
     /** A blog created and posted in one go; returns its key and slug. */
     async posted(
       user: string,

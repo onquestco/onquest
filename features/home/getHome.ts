@@ -1,4 +1,4 @@
-import { toFeedItems, toQuestCards } from '@/lib/social/cardRows';
+import { toHomeFeedItems, toQuestCards } from '@/lib/social/cardRows';
 import type { FeedPage } from '@/lib/social/schema';
 import { createServerSupabase } from '@/lib/supabase/server';
 import type { QuestCard } from '@/lib/trip/cards';
@@ -8,18 +8,19 @@ const SUGGESTIONS = 6;
 const SIGNED_OUT_SUGGESTIONS = 10; // the most the function returns: it's the whole page signed out
 
 /**
- * One page of the Home feed (spec C §3.4). `now` is fixed by the first page and passed back by
- * "Load more", so the order doesn't shift between pages. Signed in only; never cached.
+ * One page of the Home feed (spec C §3.4): Quests and public blogs from people you follow, in one
+ * order (blogs spec S2). `now` is fixed by the first page and passed back by "Load more", so the
+ * order doesn't shift between pages. Signed in only; never cached.
  */
 export async function getFeedPage(now: string, offset: number): Promise<FeedPage> {
   const supabase = await createServerSupabase();
-  const { data, error } = await supabase.rpc('list_feed', {
+  const { data, error } = await supabase.rpc('list_home_feed', {
     p_now: now,
     p_limit: FEED_PAGE_SIZE,
     p_offset: offset,
   });
   if (error) throw new Error('Could not load the feed');
-  const items = toFeedItems(data);
+  const items = toHomeFeedItems(data);
   return { items, nextOffset: items.length === FEED_PAGE_SIZE ? offset + items.length : null, now };
 }
 

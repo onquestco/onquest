@@ -28,6 +28,9 @@ const EXPECTED: Record<string, string[]> = {
   get_blog_status: PUBLIC_PAGES,
   get_blog_quest: PUBLIC_PAGES,
   list_sitemap_blogs: PUBLIC_PAGES,
+  // Blog social and discovery (migration 17).
+  get_blog_social: PUBLIC_PAGES,
+  list_explore_blogs: PUBLIC_PAGES,
 
   is_handle_available: SIGNED_IN,
   save_profile: SIGNED_IN,
@@ -58,6 +61,13 @@ const EXPECTED: Record<string, string[]> = {
   set_blog_visibility: SIGNED_IN,
   set_blog_comments: SIGNED_IN,
   delete_blog: SIGNED_IN,
+  set_blog_like: SIGNED_IN,
+  post_blog_comment: SIGNED_IN,
+  delete_blog_comment: SIGNED_IN,
+  get_my_blog_state: SIGNED_IN,
+  list_my_blogs: SIGNED_IN,
+  list_my_comment_blog_keys: SIGNED_IN,
+  list_home_feed: SIGNED_IN,
 
   geocode_cache_get: SERVER,
   geocode_cache_put: SERVER,
@@ -92,6 +102,9 @@ const EXPECTED: Record<string, string[]> = {
   insert_blog: NOBODY,
   archive_blog_draft: NOBODY,
   insert_blog_draft: NOBODY,
+  can_see_blog: NOBODY,
+  blog_card_json: NOBODY,
+  public_blogs_scored: NOBODY,
 };
 
 type GrantRow = { name: string; anon: boolean; authenticated: boolean; service_role: boolean };

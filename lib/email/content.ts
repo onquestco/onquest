@@ -5,8 +5,11 @@ import type { EmailKind } from './links';
 
 export type NotificationEmail = {
   kind: EmailKind;
+  /** What was liked or commented on (blogs spec §3.6). Default 'quest'. */
+  target?: 'quest' | 'blog';
+  /** The Quest's or the blog's title. */
   questTitle?: string;
-  /** Absolute URL of the Quest (like, comment) or the follower's profile (follow). */
+  /** Absolute URL of the Quest or blog (like, comment) or the follower's profile (follow). */
   url: string;
   actorName?: string;
   commentBody?: string;
@@ -19,11 +22,12 @@ const cut = (text: string, length: number) => {
 };
 
 export function buildNotificationEmail(email: NotificationEmail) {
-  const title = cut(email.questTitle ?? 'your Quest', 60);
+  const thing = email.target === 'blog' ? 'blog' : 'Quest';
+  const title = cut(email.questTitle ?? `your ${thing}`, 60);
   const name = cut(email.actorName ?? 'Someone', 40);
   const subject =
     email.kind === 'like'
-      ? `Someone liked your Quest ${title}`
+      ? `Someone liked your ${thing} ${title}`
       : email.kind === 'comment'
         ? `${name} commented on ${title}`
         : `${name} started following you on OnQuest`;
@@ -32,7 +36,7 @@ export function buildNotificationEmail(email: NotificationEmail) {
       ? `${name} commented on ${title}: "${cut(email.commentBody, 140)}"`
       : subject;
   const link = `${email.url}${email.url.includes('?') ? '&' : '?'}n=email`;
-  const action = email.kind === 'follow' ? 'See their profile' : 'Open your Quest';
+  const action = email.kind === 'follow' ? 'See their profile' : `Open your ${thing}`;
   const stop =
     email.kind === 'like'
       ? 'Stop emails about likes'

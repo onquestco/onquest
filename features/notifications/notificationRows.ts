@@ -2,7 +2,26 @@ import { z } from 'zod';
 import { photoUrls } from '@/lib/storage';
 import type { NotificationItem } from '@/lib/social/schema';
 
-// list_my_notifications' snake_case output → NotificationItem[].
+// list_my_notifications' snake_case output → NotificationItem[]. A like or comment is about a
+// Quest (quest) or, from migration 17, a blog (blog).
+
+const SubjectRowSchema = z.object({
+  key: z.uuid(),
+  title: z.string(),
+  path: z.string(),
+  cover_photo_key: z.string().optional(),
+  photo_folder: z.string(),
+});
+
+function toSubject(row: z.infer<typeof SubjectRowSchema> | undefined) {
+  if (!row) return undefined;
+  return {
+    key: row.key,
+    title: row.title,
+    path: row.path,
+    coverThumb: row.cover_photo_key ? photoUrls(row.photo_folder, row.cover_photo_key).thumb : undefined,
+  };
+}
 
 const RowSchema = z.object({
   key: z.uuid(),
@@ -14,15 +33,8 @@ const RowSchema = z.object({
   actor: z
     .object({ handle: z.string(), name: z.string(), avatar_url: z.string().nullable().optional() })
     .optional(),
-  quest: z
-    .object({
-      key: z.uuid(),
-      title: z.string(),
-      path: z.string(),
-      cover_photo_key: z.string().optional(),
-      photo_folder: z.string(),
-    })
-    .optional(),
+  quest: SubjectRowSchema.optional(),
+  blog: SubjectRowSchema.optional(),
   comment_excerpt: z.string().optional(),
 });
 
@@ -39,16 +51,8 @@ export function toNotificationItems(raw: unknown): NotificationItem[] {
       actor: row.actor
         ? { handle: row.actor.handle, name: row.actor.name, avatarUrl: row.actor.avatar_url ?? undefined }
         : undefined,
-      quest: row.quest
-        ? {
-            key: row.quest.key,
-            title: row.quest.title,
-            path: row.quest.path,
-            coverThumb: row.quest.cover_photo_key
-              ? photoUrls(row.quest.photo_folder, row.quest.cover_photo_key).thumb
-              : undefined,
-          }
-        : undefined,
+      quest: toSubject(row.quest),
+      blog: toSubject(row.blog),
       commentExcerpt: row.comment_excerpt,
     }));
 }

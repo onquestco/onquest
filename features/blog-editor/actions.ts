@@ -1,12 +1,16 @@
 'use server';
 
+import { after } from 'next/server';
 import { z } from 'zod';
+import { draftSavedProperties } from '@/features/blogs/blogEvents';
 import { blogSaveError } from '@/features/blogs/blogErrors';
 import { loadOwnBlog, ownsBlog } from '@/features/blogs/blogRows';
 import { action } from '@/lib/action';
+import { trackServer } from '@/lib/analytics/server';
 import { BlogDocumentSchema } from '@/lib/blog/schema';
 import { geocoderFor } from '@/lib/geoServer';
 import { deleteQuestFiles } from '@/lib/storage';
+import { shouldTrackDraftSave } from './shouldTrackDraftSave';
 
 // Draft writes for the composer (blogs spec §4.2). Never refresh public caches: readers only see
 // a change when it's posted. Domain errors come back in `data`, never thrown.
@@ -19,7 +23,7 @@ const SaveDraftSchema = z.object({
 });
 
 /** Autosave. Fails with `conflict` when another tab or device saved first. */
-export const saveBlogDraft = action(SaveDraftSchema, async ({ key, basedOn, document }, { db }) => {
+export const saveBlogDraft = action(SaveDraftSchema, async ({ key, basedOn, document }, { user, db }) => {
   const created = basedOn === null;
   const { data, error } = created
     ? await db.rpc('create_blog', { p_key: key, p_document: document })
@@ -36,7 +40,12 @@ export const saveBlogDraft = action(SaveDraftSchema, async ({ key, basedOn, docu
     return { saved: false as const, error: failure };
   }
   if (error) throw new Error('Could not save blog');
-  return { saved: true as const, savedAt: data as string, created };
+  const savedAt = data as string;
+  // At most once a calendar minute per blog (spec §10), from the timestamps the database returned.
+  if (shouldTrackDraftSave(basedOn, savedAt)) {
+    after(() => trackServer('blog_draft_saved', user.id, draftSavedProperties(key, document)));
+  }
+  return { saved: true as const, savedAt, created };
 });
 
 /** Close on an empty composer: the rows and any uploaded files go. Never a posted blog. */

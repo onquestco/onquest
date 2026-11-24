@@ -500,7 +500,7 @@ All `/blogs/*` routes are in the `(signed-in)` group, so its layout redirects si
    - The functions in §4.3 (migration 16 part).
    - Replaced `delete_account_data`, `list_pending_deletions` and `run_retention_cleanup`.
    - Trigram index guarded as in migration 9.
-2. `supabase/migrations/20261124110000_17_blog_social.sql`
+2. `supabase/migrations/20261124144017_17_blog_social.sql`
    - `blog_likes`, `blog_comments` and their archives.
    - `alter table notifications add column blog_key uuid` (deferred FK to `blogs`), plus `check (trip_key is null or blog_key is null)`.
    - Index `notifications_by_blog (blog_key)`.
@@ -985,7 +985,7 @@ Not created (per instruction). Labels for each: `spec:blogs` plus the owner labe
 **Depends on:** BL-01
 
 **Build**
-- `supabase/migrations/20261124110000_17_blog_social.sql`:
+- `supabase/migrations/20261124144017_17_blog_social.sql`:
   - `blog_likes`, `blog_comments` and their archives (RLS, grants).
   - `notifications.blog_key` + check + index.
   - `set_blog_like`, `post_blog_comment` (rate limit across both comment tables), `delete_blog_comment`, `get_blog_social`, `get_my_blog_state`, `list_my_blogs`, `list_my_comment_blog_keys`, `blog_card_json`, `list_home_feed`, `list_explore_blogs`.

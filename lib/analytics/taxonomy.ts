@@ -30,6 +30,92 @@ export const CLIENT_EVENTS = {
       "required": true
     }
   },
+  "blog_create_started": {
+    "blog_id": {
+      "type": "STRING",
+      "required": true
+    },
+    "source": {
+      "type": "STRING",
+      "required": true,
+      "values": [
+        "create",
+        "write_your_own"
+      ]
+    }
+  },
+  "blog_previewed": {
+    "blog_id": {
+      "type": "STRING",
+      "required": true
+    }
+  },
+  "blog_quest_linked": {
+    "blog_id": {
+      "type": "STRING",
+      "required": true
+    },
+    "action": {
+      "type": "STRING",
+      "required": true,
+      "values": [
+        "link",
+        "remove"
+      ]
+    }
+  },
+  "blog_quest_opened": {
+    "blog_id": {
+      "type": "STRING",
+      "required": true
+    },
+    "view_id": {
+      "type": "STRING",
+      "required": true
+    }
+  },
+  "blog_read_end": {
+    "blog_id": {
+      "type": "STRING",
+      "required": true
+    },
+    "view_id": {
+      "type": "STRING",
+      "required": true
+    },
+    "seconds": {
+      "type": "INT64",
+      "required": true
+    }
+  },
+  "blog_viewed": {
+    "blog_id": {
+      "type": "STRING",
+      "required": true
+    },
+    "view_id": {
+      "type": "STRING",
+      "required": true
+    },
+    "signed_in": {
+      "type": "BOOL",
+      "required": true
+    },
+    "referrer": {
+      "type": "STRING",
+      "required": true,
+      "values": [
+        "whatsapp",
+        "instagram",
+        "other",
+        "none"
+      ]
+    },
+    "has_quest": {
+      "type": "BOOL",
+      "required": true
+    }
+  },
   "create_menu_opened": {
     "from_screen": {
       "type": "STRING",
@@ -652,6 +738,132 @@ export const SERVER_EVENTS = {
       "required": true
     }
   },
+  "blog_comment_posted": {
+    "blog_id": {
+      "type": "STRING",
+      "required": true
+    },
+    "length": {
+      "type": "INT64",
+      "required": true,
+      "min": 1,
+      "max": 300
+    }
+  },
+  "blog_draft_saved": {
+    "blog_id": {
+      "type": "STRING",
+      "required": true
+    },
+    "chars_bucket": {
+      "type": "STRING",
+      "required": true,
+      "values": [
+        "0",
+        "1-500",
+        "501-2000",
+        "2001-5000",
+        "5001-10000"
+      ]
+    },
+    "photos": {
+      "type": "INT64",
+      "required": true,
+      "min": 0,
+      "max": 10
+    }
+  },
+  "blog_liked": {
+    "blog_id": {
+      "type": "STRING",
+      "required": true
+    },
+    "unlike": {
+      "type": "BOOL",
+      "required": true
+    },
+    "source": {
+      "type": "STRING",
+      "required": true,
+      "values": [
+        "blog_page",
+        "feed",
+        "after_sign_in"
+      ]
+    }
+  },
+  "blog_managed": {
+    "blog_id": {
+      "type": "STRING",
+      "required": true
+    },
+    "action": {
+      "type": "STRING",
+      "required": true,
+      "values": [
+        "edit",
+        "visibility",
+        "comments",
+        "delete"
+      ]
+    },
+    "value": {
+      "type": "STRING",
+      "required": true,
+      "values": [
+        "public",
+        "unlisted",
+        "private",
+        "on",
+        "off",
+        "none"
+      ]
+    }
+  },
+  "blog_published": {
+    "blog_id": {
+      "type": "STRING",
+      "required": true
+    },
+    "visibility": {
+      "type": "STRING",
+      "required": true,
+      "values": [
+        "public",
+        "unlisted",
+        "private"
+      ]
+    },
+    "photos": {
+      "type": "INT64",
+      "required": true,
+      "min": 0,
+      "max": 10
+    },
+    "chars_bucket": {
+      "type": "STRING",
+      "required": true,
+      "values": [
+        "0",
+        "1-500",
+        "501-2000",
+        "2001-5000",
+        "5001-10000"
+      ]
+    },
+    "has_quest": {
+      "type": "BOOL",
+      "required": true
+    },
+    "has_place": {
+      "type": "BOOL",
+      "required": true
+    },
+    "minutes_since_start": {
+      "type": "FLOAT64",
+      "required": false
+    }
+  },
   "comment_deleted": {
     "quest_id": {
       "type": "STRING",
@@ -703,6 +915,14 @@ export const SERVER_EVENTS = {
     "recipient_id": {
       "type": "STRING",
       "required": true
+    },
+    "target": {
+      "type": "STRING",
+      "required": false,
+      "values": [
+        "quest",
+        "blog"
+      ]
     }
   },
   "photos_uploaded": {
@@ -822,7 +1042,8 @@ export const SERVER_EVENTS = {
         "quests_empty",
         "make_your_own",
         "ftue",
-        "whatis_sheet"
+        "whatis_sheet",
+        "blog_link"
       ]
     }
   },

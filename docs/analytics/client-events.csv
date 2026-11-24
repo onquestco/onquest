@@ -92,3 +92,18 @@ settings_viewed,user_id,client,client_ts,(common only),,,,,Settings opens,Pass �
 legal_page_viewed,user_id (empty when signed out),client,client_ts,page,STRING,privacy / terms,Which legal page,yes,The Privacy policy or Terms page opens,Not yet tested
 legal_page_viewed,,,,source,STRING,sign_in / settings / footer / direct,Where the link was tapped,yes,,Not yet tested
 account_delete_started,user_id,client,client_ts,(common only),,,,,Delete account is tapped (before confirming),Pass · fired 1×
+blog_create_started,user_id,client,client_ts,blog_id,STRING,,The new blog's key,yes,"The composer opens on /blogs/new with a new key (after Write a blog); not again for a resumed unsent draft",Not yet tested: BL-03 to BL-05 fire it
+blog_create_started,,,,source,STRING,create / write_your_own,write_your_own = from a blog page's Write your own card,yes,,Not yet tested: BL-03 to BL-05 fire it
+blog_quest_linked,user_id,client,client_ts,blog_id,STRING,,,yes,A Quest is linked to a blog or removed from it,Not yet tested: BL-03 to BL-05 fire it
+blog_quest_linked,,,,action,STRING,link / remove,,yes,,Not yet tested: BL-03 to BL-05 fire it
+blog_previewed,user_id,client,client_ts,blog_id,STRING,,,yes,Preview is tapped in the composer,Not yet tested: BL-03 to BL-05 fire it
+blog_viewed,user_id (empty when signed out; anon_id in common),client,client_ts,blog_id,STRING,,,yes,A blog page opens,Not yet tested: BL-03 to BL-05 fire it
+blog_viewed,,,,view_id,STRING,UUID,"One per page view, also on blog_read_end and blog_quest_opened",yes,,Not yet tested: BL-03 to BL-05 fire it
+blog_viewed,,,,signed_in,BOOL,true / false,,yes,,Not yet tested: BL-03 to BL-05 fire it
+blog_viewed,,,,referrer,STRING,whatsapp / instagram / other / none,Where a shared link was opened from,yes,,Not yet tested: BL-03 to BL-05 fire it
+blog_viewed,,,,has_quest,BOOL,true / false,The linked Quest card rendered,yes,,Not yet tested: BL-03 to BL-05 fire it
+blog_read_end,user_id (empty when signed out; anon_id in common),client,client_ts,blog_id,STRING,,,yes,"Once per page view: the end of the text is on screen and the page has been visible 5 seconds",Not yet tested: BL-03 to BL-05 fire it
+blog_read_end,,,,view_id,STRING,UUID,,yes,,Not yet tested: BL-03 to BL-05 fire it
+blog_read_end,,,,seconds,INT64,,"Visible seconds, rounded",yes,,Not yet tested: BL-03 to BL-05 fire it
+blog_quest_opened,user_id (empty when signed out; anon_id in common),client,client_ts,blog_id,STRING,,,yes,View Quest is tapped on a blog,Not yet tested: BL-03 to BL-05 fire it
+blog_quest_opened,,,,view_id,STRING,UUID,,yes,,Not yet tested: BL-03 to BL-05 fire it
