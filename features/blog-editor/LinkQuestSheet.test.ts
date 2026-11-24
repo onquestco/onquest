@@ -53,6 +53,7 @@ describe('LinkQuestSheet', () => {
     const goa = quest('3 days in Goa', 'public', 1);
     const html = render([goa, quest('Hampi weekend', 'public', 2)], goa.key);
     expect(html.match(/checked=""/g)).toHaveLength(1);
-    expect(html).toMatch(new RegExp(`value="${goa.key}" checked=""`));
+    const chosenInput = html.match(new RegExp(`<input[^>]*value="${goa.key}"[^>]*>`))?.[0] ?? '';
+    expect(chosenInput).toContain('checked=""');
   });
 });
