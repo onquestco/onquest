@@ -18,7 +18,9 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: '/',
+        // A blog's link preview image is served from its internal /b/ path; preview bots that
+        // honour robots.txt (X, LinkedIn) must still reach it. The longer rule wins over /b/.
+        allow: ['/', '/b/*/*/opengraph-image'],
         // Signed-in app screens (all noindex): nothing for a crawler there.
         disallow: [
           '/trips/',

@@ -2,7 +2,22 @@ import { describe, expect, it } from 'vitest';
 import type { ProfileView } from './getProfile';
 import { profileMetadata } from './metadata';
 
-const profile = (quests: number): ProfileView => ({
+const blogCard = {
+  key: '00000000-0000-4000-8000-000000000020',
+  title: 'Goa on 15k',
+  status: 'published' as const,
+  visibility: 'public' as const,
+  path: '/@riya/blog/goa-on-15k',
+  excerpt: 'We stayed in Anjuna.',
+  photoCount: 0,
+  readMinutes: 1,
+  likeCount: 0,
+  commentCount: 0,
+  savedAt: '2026-11-20 10:00:00+00',
+  owner: { key: '00000000-0000-4000-8000-000000000001', handle: 'riya', name: 'Riya' },
+};
+
+const profile = (quests: number, blogs: (typeof blogCard)[] = []): ProfileView => ({
   key: '00000000-0000-4000-8000-000000000001',
   handle: 'riya',
   name: 'Riya',
@@ -13,13 +28,17 @@ const profile = (quests: number): ProfileView => ({
   places: ['Goa'],
   pins: [],
   quests: [],
-  blogs: [], // migration 17; the D9 index rule for blogs comes with BL-04
+  blogs, // public blogs only (get_profile)
 });
 
 describe('profileMetadata', () => {
   it('indexes a profile only once it has a public Quest', () => {
     expect(profileMetadata(profile(0)).robots).toEqual({ index: false, follow: true });
     expect(profileMetadata(profile(2)).robots).toEqual({ index: true, follow: true });
+  });
+
+  it('indexes a profile with a public blog and no public Quest (blogs D9)', () => {
+    expect(profileMetadata(profile(0, [blogCard])).robots).toEqual({ index: true, follow: true });
   });
 
   it('describes it with the Quest count and places when there is no bio', () => {

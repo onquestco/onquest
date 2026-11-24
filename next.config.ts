@@ -19,6 +19,8 @@ const nextConfig: NextConfig = {
       // Before /@:handle/:slug, so they aren't taken for Quests (slugs can't be these: lib/slug.ts).
       { source: '/@:handle/followers', destination: '/u/:handle/followers' },
       { source: '/@:handle/following', destination: '/u/:handle/following' },
+      // Blogs (blogs spec §3.3): three segments, so no Quest slug (one segment) can ever match it.
+      { source: '/@:handle/blog/:slug', destination: '/b/:handle/:slug' },
       { source: '/@:handle/:slug', destination: '/u/:handle/:slug' },
     ];
   },

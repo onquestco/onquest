@@ -55,8 +55,9 @@ export function usePostBlog(store: BlogDraftStore, saver: BlogDraftSaver) {
     const chosen = visibility ?? store.getState().visibility;
     store.getState().setPublished({ slug: result.data.slug, path: result.data.path, visibility: chosen }, result.data.savedAt);
     removeLocalDraft(browserStorage(), key);
-    // Until the blog page exists (BL-04), an update lands on the share screen too, with "Blog updated."
-    router.push(result.data.firstPublish ? `/blogs/${key}/share` : `/blogs/${key}/share?updated=1`);
+    // An update goes live at once and lands on the blog with "Blog updated." (spec §6.1). The
+    // writer's own view shows it whatever its visibility, and is never cached.
+    router.push(result.data.firstPublish ? `/blogs/${key}/share` : `/blogs/${key}?updated=1`);
   }
 
   return { post, posting, error, clearError: () => setError(undefined) };

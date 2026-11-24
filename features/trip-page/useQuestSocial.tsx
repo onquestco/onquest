@@ -9,8 +9,16 @@ import type { LikeSource, SocialActions } from './socialActions';
 
 const SIGNED_OUT: ViewerState = { signedIn: false, liked: false, isOwner: false, followingOwner: false };
 
+/** What the likes and comments are on: words in labels and messages (blogs spec §3.4). */
+export type SocialSubject = 'quest' | 'blog';
+
+/** "Quest" or "blog", as the copy writes it ("Like this Quest", "Comments are off for this blog."). */
+export const subjectNoun = (subject: SocialSubject) => (subject === 'blog' ? 'blog' : 'Quest');
+
 type Social = {
+  /** The Quest's or the blog's key (the like and comment target). */
   tripKey: string;
+  subject: SocialSubject;
   path: string;
   /** The creator's profile key, when the page knows it (not on /demo). */
   ownerKey?: string;
@@ -48,6 +56,8 @@ type Props = {
   viewer: ViewerState | null;
   actions: SocialActions;
   startComposerOpen?: boolean;
+  /** 'quest' unless a blog page passes 'blog'. */
+  subject?: SocialSubject;
   children: ReactNode;
 };
 
@@ -59,6 +69,7 @@ export function QuestSocialProvider({
   viewer,
   actions,
   startComposerOpen = false,
+  subject = 'quest',
   children,
 }: Props) {
   const [like, setLikeState] = useState({ liked: viewer?.liked ?? false, likeCount: initial.likeCount });
@@ -83,6 +94,7 @@ export function QuestSocialProvider({
 
   const value: Social = {
     tripKey,
+    subject,
     path,
     ownerKey,
     viewer: viewer ?? SIGNED_OUT,
