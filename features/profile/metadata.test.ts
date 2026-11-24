@@ -13,6 +13,7 @@ const profile = (quests: number): ProfileView => ({
   places: ['Goa'],
   pins: [],
   quests: [],
+  blogs: [], // migration 17; the D9 index rule for blogs comes with BL-04
 });
 
 describe('profileMetadata', () => {
