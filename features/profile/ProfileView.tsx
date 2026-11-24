@@ -2,10 +2,10 @@ import { PinIcon } from '@/design-system/components/icons';
 import { SiteFooter } from '@/features/shell/SiteFooter';
 import type { ProfileView as Profile } from './getProfile';
 import { ProfileHeader } from './ProfileHeader';
-import { ProfileQuestGrid } from './ProfileQuestGrid';
-import { OwnProfileNote, ProfileTopBar, ProfileViewerProvider } from './ProfileViewerContext';
+import { ProfileSections } from './ProfileSections';
+import { ProfileTopBar, ProfileViewerProvider } from './ProfileViewerContext';
 
-/** Screen 15: who they are, their numbers, places, and their public Quests (M15, M22). */
+/** Screen 15: who they are, their numbers, places, and their public Quests and blogs (M15, M22, B12). */
 export function ProfileView({ profile }: { profile: Profile }) {
   return (
     <ProfileViewerProvider profileKey={profile.key}>
@@ -28,15 +28,7 @@ export function ProfileView({ profile }: { profile: Profile }) {
           </ul>
         )}
 
-        <section aria-label="Quests" className="flex flex-col gap-3 pt-1">
-          <h2 className="text-lead font-semibold text-ink">Quests</h2>
-          {profile.quests.length === 0 ? (
-            <p className="text-body text-ink-muted">No public Quests yet.</p>
-          ) : (
-            <ProfileQuestGrid initial={profile.quests} />
-          )}
-          <OwnProfileNote />
-        </section>
+        <ProfileSections quests={profile.quests} blogs={profile.blogs} />
         <SiteFooter />
       </main>
     </ProfileViewerProvider>

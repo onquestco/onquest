@@ -1,8 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
+import { hasBlogAccess } from '@/features/blog-editor/hasBlogAccess';
 import { createServerSupabase } from '@/lib/supabase/server';
 
-// What the cached profile page can't know: signed in, is this me, do I follow them. Never cached.
+// What the cached profile page can't know: signed in, is this me, do I follow them, and on your
+// own profile whether you can write a blog (its Blogs switch and empty state, blogs spec §6.3).
+// Never cached.
 const NO_STORE = { 'Cache-Control': 'private, no-store' };
 const SIGNED_OUT = { signedIn: false, isSelf: false, following: false };
 
@@ -16,7 +19,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json(SIGNED_OUT, { headers: NO_STORE });
   if (user.id === key.data)
-    return NextResponse.json({ signedIn: true, isSelf: true, following: false }, { headers: NO_STORE });
+    return NextResponse.json(
+      { signedIn: true, isSelf: true, following: false, canWriteBlogs: await hasBlogAccess() },
+      { headers: NO_STORE },
+    );
 
   const { data } = await supabase.rpc('get_my_follow_state', { p_keys: [key.data] });
   const following = Array.isArray(data) && data.includes(key.data);

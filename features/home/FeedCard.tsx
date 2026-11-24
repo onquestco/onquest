@@ -15,7 +15,7 @@ const pill =
   'inline-flex min-h-11 items-center gap-1.5 rounded-pill px-2.5 text-label font-semibold text-ink-muted focus-visible:outline-2 focus-visible:outline-brand-strong';
 
 /** The phone's share sheet where there is one, else copy the link. */
-async function shareQuest(title: string, path: string) {
+export async function shareQuest(title: string, path: string) {
   const url = `${window.location.origin}${path}`;
   try {
     if (navigator.share) await navigator.share({ title, url });
