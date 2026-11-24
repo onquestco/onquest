@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { buttonClassName } from '@/design-system/components/Button';
 import { CloseIcon, PencilIcon } from '@/design-system/components/icons';
 import { Toast } from '@/design-system/components/Toast';
+import { track } from '@/lib/analytics/client';
 import { placeholderImage, type Scene } from '@/lib/demo/placeholderImages';
 
 const FAN: { scene: Scene; tilt: string }[] = [
@@ -14,8 +15,32 @@ const FAN: { scene: Scene; tilt: string }[] = [
   { scene: 'bonfire', tilt: 'translate-x-12 rotate-9' },
 ];
 
-/** The Create tab (the prototype's own screen): a Quest, the main thing, or a blog, "Releasing soon". */
-export function CreateChooser() {
+export type BlogCreateSource = 'create' | 'write_your_own';
+
+type Props = {
+  /** has_feature_access('blogs'): "Write a blog" is live only for people with access (spec §3.9). */
+  blogsEnabled?: boolean;
+  /** Where the chooser was opened from, passed on to the composer for blog_create_started. */
+  source?: BlogCreateSource;
+};
+
+/** create_option_tapped (spec §10): `available` is false for the "Releasing soon" blog tap. */
+export function createOptionProperties(option: 'quest' | 'blog', blogsEnabled: boolean) {
+  return { option, available: option === 'quest' || blogsEnabled };
+}
+
+const blogCopy = (
+  <span className="flex flex-col gap-0.5">
+    <span className="text-body font-semibold text-ink">Write a blog</span>
+    <span className="text-label font-normal text-ink-muted">Tips, guides and longer stories from your travels.</span>
+  </span>
+);
+
+/**
+ * The Create tab (the prototype's own screen): a Quest, the main thing, or a blog. "Write a blog"
+ * opens the composer for people with access; everyone else keeps "Releasing soon" (PRD B1, rollout).
+ */
+export function CreateChooser({ blogsEnabled = false, source = 'create' }: Props) {
   const router = useRouter();
   const [blogNote, setBlogNote] = useState(false);
 
@@ -44,6 +69,7 @@ export function CreateChooser() {
         <h2 className="text-title text-ink">What do you want to make?</h2>
         <Link
           href="/quests/new?source=create_menu"
+          onClick={() => track('create_option_tapped', createOptionProperties('quest', blogsEnabled))}
           className="flex flex-col gap-3.5 rounded-lg border-2 border-brand-strong bg-brand-wash p-4.5 shadow-brand"
         >
           <span aria-hidden className="relative block h-37.5">
@@ -64,24 +90,40 @@ export function CreateChooser() {
           </span>
           <span className={buttonClassName({ block: true })}>Start a Quest</span>
         </Link>
-        <button
-          type="button"
-          onClick={() => setBlogNote(true)}
-          className="flex items-center gap-3 rounded-md border border-dashed border-line-control bg-surface p-3.5 text-left"
-        >
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-pill bg-surface-page text-ink-muted">
-            <PencilIcon size={22} />
-          </span>
-          <span className="flex flex-col gap-0.5">
-            <span className="text-body font-semibold text-ink-muted">Write a blog</span>
-            <span className="text-label font-normal text-ink-muted">
-              Tips, guides and longer stories from your travels.
+        {blogsEnabled ? (
+          <Link
+            href={`/blogs/new?source=${source}`}
+            onClick={() => track('create_option_tapped', createOptionProperties('blog', true))}
+            className="flex items-center gap-3 rounded-md border border-line-control bg-surface p-3.5 text-left focus-visible:outline-2 focus-visible:outline-brand-strong"
+          >
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-pill bg-brand-wash text-brand-strong">
+              <PencilIcon size={22} />
             </span>
-          </span>
-          <span className="ml-auto shrink-0 rounded-pill bg-logo-brown px-2.5 py-1 text-caption font-bold whitespace-nowrap text-on-night">
-            Releasing soon
-          </span>
-        </button>
+            {blogCopy}
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              track('create_option_tapped', createOptionProperties('blog', false));
+              setBlogNote(true);
+            }}
+            className="flex items-center gap-3 rounded-md border border-dashed border-line-control bg-surface p-3.5 text-left"
+          >
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-pill bg-surface-page text-ink-muted">
+              <PencilIcon size={22} />
+            </span>
+            <span className="flex flex-col gap-0.5">
+              <span className="text-body font-semibold text-ink-muted">Write a blog</span>
+              <span className="text-label font-normal text-ink-muted">
+                Tips, guides and longer stories from your travels.
+              </span>
+            </span>
+            <span className="ml-auto shrink-0 rounded-pill bg-logo-brown px-2.5 py-1 text-caption font-bold whitespace-nowrap text-on-night">
+              Releasing soon
+            </span>
+          </button>
+        )}
       </main>
       {blogNote && (
         <Toast

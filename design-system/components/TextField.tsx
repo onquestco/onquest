@@ -1,4 +1,4 @@
-import { useId, type InputHTMLAttributes, type ReactNode } from 'react';
+import { useId, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
 
 // A labelled input with an optional fixed prefix ("onquest.in/@"), hint, counter and error.
 // The label is always visible (never placeholder-only) and inputs stay 16px so phones don't zoom.
@@ -51,6 +51,64 @@ export function TextField({ label, prefix, hint, error, showCount, className, ..
             {hint}
           </p>
         )
+      )}
+    </div>
+  );
+}
+
+type TextAreaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  /** The accessible name. Shown above the box unless `bare`. */
+  label: string;
+  /**
+   * A writing surface with no box, where the screen itself is the form (the blog composer's title
+   * and body). The label stays visible, small and muted above the text, and the field still shows
+   * a focus outline: the placeholder is never the only cue.
+   */
+  bare?: boolean;
+  /** `title` for a large heading-sized field. Always at least 16px, so phones don't zoom. */
+  size?: 'body' | 'title';
+  /** "100 / 100" or similar, shown under the field. */
+  counter?: string | null;
+};
+
+/** Grows with its text instead of scrolling inside itself. */
+function grow(element: HTMLTextAreaElement | null) {
+  if (!element) return;
+  element.style.height = 'auto';
+  element.style.height = `${element.scrollHeight}px`;
+}
+
+/** A multi-line field that grows as you type. Use in client components only (it measures itself). */
+export function TextArea({ label, bare = false, size = 'body', counter, className, onInput, ...textarea }: TextAreaProps) {
+  const counterId = useId();
+  const ownId = useId();
+  const id = textarea.id ?? ownId;
+  const text = size === 'title' ? 'text-title' : 'text-body';
+  const box = bare
+    ? 'rounded-sm border-0 bg-transparent px-0 py-1 placeholder:text-ink-muted focus:outline-2 focus:outline-offset-4 focus:outline-brand-strong'
+    : 'rounded-sm border border-line-control bg-surface px-3 py-3 placeholder:text-ink-subtle focus:border-brand-strong focus:outline-2 focus:outline-brand-strong';
+  return (
+    <div className={['flex flex-col gap-1', className].filter(Boolean).join(' ')}>
+      <label className={bare ? 'text-caption text-ink-muted' : 'text-label text-ink-muted'} htmlFor={id}>
+        {label}
+      </label>
+      <textarea
+        {...textarea}
+        id={id}
+        aria-describedby={counter ? counterId : undefined}
+        // A new callback each render, so it measures again after every change: restored or
+        // pasted text shows in full too.
+        ref={(element) => grow(element)}
+        onInput={(event) => {
+          grow(event.currentTarget);
+          onInput?.(event);
+        }}
+        className={`block w-full resize-none overflow-hidden text-ink ${text} ${box}`}
+      />
+      {counter && (
+        <p id={counterId} aria-live="polite" className="self-end text-caption text-ink-muted">
+          {counter}
+        </p>
       )}
     </div>
   );

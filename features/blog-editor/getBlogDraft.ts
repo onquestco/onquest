@@ -29,6 +29,7 @@ export const getBlogDraft = cache(async (key: string) => {
     commentsOn: blog.comments_on,
     ownerHandle: profile.handle,
     ownerName: profile.name,
+    ownerKey: user.id,
     photoFolder: `${user.id}/${key}`,
     document: draft.document,
     hasUnpublishedChanges: posted && blog.published_draft_saved_at_text !== draft.saved_at_text,

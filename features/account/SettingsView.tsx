@@ -9,6 +9,7 @@ import { Segmented } from '@/design-system/components/Segmented';
 import { Switch } from '@/design-system/components/Switch';
 import { Toast } from '@/design-system/components/Toast';
 import { TopBar } from '@/design-system/components/TopBar';
+import { clearLocalDrafts } from '@/features/blog-editor/localDraft';
 import { WhatIsAQuestSheet } from '@/features/home/WhatIsAQuestSheet';
 import type { ProfileSettings } from '@/lib/profile/schema';
 import { SUPPORT_EMAIL } from '@/lib/site';
@@ -87,6 +88,8 @@ export function SettingsView({ email, settings: initial, savedAt }: Props) {
   }
 
   async function leave() {
+    // Nothing of anyone's writing stays on a shared phone (blogs spec §3.2).
+    clearLocalDrafts();
     await signOut({}).catch(() => null);
     router.replace('/');
     router.refresh();

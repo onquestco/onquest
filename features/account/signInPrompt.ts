@@ -52,6 +52,7 @@ export function signInReturnFromHref(href: string): SignInReturn {
 // Pages that need an account. Signed out, a link to one of these opens the popup instead.
 const NEEDS_ACCOUNT = [
   /^\/quests(\/|$)/,
+  /^\/blogs(\/|$)/,
   /^\/create$/,
   /^\/notifications$/,
   /^\/settings(\/|$)/,

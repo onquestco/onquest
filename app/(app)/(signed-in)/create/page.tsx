@@ -1,9 +1,13 @@
 import type { Metadata } from 'next';
+import { hasBlogAccess } from '@/features/blog-editor/hasBlogAccess';
 import { CreateChooser } from '@/features/shell/CreateChooser';
 import { SITE_NAME } from '@/lib/site';
 
 export const metadata: Metadata = { title: `Create | ${SITE_NAME}`, robots: { index: false } };
 
-export default function CreatePage() {
-  return <CreateChooser />;
+type Props = { searchParams: Promise<{ source?: string }> };
+
+export default async function CreatePage({ searchParams }: Props) {
+  const [blogsEnabled, { source }] = await Promise.all([hasBlogAccess(), searchParams]);
+  return <CreateChooser blogsEnabled={blogsEnabled} source={source === 'write_your_own' ? 'write_your_own' : 'create'} />;
 }
