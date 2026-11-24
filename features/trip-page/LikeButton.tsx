@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { HeartIcon } from '@/design-system/components/icons';
 import { likeLabel } from './likeCopy';
 import { signInPath, type LikeSource } from './socialActions';
-import { useQuestSocial } from './useQuestSocial';
+import { subjectNoun, useQuestSocial } from './useQuestSocial';
 
 // The prototype's like: a round outlined heart, and the count beside it.
 const circle =
@@ -12,8 +12,9 @@ const circle =
 
 /** Signed out, the heart is a sign-in link that comes back here and counts the like (M10). */
 export function LikeButton({ source }: { source: LikeSource }) {
-  const { viewer, liked, likeCount, toggleLike, path, tripKey } = useQuestSocial();
+  const { viewer, liked, likeCount, toggleLike, path, tripKey, subject } = useQuestSocial();
   const label = likeLabel(likeCount);
+  const noun = subjectNoun(subject);
 
   return (
     <div className="flex min-w-0 items-center gap-2.5">
@@ -22,13 +23,13 @@ export function LikeButton({ source }: { source: LikeSource }) {
           type="button"
           className={circle}
           aria-pressed={liked}
-          aria-label={liked ? 'Unlike this Quest' : 'Like this Quest'}
+          aria-label={liked ? `Unlike this ${noun}` : `Like this ${noun}`}
           onClick={() => toggleLike(source)}
         >
           <HeartIcon size={20} filled={liked} />
         </button>
       ) : (
-        <Link href={signInPath('like', path, tripKey)} className={circle} aria-label="Like this Quest">
+        <Link href={signInPath('like', path, tripKey)} className={circle} aria-label={`Like this ${noun}`}>
           <HeartIcon size={20} />
         </Link>
       )}

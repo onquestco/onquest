@@ -6,13 +6,16 @@ import { Button } from '@/design-system/components/Button';
 import { COMMENT_MAX } from '@/lib/social/schema';
 import { charactersLeft } from './likeCopy';
 import { signInPath } from './socialActions';
-import { useQuestSocial } from './useQuestSocial';
+import { subjectNoun, useQuestSocial, type SocialSubject } from './useQuestSocial';
 
-const ERRORS: Record<string, string> = {
-  too_fast: 'Too many comments in a minute. Wait a moment and try again.',
-  comments_off: 'Comments are off for this Quest.',
-  not_visible: "This Quest isn't available any more.",
-};
+function errorMessages(subject: SocialSubject): Record<string, string> {
+  const noun = subjectNoun(subject);
+  return {
+    too_fast: 'Too many comments in a minute. Wait a moment and try again.',
+    comments_off: `Comments are off for this ${noun}.`,
+    not_visible: `This ${noun} isn't available any more.`,
+  };
+}
 
 // Closed, the composer looks like the comment box it opens (the prototype's pill field).
 const COMPOSER_PROMPT =
@@ -24,6 +27,7 @@ export function CommentComposer() {
     viewer,
     path,
     tripKey,
+    subject,
     actions,
     addComment,
     composerOpen: open,
@@ -50,7 +54,7 @@ export function CommentComposer() {
     const result = await actions.postComment(text).catch(() => null);
     setSending(false);
     if (result === null || !result.ok) {
-      setError((result && ERRORS[result.error]) ?? "Couldn't post your comment. Try again.");
+      setError((result && errorMessages(subject)[result.error]) ?? "Couldn't post your comment. Try again.");
       return;
     }
     addComment(result.data);

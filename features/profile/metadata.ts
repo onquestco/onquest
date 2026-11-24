@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { absoluteUrl, SITE_NAME } from '@/lib/site';
 import type { ProfileView } from './getProfile';
 
-/** /@handle: indexed only with at least one public Quest (spec C §4.4). */
+/** /@handle: indexed only with at least one public Quest or public blog (spec C §4.4, blogs D9). */
 export function profileMetadata(profile: ProfileView): Metadata {
   const url = absoluteUrl(`/@${profile.handle}`);
   const description =
@@ -14,7 +14,10 @@ export function profileMetadata(profile: ProfileView): Metadata {
     title: `${profile.name} (@${profile.handle}) | ${SITE_NAME}`,
     description: description.slice(0, 155),
     alternates: { canonical: url },
-    robots: profile.stats.quests > 0 ? { index: true, follow: true } : { index: false, follow: true },
+    robots:
+      profile.stats.quests > 0 || profile.blogs.length > 0
+        ? { index: true, follow: true }
+        : { index: false, follow: true },
     openGraph: { type: 'profile', siteName: SITE_NAME, title: profile.name, url, description },
   };
 }

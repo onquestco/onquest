@@ -9,8 +9,16 @@ import type { LikeSource, SocialActions } from './socialActions';
 
 const SIGNED_OUT: ViewerState = { signedIn: false, liked: false, isOwner: false, followingOwner: false };
 
+/** What the likes and comments are on: words in labels and messages (blogs spec §3.4). */
+export type SocialSubject = 'quest' | 'blog';
+
+/** "Quest" or "blog", as the copy writes it ("Like this Quest", "Comments are off for this blog."). */
+export const subjectNoun = (subject: SocialSubject) => (subject === 'blog' ? 'blog' : 'Quest');
+
 type Social = {
+  /** The Quest's or the blog's key (the like and comment target). */
   tripKey: string;
+  subject: SocialSubject;
   path: string;
   /** The creator's profile key, when the page knows it (not on /demo). */
   ownerKey?: string;
@@ -21,6 +29,8 @@ type Social = {
   likeCount: number;
   commentsOn: boolean;
   comments: Comment[];
+  /** Every comment, not just the newest 100 that are loaded (get_*_social's comment_count). */
+  commentCount: number;
   composerOpen: boolean;
   setComposerOpen: (open: boolean) => void;
   /** Optimistic: the heart changes at once and goes back if the server says no. */
@@ -48,6 +58,8 @@ type Props = {
   viewer: ViewerState | null;
   actions: SocialActions;
   startComposerOpen?: boolean;
+  /** 'quest' unless a blog page passes 'blog'. */
+  subject?: SocialSubject;
   children: ReactNode;
 };
 
@@ -59,10 +71,12 @@ export function QuestSocialProvider({
   viewer,
   actions,
   startComposerOpen = false,
+  subject = 'quest',
   children,
 }: Props) {
   const [like, setLikeState] = useState({ liked: viewer?.liked ?? false, likeCount: initial.likeCount });
   const [comments, setComments] = useState(initial.comments);
+  const [commentCount, setCommentCount] = useState(initial.commentCount);
   const [composerOpen, setComposerOpen] = useState(startComposerOpen);
   // The viewer arrives after the page: take their like from it once (the count already includes it).
   const [seenViewer, setSeenViewer] = useState(viewer);
@@ -83,6 +97,7 @@ export function QuestSocialProvider({
 
   const value: Social = {
     tripKey,
+    subject,
     path,
     ownerKey,
     viewer: viewer ?? SIGNED_OUT,
@@ -90,13 +105,22 @@ export function QuestSocialProvider({
     ...like,
     commentsOn: initial.commentsOn,
     comments,
+    commentCount,
     composerOpen,
     setComposerOpen,
     toggleLike,
-    addComment: (comment) => setComments((list) => [...list, comment]),
-    dropComment: (key) => setComments((list) => list.filter((comment) => comment.key !== key)),
-    restoreComment: (comment, index) =>
-      setComments((list) => [...list.slice(0, index), comment, ...list.slice(index)]),
+    addComment: (comment) => {
+      setComments((list) => [...list, comment]);
+      setCommentCount((count) => count + 1);
+    },
+    dropComment: (key) => {
+      setComments((list) => list.filter((comment) => comment.key !== key));
+      setCommentCount((count) => Math.max(0, count - 1));
+    },
+    restoreComment: (comment, index) => {
+      setComments((list) => [...list.slice(0, index), comment, ...list.slice(index)]);
+      setCommentCount((count) => count + 1);
+    },
     actions,
   };
   return <SocialContext.Provider value={value}>{children}</SocialContext.Provider>;
