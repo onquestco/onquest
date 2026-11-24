@@ -5,7 +5,9 @@ import { ALEX, NEWCOMER, STRANGER } from './testDatabase';
 // Feed, suggestions, trending, chips and travellers (spec C §3.4), including M21's ranking.
 
 let db: Awaited<ReturnType<typeof createSocialDatabase>>;
-const NOW = '2026-11-10T12:00:00Z';
+// The real clock: trending only looks at the last 14 days of now(), so a fixed date stops
+// matching two weeks after it was written.
+const NOW = new Date().toISOString();
 const hoursAgo = (hours: number) => new Date(Date.parse(NOW) - hours * 3600_000).toISOString();
 let next = 0;
 

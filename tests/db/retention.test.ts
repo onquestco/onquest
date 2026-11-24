@@ -63,6 +63,23 @@ beforeAll(async () => {
       [BLOG, ALEX, savedAt, age],
     );
   }
+  // Blog likes and comments (migration 17): 90 days, like the Quest ones.
+  for (const [age, savedAt] of [
+    ['100 days', '2020-01-01'],
+    ['10 days', '2020-01-02'],
+  ]) {
+    await db.query(
+      `insert into public.blog_likes_archive (key, blog_key, user_key, saved_at, saved_by, save_reason, archived_at)
+       values ($1, $1, $2, $3::timestamptz, $2, 'create', now() - $4::interval)`,
+      [BLOG, ALEX, savedAt, age],
+    );
+    await db.query(
+      `insert into public.blog_comments_archive (key, blog_key, author_key, body, saved_at, saved_by, save_reason,
+         archived_at)
+       values ($1, $1, $2, 'Nice', $3::timestamptz, $2, 'delete', now() - $4::interval)`,
+      [BLOG, ALEX, savedAt, age],
+    );
+  }
   await db.exec('set role service_role');
   await db.query('select public.run_retention_cleanup()');
   await db.exec('reset role');
@@ -80,6 +97,11 @@ describe('run_retention_cleanup', () => {
     expect(await count('select count(*) n from public.blogs_archive')).toBe(2);
     expect(await count('select count(*) n from public.blog_drafts_archive')).toBe(1);
     expect(await count('select count(*) n from public.feature_access_archive')).toBe(2);
+  });
+
+  it('keeps blog like and comment archives 90 days', async () => {
+    expect(await count('select count(*) n from public.blog_likes_archive')).toBe(1);
+    expect(await count('select count(*) n from public.blog_comments_archive')).toBe(1);
   });
 
   it('removes geocoder calls older than a day', async () => {

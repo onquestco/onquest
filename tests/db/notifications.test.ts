@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
+import { blogFunctions } from './blogHelpers';
 import { createSocialDatabase, GOA, GOKARNA } from './socialHelpers';
 import { ALEX, NEWCOMER, STRANGER } from './testDatabase';
 
@@ -12,6 +13,7 @@ type Item = {
   like_count?: number;
   actor?: { handle: string };
   quest?: { key: string; path: string; title: string };
+  blog?: { key: string; path: string; title: string; photo_folder: string; cover_photo_key?: string };
   comment_excerpt?: string;
 };
 const list = (user: string) => db.one<Item[]>(user, 'select public.list_my_notifications() as result');
@@ -90,5 +92,57 @@ describe('unread and seen', () => {
     expect(
       await db.count('select count(*) n from public.notification_reads_archive where key = $1', [ALEX]),
     ).toBe(1);
+  });
+});
+
+describe('blog notifications (migration 17)', () => {
+  let test: Awaited<ReturnType<typeof createSocialDatabase>>;
+  let blogKey: string;
+  const items = () => test.one<Item[]>(ALEX, 'select public.list_my_notifications() as result');
+
+  beforeAll(async () => {
+    test = await createSocialDatabase();
+    const blogs = blogFunctions(test);
+    await blogs.grant('alex');
+    blogKey = (await blogs.posted(ALEX, { slug: 'goa-on-15k' })).key;
+    await test.like(STRANGER, GOA); // a Quest like the same day, grouped apart from the blog's
+    await blogs.like(STRANGER, blogKey);
+    await blogs.like(NEWCOMER, blogKey);
+    await blogs.comment(NEWCOMER, blogKey, 'Which beach is this?');
+  }, 30_000);
+
+  it("groups a blog's likes apart from a Quest's, and links to the blog", async () => {
+    const [comment, blogLikes, questLikes] = await items();
+    expect(blogLikes).toMatchObject({
+      kind: 'like',
+      like_count: 2,
+      blog: { key: blogKey, title: 'Goa on 15k', path: '/@alex/blog/goa-on-15k' },
+    });
+    expect(blogLikes).not.toHaveProperty('quest');
+    expect(blogLikes).not.toHaveProperty('actor');
+    expect(blogLikes?.blog?.photo_folder).toBe(`${ALEX}/${blogKey}`);
+    expect(blogLikes?.blog).toHaveProperty('cover_photo_key');
+    expect(questLikes).toMatchObject({ kind: 'like', like_count: 1, quest: { key: GOA } });
+    expect(questLikes).not.toHaveProperty('blog');
+    expect(comment).toMatchObject({
+      kind: 'comment',
+      actor: { handle: 'riya' },
+      blog: { key: blogKey },
+      comment_excerpt: 'Which beach is this?',
+    });
+  });
+
+  it('counts blog notifications as unread like any other (one per row, as for Quests)', async () => {
+    expect(await test.one<number>(ALEX, 'select public.count_unread_notifications() as result')).toBe(4);
+  });
+
+  it('keeps a row about one thing only: a Quest or a blog', async () => {
+    await expect(
+      test.db.query(
+        `insert into public.notifications (key, recipient_key, kind, trip_key, blog_key, saved_at, save_reason)
+         values (gen_random_uuid(), $1, 'like', $2, $3, now(), 'create')`,
+        [ALEX, GOA, blogKey],
+      ),
+    ).rejects.toThrow(/notifications_one_subject/);
   });
 });

@@ -68,6 +68,24 @@ describe('delete_blog', () => {
     expect(await count('select count(*) n from public.blogs where key = $1', [key])).toBe(0);
   });
 
+  it('removes its likes, comments and notifications too, live and archived (migration 17)', async () => {
+    const { key } = await blogs.posted(ALEX, { slug: 'well-liked' });
+    await blogs.like(STRANGER, key);
+    await blogs.like(STRANGER, key, false);
+    await blogs.like(STRANGER, key);
+    const { key: commentKey } = await blogs.comment(STRANGER, key, 'Lovely');
+    await blogs.comment(STRANGER, key, 'Rude');
+    await blogs.deleteComment(ALEX, commentKey);
+    const reactions = ['blog_likes', 'blog_likes_archive', 'blog_comments', 'blog_comments_archive', 'notifications'];
+    for (const table of reactions) {
+      expect(await count(`select count(*) n from public.${table} where blog_key = $1`, [key])).toBeGreaterThan(0);
+    }
+    await blogs.remove(ALEX, key);
+    for (const table of reactions) {
+      expect(await count(`select count(*) n from public.${table} where blog_key = $1`, [key])).toBe(0);
+    }
+  });
+
   it("leaves the writer's other blogs alone", async () => {
     expect(await blogs.getBlog('alex_two', 'not-yours')).toMatchObject({ blog: { slug: 'not-yours' } });
   });
