@@ -37,6 +37,19 @@ function serverDeps(): NotifyDeps {
         ? { title: data.title ?? 'your Quest', url: absoluteUrl(`/@${handle}/${data.slug}`) }
         : null;
     },
+    async blog(blogKey) {
+      const { data } = await admin
+        .from('blogs')
+        .select('title, slug, owner:profiles!blogs_owner_key_fkey(handle)')
+        .eq('key', blogKey)
+        .maybeSingle();
+      const owner = data?.owner as { handle: string } | { handle: string }[] | null | undefined;
+      const handle = Array.isArray(owner) ? owner[0]?.handle : owner?.handle;
+      // Only a posted blog has a link.
+      return data?.slug && handle
+        ? { title: data.title ?? 'your blog', url: absoluteUrl(`/@${handle}/blog/${data.slug}`) }
+        : null;
+    },
     async person(key) {
       const { data } = await admin.from('profiles').select('handle, name').eq('key', key).maybeSingle();
       return data ? { name: data.name ?? data.handle, url: absoluteUrl(`/@${data.handle}`) } : null;
@@ -65,6 +78,20 @@ export async function notifyQuestOwner(event: {
 }) {
   const admin = createAdminSupabase();
   const { data } = await admin.from('trips').select('owner_key').eq('key', event.tripKey).maybeSingle();
+  if (!data || data.owner_key === event.actorKey) return;
+  const outcome = await notifyByEmail({ ...event, recipientKey: data.owner_key as string }, serverDeps());
+  if (outcome === 'failed') console.error('Notification email failed'); // no user text, no address
+}
+
+/** Emails a blog's writer about a like or comment (never about their own; blogs spec §3.6). */
+export async function notifyBlogOwner(event: {
+  kind: Extract<EmailKind, 'like' | 'comment'>;
+  blogKey: string;
+  actorKey: string;
+  commentBody?: string;
+}) {
+  const admin = createAdminSupabase();
+  const { data } = await admin.from('blogs').select('owner_key').eq('key', event.blogKey).maybeSingle();
   if (!data || data.owner_key === event.actorKey) return;
   const outcome = await notifyByEmail({ ...event, recipientKey: data.owner_key as string }, serverDeps());
   if (outcome === 'failed') console.error('Notification email failed'); // no user text, no address

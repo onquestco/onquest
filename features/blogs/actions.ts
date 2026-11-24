@@ -5,9 +5,11 @@ import { z } from 'zod';
 import { getMyProfile } from '@/features/account/getCurrentUser';
 import { photosToSweep } from '@/features/editor/photoSweep';
 import { action } from '@/lib/action';
+import { trackServer } from '@/lib/analytics/server';
 import { deletePhotoFiles, deleteQuestFiles, listPhotoIds, photoUploadedAt } from '@/lib/storage';
 import { VisibilitySchema } from '@/lib/trip/schema';
 import { blogSaveError } from './blogErrors';
+import { managedProperties, publishedProperties } from './blogEvents';
 import { loadOwnBlog } from './blogRows';
 import { firstBlogSlug } from './blogSlug';
 import { refreshBlogPages, refreshBlogSocial } from './refreshBlog';
@@ -50,6 +52,14 @@ export const publishBlog = action(PublishSchema, async (input, { user, db }) => 
 
   const result = z.object({ saved_at: z.string(), slug: z.string(), first_publish: z.boolean() }).parse(data);
   refreshBlogPages({ ownerKey: user.id, blogKey: input.key, handles: [profile.handle], slugs: [result.slug] });
+  const visibility = input.visibility ?? blog.visibility;
+  // blog_published on the first Post; an update is "edit" from the ⋯ menu's point of view (spec §10).
+  const postedAt = new Date();
+  after(() =>
+    result.first_publish
+      ? trackServer('blog_published', user.id, publishedProperties(input.key, draft.document, visibility, postedAt))
+      : trackServer('blog_managed', user.id, managedProperties(input.key, { action: 'edit' })),
+  );
 
   // Removed photos keep their files until now; sweep them once the response is sent. Publishing
   // leaves the draft as it was, so its photos are exactly what both rows now use.
@@ -99,6 +109,7 @@ export const setBlogVisibility = action(
       return { saved: false as const, error: failure };
     }
     if (error) throw new Error('Could not change visibility');
+    after(() => trackServer('blog_managed', user.id, managedProperties(key, { action: 'visibility', visibility })));
     refreshBlogPages({
       ownerKey: user.id,
       blogKey: key,
@@ -112,12 +123,13 @@ export const setBlogVisibility = action(
 const CommentsChangeSchema = z.object({ key: z.uuid(), basedOn: z.string().min(1), on: z.boolean() });
 
 /** Comments off hides every comment and blocks new ones. */
-export const setBlogComments = action(CommentsChangeSchema, async ({ key, basedOn, on }, { db }) => {
+export const setBlogComments = action(CommentsChangeSchema, async ({ key, basedOn, on }, { user, db }) => {
   const { data, error } = await db.rpc('set_blog_comments', { p_key: key, p_based_on: basedOn, p_on: on });
   const failure = blogSaveError(error);
   if (failure === 'conflict' || failure === 'not_found') return { saved: false as const, error: failure };
   if (error) throw new Error('Could not change comments');
   refreshBlogSocial(key);
+  after(() => trackServer('blog_managed', user.id, managedProperties(key, { action: 'comments', on })));
   return { saved: true as const, savedAt: data as string };
 });
 
@@ -138,5 +150,6 @@ export const deleteBlog = action(z.object({ key: z.uuid() }), async ({ key }, { 
     handles: removed.handles,
     slugs: removed.slug ? [removed.slug] : [],
   });
+  after(() => trackServer('blog_managed', user.id, managedProperties(key, { action: 'delete' })));
   return { deleted: true as const };
 });

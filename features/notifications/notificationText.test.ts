@@ -41,6 +41,25 @@ describe('notificationHref', () => {
   });
 });
 
+describe('blog notifications (blogs spec §3.6)', () => {
+  const blog = { key: '00000000-0000-4000-8000-0000000000bb', title: 'Goa on 15k', path: '/@riya/blog/goa-on-15k' };
+  const actor = { handle: 'meera', name: 'Meera' };
+
+  it("say the blog's title, and 'your blog' when there's nothing else to say", () => {
+    expect(notificationText({ ...base, kind: 'like', likeCount: 1, blog })).toBe('Someone liked Goa on 15k');
+    expect(notificationText({ ...base, kind: 'like', likeCount: 2, blog })).toBe('2 people liked Goa on 15k');
+    expect(notificationText({ ...base, kind: 'comment', actor, blog, commentExcerpt: 'So cool' })).toBe(
+      'Meera commented on Goa on 15k: "So cool"',
+    );
+    expect(notificationText({ ...base, kind: 'comment', actor, blog })).toBe('Meera commented on your blog');
+  });
+
+  it('open the blog, at its comments for a comment', () => {
+    expect(notificationHref({ ...base, kind: 'like', blog })).toBe('/@riya/blog/goa-on-15k');
+    expect(notificationHref({ ...base, kind: 'comment', actor, blog })).toBe('/@riya/blog/goa-on-15k#comments');
+  });
+});
+
 describe('timeAgo', () => {
   const now = new Date('2026-11-10T06:00:00.000Z');
   it('counts up in minutes, hours and days, then shows the date', () => {

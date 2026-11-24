@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { notifyByEmail, type NotifyDeps } from './notify';
-import type { OutgoingEmail } from './resend';
+import { sendWithResend, type OutgoingEmail } from './resend';
 
 // Resend is mocked: switches, the budget and what goes out.
 
@@ -13,6 +13,7 @@ function deps(overrides: Partial<NotifyDeps> = {}, settings: Record<string, unkn
   return {
     recipient: async () => ({ email: 'owner@example.com', settings }),
     quest: async () => ({ title: 'Goa trip', url: 'https://onquest.in/@riya/goa' }),
+    blog: async () => ({ title: 'Goa on 15k', url: 'https://onquest.in/@riya/blog/goa-on-15k' }),
     person: async () => ({ name: 'Sam', url: 'https://onquest.in/@sam' }),
     claimBudget: async () => true,
     overBudget: () => void (warnings += 1),
@@ -63,5 +64,35 @@ describe('notifyByEmail', () => {
   it('never throws, even when a lookup fails', async () => {
     const broken = deps({ recipient: async () => Promise.reject(new Error('db down')) });
     expect(await notifyByEmail({ kind: 'like', recipientKey: OWNER, tripKey: 'k' }, broken)).toBe('failed');
+  });
+
+  it('emails a blog writer with blog wording, linking to the blog (blogs spec §3.6)', async () => {
+    expect(
+      await notifyByEmail({ kind: 'like', recipientKey: OWNER, actorKey: SAM, blogKey: 'b' }, deps()),
+    ).toBe('sent');
+    expect(sent[0]?.subject).toBe('Someone liked your blog Goa on 15k');
+    expect(sent[0]?.text).toContain('https://onquest.in/@riya/blog/goa-on-15k?n=email');
+    expect(
+      await notifyByEmail(
+        { kind: 'comment', recipientKey: OWNER, actorKey: SAM, blogKey: 'b', commentBody: 'Nice' },
+        deps(),
+      ),
+    ).toBe('sent');
+    expect(sent[1]?.subject).toBe('Sam commented on Goa on 15k');
+    expect(sent[1]?.text).toContain('Open your blog');
+  });
+
+  it('sends nothing for a blog without Resend set up: not_configured (the bell still has it)', async () => {
+    const withoutResend = deps({ send: (email) => sendWithResend(email, { apiKey: '' }) });
+    expect(await notifyByEmail({ kind: 'like', recipientKey: OWNER, blogKey: 'b' }, withoutResend)).toBe(
+      'not_configured',
+    );
+  });
+
+  it('fails quietly when the blog has no link (never posted, or gone)', async () => {
+    expect(await notifyByEmail({ kind: 'like', recipientKey: OWNER, blogKey: 'b' }, deps({ blog: async () => null }))).toBe(
+      'failed',
+    );
+    expect(sent).toEqual([]);
   });
 });

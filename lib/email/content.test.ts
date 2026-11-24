@@ -32,4 +32,21 @@ describe('buildNotificationEmail', () => {
     expect(email.text).toContain('https://onquest.in/@riya/goa?n=email');
     expect(email.text).toContain('Stop emails about likes: https://onquest.in/email/unsubscribe?u=1');
   });
+
+  it('says "your blog" for a blog (blogs spec §3.6)', () => {
+    const like = buildNotificationEmail({ ...base, kind: 'like', target: 'blog', questTitle: 'Goa on 15k' });
+    expect(like.subject).toBe('Someone liked your blog Goa on 15k');
+    expect(like.text).toContain('Open your blog:');
+    const comment = buildNotificationEmail({
+      ...base,
+      kind: 'comment',
+      target: 'blog',
+      questTitle: 'Goa on 15k',
+      actorName: 'Meera',
+      commentBody: 'Lovely',
+    });
+    expect(comment.subject).toBe('Meera commented on Goa on 15k');
+    expect(comment.html).toContain('Open your blog');
+    expect(comment.html.includes('your Quest')).toBe(false);
+  });
 });

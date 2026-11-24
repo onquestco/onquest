@@ -18,12 +18,15 @@ export type NotifyEvent = {
   /** Never used for likes: the creator doesn't learn who liked. */
   actorKey?: string;
   tripKey?: string;
+  /** A like or comment on a blog (blogs spec §3.6), instead of tripKey. */
+  blogKey?: string;
   commentBody?: string;
 };
 
 export type NotifyDeps = {
   recipient: (key: string) => Promise<{ email: string; settings: Record<string, unknown> } | null>;
   quest: (tripKey: string) => Promise<{ title: string; url: string } | null>;
+  blog: (blogKey: string) => Promise<{ title: string; url: string } | null>;
   person: (key: string) => Promise<{ name: string; url: string } | null>;
   claimBudget: (kind: EmailKind) => Promise<boolean>;
   overBudget: () => void;
@@ -39,7 +42,11 @@ export async function notifyByEmail(event: NotifyEvent, deps: NotifyDeps): Promi
     if (!recipient) return 'no_recipient';
     if (recipient.settings[SWITCH[event.kind]] === false) return 'switched_off';
 
-    const quest = event.tripKey ? await deps.quest(event.tripKey) : null;
+    const quest = event.blogKey
+      ? await deps.blog(event.blogKey)
+      : event.tripKey
+        ? await deps.quest(event.tripKey)
+        : null;
     const actor = event.kind !== 'like' && event.actorKey ? await deps.person(event.actorKey) : null;
     const url = event.kind === 'follow' ? actor?.url : quest?.url;
     if (!url) return 'failed';
@@ -51,6 +58,7 @@ export async function notifyByEmail(event: NotifyEvent, deps: NotifyDeps): Promi
     const stop = unsubscribeUrl(event.recipientKey, event.kind);
     const content = buildNotificationEmail({
       kind: event.kind,
+      target: event.blogKey ? 'blog' : 'quest',
       questTitle: quest?.title,
       url,
       actorName: actor?.name,

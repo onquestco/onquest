@@ -7,7 +7,7 @@ username_set,user_id,server,server_ts,changed,BOOL,true / false,true when replac
 username_set,,,,length,INT64,3–20,,yes,,Pass · fired 3×
 profile_updated,user_id,server,server_ts,fields,STRING,"name,username,photo,city,bio","Comma list of fields that changed, never their values",yes,Edit profile is saved with changes,Pass · fired 1×
 quest_draft_created,user_id,server,server_ts,quest_id,STRING,,,yes,A draft Quest is created (Next on Pick photos),Pass · fired 4×
-quest_draft_created,,,,source,STRING,home_banner / home_empty / create_menu / quests_tab / quests_empty / make_your_own / ftue / whatis_sheet,,yes,,Pass · fired 4×
+quest_draft_created,,,,source,STRING,home_banner / home_empty / create_menu / quests_tab / quests_empty / make_your_own / ftue / whatis_sheet / blog_link,blog_link = "Create a Quest" from a blog's Link a Quest sheet,yes,,Pass · fired 4×
 photos_uploaded,user_id,server,server_ts,quest_id,STRING,,,yes,Uploads for a Quest finish,Pass · fired 5×
 photos_uploaded,,,,count,INT64,1–15,,yes,,Pass · fired 5×
 photos_uploaded,,,,failed,INT64,0–15,Failed after retries,yes,,Pass · fired 5×
@@ -56,7 +56,26 @@ user_followed,,,,unfollow,BOOL,true / false,,yes,,Pass · fired 6×
 notification_sent,user_id (the person notified),server,server_ts,kind,STRING,like / comment / follow,,yes,"A notification is created (not for unlikes or your own actions), and its email if that setting is on",Pass · fired 16×
 notification_sent,,,,channel,STRING,bell / email,,yes,,Pass · fired 16×
 notification_sent,,,,recipient_id,STRING,,,yes,,Pass · fired 16×
+notification_sent,,,,target,STRING,quest / blog,What was liked or commented on (absent for follows),optional,,Not yet tested
 setting_changed,user_id,server,server_ts,setting,STRING,email_likes / email_comments / email_follows / default_visibility / show_places,,yes,A setting is saved (not when re-tapping the current value),Pass · fired 10×
 setting_changed,,,,value,STRING,true / false / public / unlisted / private,,yes,,Pass · fired 10×
 user_signed_out,user_id,server,server_ts,(common only),,,,,Sign out is confirmed,Pass · fired 1×
 account_deleted,user_id,server,server_ts,quests_count,INT64,,,yes,Account deletion is confirmed (DELETE typed),Pass · fired 1×
+blog_draft_saved,user_id,server,server_ts,blog_id,STRING,,The blog key,yes,"A blog draft is saved: at most once a calendar minute per blog (the first save always counts)",Not yet tested: fires from BL-02
+blog_draft_saved,,,,chars_bucket,STRING,0 / 1-500 / 501-2000 / 2001-5000 / 5001-10000,"Body length in characters, never the text",yes,,Not yet tested: fires from BL-02
+blog_draft_saved,,,,photos,INT64,0–10,,yes,,Not yet tested: fires from BL-02
+blog_published,user_id,server,server_ts,blog_id,STRING,,,yes,A blog is posted for the first time,Not yet tested: fires from BL-02
+blog_published,,,,visibility,STRING,public / unlisted / private,,yes,,Not yet tested: fires from BL-02
+blog_published,,,,photos,INT64,0–10,,yes,,Not yet tested: fires from BL-02
+blog_published,,,,chars_bucket,STRING,0 / 1-500 / 501-2000 / 2001-5000 / 5001-10000,"Body length in characters, never the text",yes,,Not yet tested: fires from BL-02
+blog_published,,,,has_quest,BOOL,true / false,A Quest is linked,yes,,Not yet tested: fires from BL-02
+blog_published,,,,has_place,BOOL,true / false,A place is added,yes,,Not yet tested: fires from BL-02
+blog_published,,,,minutes_since_start,FLOAT64,,From the first text typed or photo picked,optional,,Not yet tested: fires from BL-02
+blog_liked,user_id,server,server_ts,blog_id,STRING,,,yes,A like or unlike on a blog is saved,Not yet tested: fires from BL-02
+blog_liked,,,,unlike,BOOL,true / false,,yes,,Not yet tested: fires from BL-02
+blog_liked,,,,source,STRING,blog_page / feed / after_sign_in,after_sign_in = the like saved right after a signed-out reader signed in to like,yes,,Not yet tested: fires from BL-02
+blog_comment_posted,user_id,server,server_ts,blog_id,STRING,,,yes,A comment on a blog is saved,Not yet tested: fires from BL-02
+blog_comment_posted,,,,length,INT64,1–300,"Characters, never the text",yes,,Not yet tested: fires from BL-02
+blog_managed,user_id,server,server_ts,blog_id,STRING,,,yes,"A change from a blog's ⋯ menu is saved (edit = an update posted again)",Not yet tested: fires from BL-02
+blog_managed,,,,action,STRING,edit / visibility / comments / delete,,yes,,Not yet tested: fires from BL-02
+blog_managed,,,,value,STRING,public / unlisted / private / on / off / none,"The new visibility, comments on or off, or none",yes,,Not yet tested: fires from BL-02

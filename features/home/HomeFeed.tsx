@@ -5,6 +5,7 @@ import { Button } from '@/design-system/components/Button';
 import { FeedPageSchema, type FeedPage } from '@/lib/social/schema';
 import type { QuestCard } from '@/lib/trip/cards';
 import { FeedCard } from './FeedCard';
+import { questFeedItems } from './feedItems';
 
 type Props = { signedIn: boolean; first: FeedPage | null; suggested: QuestCard[] };
 
@@ -13,7 +14,8 @@ type Props = { signedIn: boolean; first: FeedPage | null; suggested: QuestCard[]
  * Signed out (OQ-16) there's no one followed, so it's suggestions only, as "Popular on OnQuest".
  */
 export function HomeFeed({ signedIn, first, suggested }: Props) {
-  const [items, setItems] = useState(first?.items ?? []);
+  // Blog items are skipped until BL-05 renders them (questFeedItems).
+  const [items, setItems] = useState(questFeedItems(first?.items ?? []));
   const [nextOffset, setNextOffset] = useState(first?.nextOffset ?? null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(signedIn && first === null);
@@ -28,7 +30,7 @@ export function HomeFeed({ signedIn, first, suggested }: Props) {
       const page = FeedPageSchema.parse(await response.json());
       setItems((list) => [
         ...list,
-        ...page.items.filter((item) => !list.some((seen) => seen.key === item.key)),
+        ...questFeedItems(page.items).filter((item) => !list.some((seen) => seen.key === item.key)),
       ]);
       setNextOffset(page.nextOffset);
     } catch {
