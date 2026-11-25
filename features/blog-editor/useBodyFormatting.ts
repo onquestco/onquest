@@ -17,7 +17,7 @@ import {
 import type { ToolbarCommand } from './FormatToolbar';
 import { applyLink, linkAt, removeLink, type LinkAtCursor } from './linkCommands';
 import { cutBody } from './textLimits';
-import { useBodyHistory, type Snapshot } from './useBodyHistory';
+import type { BodyHistory, Snapshot } from './useBodyHistory';
 
 // The body field's formatting (spec §6.1): toolbar commands, shortcuts, list continuation, the
 // link sheet and undo/redo, all as edits to the one body string in the draft store. Every edit
@@ -59,11 +59,11 @@ export function shortcutCommand(event: {
 
 export function useBodyFormatting(
   store: BlogDraftStore,
+  history: BodyHistory,
   fieldId: string,
   onToast: (message: string) => void,
 ) {
   const body = useStore(store, (state) => state.document.body);
-  const history = useBodyHistory({ body, selection: { start: body.length, end: body.length } });
   const [selection, setSelection] = useState<Selection>({ start: body.length, end: body.length });
   const [linkSheet, setLinkSheet] = useState<LinkSheetState | null>(null);
   /** Where the cursor goes once React has put the new text in the field. */

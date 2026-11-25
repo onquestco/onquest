@@ -59,7 +59,12 @@ export function redo(history: History): History {
   return { past: capped([...history.past, history.present]), present: next, future: rest, typedAt: null };
 }
 
-/** The history as the body field uses it. Undo and redo return the snapshot to show, or null. */
+export type BodyHistory = ReturnType<typeof useBodyHistory>;
+
+/**
+ * The history as the body field uses it. Undo and redo return the snapshot to show, or null. Held by
+ * the composer screen, above the edit/preview switch, so it survives opening Preview (review #48).
+ */
 export function useBodyHistory(initial: Snapshot) {
   const [history, setHistory] = useState(() => startHistory(initial));
   // Event handlers can run twice before a re-render (a keystroke straight after a command).
