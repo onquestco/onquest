@@ -19,6 +19,7 @@ export const Lilita_One = font('Lilita_One');
 export const Montserrat = font('Montserrat');
 export const Nunito = font('Nunito');
 export const Pacifico = font('Pacifico');
+export const Poppins = font('Poppins');
 export const Playfair_Display = font('Playfair_Display');
 export const Satisfy = font('Satisfy');
 export const Special_Elite = font('Special_Elite');

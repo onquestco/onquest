@@ -39,46 +39,40 @@ function choices(templateId: string, published = false) {
 }
 
 describe('ChooseTemplate', () => {
-  it('a new Quest is offered Coastal, selected, then Mountain, Roadtrip, Winter, Monsoon (AC1, AC4)', () => {
-    expect(choices('coastal')).toEqual(['Coastal (selected)', 'Mountain', 'Roadtrip', 'Winter', 'Monsoon']);
+  const LIVE = ['Coastal', 'Mountain', 'Roadtrip', 'Winter', 'Monsoon', 'Desert'];
+  const selecting = (index: number) =>
+    LIVE.map((name, i) => (i === index ? `${name} (selected)` : name));
+
+  it('a new Quest is offered every live template, Coastal selected (AC1, AC4)', () => {
+    expect(choices('coastal')).toEqual(selecting(0));
   });
 
   it('a draft that picked the new Mountain keeps it selected', () => {
-    expect(choices('alpine')).toEqual(['Coastal', 'Mountain (selected)', 'Roadtrip', 'Winter', 'Monsoon']);
+    expect(choices('alpine')).toEqual(selecting(1));
   });
 
   it('a draft that picked Roadtrip keeps it selected', () => {
-    expect(choices('roadtrip')).toEqual(['Coastal', 'Mountain', 'Roadtrip (selected)', 'Winter', 'Monsoon']);
+    expect(choices('roadtrip')).toEqual(selecting(2));
   });
 
   it('a draft that picked Winter keeps it selected', () => {
-    expect(choices('winter')).toEqual(['Coastal', 'Mountain', 'Roadtrip', 'Winter (selected)', 'Monsoon']);
+    expect(choices('winter')).toEqual(selecting(3));
   });
 
   it('a draft that picked Monsoon keeps it selected', () => {
-    expect(choices('monsoon')).toEqual(['Coastal', 'Mountain', 'Roadtrip', 'Winter', 'Monsoon (selected)']);
+    expect(choices('monsoon')).toEqual(selecting(4));
+  });
+
+  it('a draft that picked Desert keeps it selected', () => {
+    expect(choices('desert')).toEqual(selecting(5));
   });
 
   it('a draft that chose Beach keeps it, selected, next to Coastal (AC2)', () => {
-    expect(choices('beach')).toEqual([
-      'Coastal',
-      'Mountain',
-      'Roadtrip',
-      'Winter',
-      'Monsoon',
-      'Beach (selected)',
-    ]);
+    expect(choices('beach')).toEqual([...LIVE, 'Beach (selected)']);
   });
 
   it('a draft that chose the old Mountain keeps it too, after the new one (AC2)', () => {
-    expect(choices('mountain')).toEqual([
-      'Coastal',
-      'Mountain',
-      'Roadtrip',
-      'Winter',
-      'Monsoon',
-      'Mountain (selected)',
-    ]);
+    expect(choices('mountain')).toEqual([...LIVE, 'Mountain (selected)']);
   });
 
   it('a published Quest only shows the look it has (spec D4)', () => {
@@ -94,6 +88,7 @@ describe('templateChoices', () => {
       'roadtrip',
       'winter',
       'monsoon',
+      'desert',
     ]);
   });
 });

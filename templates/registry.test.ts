@@ -4,7 +4,7 @@ import { DEFAULT_TEMPLATE_ID, getTemplate, pickableTemplates, templates } from '
 vi.mock('next/font/google', () => import('./shared/nextFontStub'));
 
 const ids = (list: { id: string }[]) => list.map((template) => template.id);
-const LIVE = ['coastal', 'alpine', 'roadtrip', 'winter', 'monsoon'];
+const LIVE = ['coastal', 'alpine', 'roadtrip', 'winter', 'monsoon', 'desert'];
 
 describe('template registry', () => {
   it('starts new Quests in a live template: Coastal', () => {
@@ -23,12 +23,13 @@ describe('template registry', () => {
     expect(getTemplate('unknown').id).toBe('beach');
   });
 
-  it('offers only live templates for a new Quest: Coastal, new Mountain, Roadtrip, Winter, Monsoon', () => {
+  it('offers only live templates for a new Quest: Coastal, new Mountain, Roadtrip, Winter, Monsoon, Desert', () => {
     expect(ids(pickableTemplates('coastal'))).toEqual(LIVE);
     expect(ids(pickableTemplates('alpine'))).toEqual(LIVE);
     expect(ids(pickableTemplates('roadtrip'))).toEqual(LIVE);
     expect(ids(pickableTemplates('winter'))).toEqual(LIVE);
     expect(ids(pickableTemplates('monsoon'))).toEqual(LIVE);
+    expect(ids(pickableTemplates('desert'))).toEqual(LIVE);
     expect(ids(pickableTemplates('unknown'))).toEqual(LIVE);
   });
 
@@ -54,6 +55,12 @@ describe('template registry', () => {
     expect(templates.monsoon.status).toBe('live');
     expect(templates.monsoon.name).toBe('Monsoon');
     expect(getTemplate('monsoon').id).toBe('monsoon');
+  });
+
+  it('registers Desert as live', () => {
+    expect(templates.desert.status).toBe('live');
+    expect(templates.desert.name).toBe('Desert');
+    expect(getTemplate('desert').id).toBe('desert');
   });
 
   it('also offers a draft its current retired template', () => {

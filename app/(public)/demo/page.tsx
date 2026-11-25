@@ -12,6 +12,7 @@ import {
 } from '@/lib/demo/sampleSocial';
 import { alpineFixtures } from '@/templates/alpine/fixtures';
 import { coastalFixtures, type CoastalFixtureName } from '@/templates/coastal/fixtures';
+import { desertFixtures } from '@/templates/desert/fixtures';
 import { monsoonFixtures } from '@/templates/monsoon/fixtures';
 import { roadtripFixtures } from '@/templates/roadtrip/fixtures';
 import { isTemplateId } from '@/templates/registry';
@@ -41,8 +42,9 @@ const pick = <Name extends string>(
 //   ?quest=small|full|old             the edge-case trips
 //   ?template=mountain                the same trip in another template
 //   ?size=small|big|mixed|noCaptions|onePlace   the Coastal check trips (templates spec AC7);
-//                                               with ?template=alpine|roadtrip|winter|monsoon,
-//                                               the new Mountain's, Roadtrip's, Winter's or Monsoon's
+//                                               with ?template=alpine|roadtrip|winter|monsoon|desert,
+//                                               the new Mountain's, Roadtrip's, Winter's, Monsoon's
+//                                               or Desert's
 //   ?social=none|few|many|off         likes and comments (off = comments turned off)
 //   ?viewer=signedOut|friend|owner    who is looking
 //   ?comment=open                     back from sign-in with the comment box open
@@ -61,7 +63,9 @@ export default async function DemoPage({ searchParams }: Props) {
           ? winterFixtures
           : params.template === 'monsoon'
             ? monsoonFixtures
-            : coastalFixtures;
+            : params.template === 'desert'
+              ? desertFixtures
+              : coastalFixtures;
   const sample =
     params.size && params.size in checkTrips
       ? checkTrips[params.size as CoastalFixtureName]
