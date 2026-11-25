@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<!-- Design source: claude.ai artifact "OnQuest · Mountain Quest template" (https://claude.ai/artifact/N4ukoN4vp8Yr9HQynsRWD9), version 1795461348-4692, copied 25 Nov 2026. Visual source of truth for the new Mountain template. Note: the design references url(#glare) without defining it (sunrise and night pages); use a soft white radial glow. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OnQuest · Mountain Quest template</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Cormorant+Garamond:wght@600;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F8F5EA; --ink:#25382E; --accent:#5F7F63; --accent2:#B4532A;
+  --sand:#D9C6A3; --cream:#FBFAF6; --sky:#9DB8CE; --blue:#5B7FA8;
+  --font-serif:'Cormorant Garamond',Georgia,serif; --font-sans:'Nunito',system-ui,sans-serif; --font-hand:'Caveat',cursive;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:linear-gradient(#e7f0ea,#f3f1e4 60%,#d8e3d2);font-family:var(--font-sans);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:12px}
+.note{font:700 13px var(--font-sans);opacity:.7;text-align:center}
+.player{position:relative;width:min(94vw,400px)}
+.track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:22px;box-shadow:0 10px 30px rgba(37,56,46,.28);background:var(--paper)}
+.track::-webkit-scrollbar{display:none}
+.page{flex:0 0 100%;min-width:0;scroll-snap-align:start;container-type:inline-size}
+.stage{position:relative;width:100%;aspect-ratio:9/15;overflow:hidden;background:var(--paper)}
+.abs{position:absolute}
+.bg{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+.bird{animation:glide 7s ease-in-out infinite alternate}
+@keyframes glide{from{transform:translate(0,0)}to{transform:translate(16px,-7px)}}
+.mist{animation:mist 14s ease-in-out infinite alternate}
+@keyframes mist{from{transform:translateX(-10px)}to{transform:translateX(14px)}}
+/* text */
+.kicker{font:700 6.4cqw/1 var(--font-hand);color:var(--accent2);margin:0}
+.title{margin:0;font:700 11.5cqw/1 var(--font-serif);letter-spacing:.04em;text-transform:uppercase;color:var(--ink);text-wrap:balance}
+.pageTitle{margin:0;font:700 6.4cqw/1.1 var(--font-serif);letter-spacing:.04em;text-transform:uppercase;color:var(--ink)}
+.meta{font:800 3.4cqw/1.3 var(--font-sans);letter-spacing:.14em;text-transform:uppercase;opacity:.7}
+/* polaroid */
+.polaroid{position:absolute;background:#fff;padding:2.4cqw 2.4cqw 0;box-shadow:0 1.2cqw 3cqw rgba(37,56,46,.32);transform:rotate(var(--r,0deg));animation:drop .6s cubic-bezier(.2,.9,.3,1.2) both;animation-delay:var(--d,0s);z-index:3}
+.polaroid .img{width:100%;aspect-ratio:var(--a,1);overflow:hidden;background:var(--sky)}
+.polaroid .img svg{display:block;width:100%;height:100%}
+.polaroid .cap{font:700 5.6cqw/1 var(--font-hand);text-align:center;padding:2cqw 1cqw 2.6cqw;min-height:9cqw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tape{position:absolute;top:-3.2cqw;left:50%;width:22cqw;height:6.4cqw;transform:translateX(-50%) rotate(-3deg);opacity:.92}
+@keyframes drop{from{opacity:0;transform:translateY(-4cqw) rotate(var(--r,0deg)) scale(1.06)}to{opacity:1;transform:rotate(var(--r,0deg))}}
+.night .kicker{color:#FFD9A8}
+.night .title,.night .pageTitle{color:#fff;text-shadow:0 .5cqw 1.6cqw rgba(0,0,20,.5)}
+.stamp{position:absolute;z-index:4;border:.8cqw dashed var(--accent2);color:var(--accent2);border-radius:2cqw;text-align:center;padding:1.4cqw 1cqw;transform:rotate(6deg);background:rgba(251,250,246,.78)}
+.stamp b{display:block;font:700 8cqw/1 var(--font-serif)}
+.stamp span{font:800 2.6cqw/1.1 var(--font-sans);letter-spacing:.12em;text-transform:uppercase}
+.sticker{position:absolute;z-index:6;filter:drop-shadow(0 .4cqw .4cqw rgba(0,0,0,.2))}
+/* nav */
+.nav{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px}
+.nav button{width:40px;height:40px;border-radius:50%;border:0;background:var(--accent);color:#fff;font:800 18px var(--font-sans);cursor:pointer}
+.nav button:disabled{opacity:.35;cursor:default}
+.dots{display:flex;gap:7px}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--ink);opacity:.25;transition:.2s}
+.dots i.on{opacity:1;background:var(--accent2);transform:scale(1.25)}
+.route svg.r{position:absolute;inset:0;width:100%;height:100%;z-index:2}
+@media (prefers-reduced-motion:reduce){.polaroid,.bird,.mist{animation:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<linearGradient id="mtTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5E9441"/><stop offset="1" stop-color="#B9CF8B"/></linearGradient>
+<linearGradient id="mtBack" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5B7FA8"/><stop offset="1" stop-color="#A9BF93"/></linearGradient>
+<linearGradient id="mtMid" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4E78A6"/><stop offset=".5" stop-color="#8FAE6E"/><stop offset="1" stop-color="#9DB462"/></linearGradient>
+<linearGradient id="mtFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7FA05B"/><stop offset="1" stop-color="#A5BA6B"/></linearGradient>
+<linearGradient id="fade" gradientUnits="userSpaceOnUse" x1="0" y1="170" x2="0" y2="650"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".55" stop-color="#fff" stop-opacity=".7"/><stop offset="1" stop-color="#fff"/></linearGradient>
+<mask id="mistMask" maskUnits="userSpaceOnUse" x="-30" y="0" width="450" height="650"><rect x="-30" width="450" height="650" fill="url(#fade)"/></mask>
+<filter id="washT" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".006 .011" numOctaves="5" seed="2"/><feColorMatrix values="0 0 0 0 .16  0 0 0 0 .52  0 0 0 0 .56  2.9 0 0 0 -1.1"/></filter>
+<filter id="washG" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".009 .014" numOctaves="4" seed="9"/><feColorMatrix values="0 0 0 0 .42  0 0 0 0 .62  0 0 0 0 .30  2.8 0 0 0 -1.15"/></filter>
+<filter id="paper" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".7" numOctaves="3" seed="5"/><feColorMatrix values="0 0 0 0 .45  0 0 0 0 .40  0 0 0 0 .28  2.2 0 0 0 -1.0"/></filter>
+<filter id="streak" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".04 .22" numOctaves="3" seed="3"/><feColorMatrix values="0 0 0 0 .12  0 0 0 0 .30  0 0 0 0 .10  3 0 0 0 -1.25"/></filter>
+<linearGradient id="skySun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F2B3A6"/><stop offset=".5" stop-color="#FFD7B0"/><stop offset="1" stop-color="#FFEFCB"/></linearGradient>
+<linearGradient id="skyNight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16213E"/><stop offset=".6" stop-color="#34487C"/><stop offset="1" stop-color="#6E7FB0"/></linearGradient>
+<linearGradient id="rSun1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9A86B0"/><stop offset="1" stop-color="#D9A9A0"/></linearGradient>
+<linearGradient id="rSun2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6F6A98"/><stop offset="1" stop-color="#A57F96"/></linearGradient>
+<linearGradient id="rSun3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3F4570"/><stop offset="1" stop-color="#5A4F78"/></linearGradient>
+<linearGradient id="rN1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3D5384"/><stop offset="1" stop-color="#4D6393"/></linearGradient>
+<linearGradient id="rN2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26365F"/><stop offset="1" stop-color="#32477A"/></linearGradient>
+<linearGradient id="rN3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#121C38"/><stop offset="1" stop-color="#1B2A4C"/></linearGradient>
+<filter id="washP" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".007 .012" numOctaves="5" seed="14"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 .66  0 0 0 0 .55  2.8 0 0 0 -1.15"/></filter>
+</defs></svg>
+<div class="note">Mountain Quest template — swipe, or use the arrows / ← → keys</div>
+<div class="player">
+  <div class="track" id="track"></div>
+  <div class="nav">
+    <button id="prev" aria-label="Previous page">‹</button>
+    <div class="dots" id="dots"></div>
+    <button id="next" aria-label="Next page">›</button>
+  </div>
+</div>
+
+<script>
+/* ---------- sample trip ---------- */
+const trip = {
+  title:'Above the Clouds', handle:'alok', dateLabel:'8–12 Dec', statsLabel:'5 days · 3 peaks', destination:'Manali',
+  tapes:['rgba(217,198,163,.92)','rgba(111,143,176,.6)','rgba(95,127,99,.6)'],
+  pages:[
+    {date:'Day 1 · 8 Dec', title:'Into the valley', photos:[{s:'pines',c:'pine road'},{s:'peaks',c:'first snow peaks'}], place:'Manali'},
+    {date:'Day 2 · 9 Dec', title:'Solang ridge walk', photos:[{s:'sunrise',c:'5am sunrise'},{s:'lake',c:'mirror lake'},{s:'peaks',c:'top of the ridge'}], place:'Solang'},
+    {date:'Day 3 · 10 Dec', title:'Campfire night', photos:[{s:'camp',c:'our tent'}], place:'Sissu'}
+  ],
+  route:[['Manali',24,74],['Solang',40,54],['Sissu',62,40],['Chandratal',78,20]]
+};
+
+/* ---------- illustrations (stand-ins for user photos) ---------- */
+const scenes = {
+  peaks:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="p1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#BFD8EA"/><stop offset="1" stop-color="#F4F1E3"/></linearGradient></defs><rect width="100" height="100" fill="url(#p1)"/><circle cx="76" cy="22" r="8" fill="#FFF3C4"/><path d="M-5 80L28 24l16 24 12-16 44 48z" fill="#6F8FB8"/><path d="M28 24l-9 14 6-3 4 6 5-5 6 8-12-20z" fill="#fff"/><path d="M-5 100L20 66l18 18 18-26 49 42z" fill="#8FAE6E"/><path d="M-5 100l30-18 22 10 25-14 28 22z" fill="#5F7F63"/></svg>`,
+  pines:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="#DCE9E2"/><path d="M0 60L25 30l22 30 20-26 33 30v36H0z" fill="#A9C3C4" opacity=".7"/>${[[14,92,1],[34,96,1.2],[58,94,1.1],[82,92,1.3],[48,100,.8]].map(([x,y,k])=>`<g transform="translate(${x} ${y}) scale(${k})"><path d="M0 -52L12 -30H6L16 -12H8L18 8H-18L-8 -12H-16L-6 -30H-12z" fill="#2F5D43"/><rect x="-2" y="8" width="4" height="8" fill="#6b4a2b"/></g>`).join('')}</svg>`,
+  lake:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="#CFE3EE"/><path d="M-5 52L22 20l14 18 12-12 22 26z" fill="#6F8FB8"/><path d="M22 20l-6 9 4-2 3 4 3-4 4 7z" fill="#fff"/><rect y="50" width="100" height="50" fill="#3E8FA0"/><path d="M-5 48L22 80l14-18 12 12 22-26 40 0v0z" fill="#5E86A8" opacity=".55"/><path d="M0 70q12-3 25 0t25 0 25 0 25 0M0 82q12-3 25 0t25 0 25 0 25 0" stroke="#fff" stroke-opacity=".45" stroke-width="1.6" fill="none"/><path d="M0 50h100" stroke="#2F5D43" stroke-width="5"/></svg>`,
+  sunrise:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="s1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E58C7A"/><stop offset=".55" stop-color="#FFC989"/><stop offset="1" stop-color="#FFE6B0"/></linearGradient></defs><rect width="100" height="100" fill="url(#s1)"/><circle cx="50" cy="56" r="14" fill="#FFF0C2"/><path d="M-5 70L25 44l20 20 15-14 45 26v24H-5z" fill="#8C7BA0" opacity=".85"/><path d="M-5 82L18 62l22 18 20-16 45 22v14H-5z" fill="#5C5A86"/><path d="M-5 100V90l30-10 25 10 25-8 25 8v10z" fill="#2E3A4F"/></svg>`,
+  camp:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="c1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1F2E4F"/><stop offset="1" stop-color="#5B6FA0"/></linearGradient></defs><rect width="100" height="100" fill="url(#c1)"/><g fill="#fff">${[[12,12],[30,24],[56,10],[78,20],[90,8],[44,30],[68,34]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1"/>`).join('')}</g><path d="M-5 70L24 44l18 22 14-14 49 24v24H-5z" fill="#2B3B5E"/><rect y="74" width="100" height="26" fill="#3C5B47"/><path d="M26 92L44 58 62 92z" fill="#E9B44C" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><path d="M44 58L38 92h12z" fill="#B4532A"/><path d="M76 90q-6-10 0-20 2 8 8 8 -2 8-8 12z" fill="#FF8A3D"/><circle cx="76" cy="84" r="10" fill="#FFB86B" opacity=".3"/></svg>`
+};
+
+/* ---------- background: watercolor mist, scalloped green band, layered peaks ---------- */
+let _n=0;
+const rng=s=>()=>(s=(s*16807)%2147483647)/2147483647;
+function ridge(base,amp,seed,fill,stroke,snow){
+  const r=rng(seed*97+13),pts=[];const n=9;
+  for(let k=0;k<=n;k++){const x=-10+410*k/n,high=k%2===1;pts.push([x,base-amp*(high?.55+.45*r():.1+.2*r())]);}
+  const d='M-10 650 '+pts.map(p=>`L${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ')+' L400 650Z';
+  const line='M'+pts.map(p=>`${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' L');
+  const caps=snow?pts.filter((p,k)=>k%2===1&&p[1]<base-amp*.7).map(([x,y])=>`<path d="M${x} ${y}L${x-10} ${y+17}L${x-3} ${y+13}L${x} ${y+21}L${x+4} ${y+13}L${x+10} ${y+17}Z" fill="#fff" opacity=".85"/>`).join(''):'';
+  return `<path d="${d}" fill="${fill}"/><path d="${line}" stroke="${stroke}" stroke-width="1.6" fill="none" opacity=".55" stroke-linejoin="round"/>${caps}`;
+}
+function bird(x,y,s,r=0){return `<path transform="translate(${x} ${y}) rotate(${r}) scale(${s})" d="M-14 2Q-8 -8 0 0Q8 -8 14 2Q8 -3 0 4Q-8 -3 -14 2z" fill="#8a857a"/>`}
+function bgMist(seed,cover){
+  const flip=seed%2===0;
+  const birds=cover?`${bird(338,236,1.4,-6)}${bird(368,222,1,4)}${bird(60,300,1,6)}`:`${bird(flip?318:340,160,1.1,-4)}${bird(flip?352:366,174,.8,6)}`;
+  return `<svg class="bg" viewBox="0 0 390 650" preserveAspectRatio="none" aria-hidden="true">
+    <rect width="390" height="650" fill="#F8F5EA"/>
+    <rect width="390" height="650" filter="url(#paper)" opacity=".35"/>
+    <g class="mist" mask="url(#mistMask)"><rect x="-20" y="0" width="430" height="650" filter="url(#washT)" opacity="${cover?.95:.8}"/><rect x="-20" y="0" width="430" height="650" filter="url(#washG)" opacity=".7"/></g>
+    <g class="bird">${birds}</g>
+    ${ridge(612,105,seed+1,'url(#mtBack)','#3C5A7A',true)}
+    ${ridge(632,80,seed+4,'url(#mtMid)','#355A3C',false)}
+    ${ridge(650,52,seed+7,'url(#mtFront)','#355A3C',false)}
+    <clipPath id="band${seed}"><path d="M0 0H390V38Q357 56 325 38T260 38T195 38T130 38T65 38T0 38Z"/></clipPath>
+    <g clip-path="url(#band${seed})"><rect width="390" height="70" fill="url(#mtTop)"/><rect width="390" height="70" filter="url(#streak)" opacity=".75"/></g>
+    <path d="M0 38Q33 56 65 38T130 38T195 38T260 38T325 38T390 38" stroke="#3C5F2B" stroke-width="1.3" fill="none" opacity=".35"/>
+  </svg>`;
+}
+
+
+const band=id=>`<clipPath id="band${id}"><path d="M0 0H390V38Q357 56 325 38T260 38T195 38T130 38T65 38T0 38Z"/></clipPath><g clip-path="url(#band${id})"><rect width="390" height="70" fill="url(#mtTop)"/><rect width="390" height="70" filter="url(#streak)" opacity=".75"/></g><path d="M0 38Q33 56 65 38T130 38T195 38T260 38T325 38T390 38" stroke="#3C5F2B" stroke-width="1.3" fill="none" opacity=".35"/>`;
+function pineRow(y,n,k,fill,seed){
+  const r=rng(seed*31+5);let o='';
+  for(let i=0;i<n;i++){const x=-10+(410/n)*i+r()*14,h=(54+r()*34)*k,w=h*.46;
+    o+=`<path d="M${x} ${y-h}L${x+w*.5} ${y-h*.52}H${x+w*.22}L${x+w*.62} ${y-h*.2}H${x+w*.3}L${x+w*.7} ${y}H${x-w*.7}L${x-w*.3} ${y-h*.2}H${x-w*.62}L${x-w*.22} ${y-h*.52}H${x-w*.5}z" fill="${fill}"/>`;}
+  return o;
+}
+function bgForest(seed){
+  return `<svg class="bg" viewBox="0 0 390 650" preserveAspectRatio="none" aria-hidden="true">
+    <rect width="390" height="650" fill="#F3F4E6"/>
+    <rect width="390" height="650" filter="url(#paper)" opacity=".35"/>
+    <rect x="-20" width="430" height="650" filter="url(#washG)" opacity=".85"/>
+    <g class="bird">${bird(318,168,1.1,-4)}${bird(352,182,.8,6)}</g>
+    <path d="M-10 560L70 470l60 70 70-90 80 100 70-70 50 60V650H-10z" fill="#B7CBA2" opacity=".6"/>
+    ${pineRow(615,13,1,'#7FA05B',seed)}${pineRow(640,11,1.2,'#4F7A4A',seed+3)}${pineRow(655,9,1.45,'#2F5D43',seed+6)}
+    ${band(seed)}
+  </svg>`;
+}
+function bgSunrise(seed){
+  const r=rng(seed*13+2);
+  const clouds=[[80,210,70],[300,250,80],[190,330,90],[330,360,60]].map(([x,y,w])=>`<ellipse cx="${x}" cy="${y}" rx="${w}" ry="${8+r()*4}" fill="#fff" opacity=".45"/>`).join('');
+  return `<svg class="bg" viewBox="0 0 390 650" preserveAspectRatio="none" aria-hidden="true">
+    <rect width="390" height="650" fill="url(#skySun)"/>
+    <rect x="-20" width="430" height="650" filter="url(#washP)" opacity=".55"/>
+    <rect width="390" height="650" filter="url(#paper)" opacity=".25"/>
+    <circle cx="290" cy="500" r="120" fill="url(#glare)" opacity=".9"/><circle cx="290" cy="500" r="40" fill="#FFF3C9"/>
+    ${clouds}
+    <g class="bird">${bird(72,132,1.1,-4)}${bird(104,146,.8,6)}${bird(300,110,1.2,-6)}</g>
+    ${ridge(585,140,seed+1,'url(#rSun1)','#5A4F78',true)}${ridge(620,105,seed+4,'url(#rSun2)','#40456E',false)}${ridge(652,62,seed+7,'url(#rSun3)','#2B2F52',false)}
+  </svg>`;
+}
+function bgNight(seed){
+  const r=rng(seed*7+1);
+  const stars=Array.from({length:70},()=>{const x=r()*390,y=r()*380,k=r();return `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${(.6+k*1.3).toFixed(1)}" fill="#fff" opacity="${(.4+k*.6).toFixed(2)}"/>`}).join('');
+  return `<svg class="bg" viewBox="0 0 390 650" preserveAspectRatio="none" aria-hidden="true">
+    <rect width="390" height="650" fill="url(#skyNight)"/>
+    <rect width="390" height="650" filter="url(#paper)" opacity=".12"/>
+    ${stars}
+    <circle cx="326" cy="250" r="70" fill="url(#glare)" opacity=".55"/><circle cx="326" cy="250" r="20" fill="#FFF3C4"/>
+    <g class="mist" mask="url(#mistMask)"><rect x="-20" width="430" height="650" filter="url(#washT)" opacity=".45"/></g>
+    ${ridge(590,130,seed+1,'url(#rN1)','#8CA0CC',true)}${ridge(622,100,seed+4,'url(#rN2)','#5D74A8',false)}${pineRow(652,10,1.3,'#121C38',seed)}
+  </svg>`;
+}
+function bg(seed,cover,kind='mist'){
+  if(kind==='forest')return bgForest(seed);
+  if(kind==='sunrise')return bgSunrise(seed);
+  if(kind==='night')return bgNight(seed);
+  return bgMist(seed,cover);
+}
+
+/* ---------- stickers ---------- */
+const st=(x,y,s,r,vb,body)=>`<svg class="sticker" viewBox="${vb}" style="left:${x}%;top:${y}%;width:${s}%;rotate:${r}deg">${body}</svg>`;
+const pine=(x,y,s,r=0)=>st(x,y,s,r,'0 0 70 90','<path d="M35 6L58 44H46L62 70H8L24 44H12z" fill="#5F7F63" stroke="#fff" stroke-width="5" stroke-linejoin="round"/><rect x="30" y="68" width="10" height="16" fill="#7a5233" stroke="#fff" stroke-width="4"/>');
+const peak=(x,y,s,r=0)=>st(x,y,s,r,'0 0 90 70','<path d="M5 62L32 18L46 38L58 26L85 62z" fill="#9DB8CE" stroke="#fff" stroke-width="5" stroke-linejoin="round"/><path d="M32 18L39 29L33 31L28 25z" fill="#fff"/>');
+const compass=(x,y,s,r=0)=>st(x,y,s,r,'0 0 80 80','<circle cx="40" cy="40" r="30" fill="#FBFAF6" stroke="#fff" stroke-width="6"/><circle cx="40" cy="40" r="26" fill="none" stroke="#25382E" stroke-width="2"/><path d="M40 18L46 40L40 62L34 40z" fill="#B4532A"/><path d="M40 40L46 40L40 62L34 40z" fill="#25382E"/>');
+const tent=(x,y,s,r=0)=>st(x,y,s,r,'0 0 90 70','<path d="M6 62L45 8L84 62z" fill="#E9B44C" stroke="#fff" stroke-width="5" stroke-linejoin="round"/><path d="M45 8L36 62H54z" fill="#B4532A"/>');
+const cloud=(x,y,s,r=0)=>st(x,y,s,r,'0 0 100 60','<path d="M24 52a16 16 0 0 1 2-32 22 22 0 0 1 42-4 18 18 0 0 1 8 36z" fill="#fff" stroke="#BFD8EA" stroke-width="3"/>');
+const stickers=[pine,compass,tent,peak,cloud];
+
+const polaroid=(p,x,y,w,a,r,d,tape,cap)=>`<div class="polaroid" style="left:${x}%;top:${y}%;width:${w}%;--a:${a};--r:${r}deg;--d:${d}s">
+  <span class="tape" style="background:${tape}"></span><div class="img">${scenes[p]}</div><div class="cap">${cap||''}</div></div>`;
+const stamp=(x,y,w,big,small)=>`<div class="stamp" style="left:${x}%;top:${y}%;width:${w}%"><b>${big}</b><span>${small}</span></div>`;
+const T=trip.tapes;
+
+/* ---------- pages ---------- */
+function cover(){
+  return `<div class="stage">${bg(1,true)}
+    <div class="abs" style="left:7%;top:10%;width:70%"><p class="kicker">a Quest by @${trip.handle}</p></div>
+    <div class="abs" style="left:7%;top:14.5%;width:88%"><h1 class="title">${trip.title}</h1></div>
+    <div class="abs" style="left:7%;top:31%;width:88%"><span class="meta">${trip.dateLabel} · ${trip.statsLabel}</span></div>
+    ${polaroid('lake',53,47,43,1,8,.35,T[1],'')}
+    ${polaroid('pines',4,49,43,1,-9,.25,T[2],'')}
+    ${polaroid('peaks',17,38,64,.95,-2,.1,T[0],`Welcome to ${trip.destination}`)}
+    ${stamp(68,82,26,'▲',trip.destination)}
+    ${cloud(72,8,20,0)}
+  </div>`;
+}
+function photoPage(p,i){
+  const n=p.photos.length;
+  const L={1:[[9,27,82,.82,-2]],2:[[5,25,62,.95,-4],[36,55,58,1.05,5]],3:[[4,25,58,1,-4],[44,40,52,.95,5],[8,64,46,1.1,-2]]}[n];
+  const kind=['forest','sunrise','night'][i%3];
+  return `<div class="stage ${kind==='night'?'night':''}">${bg(i+2,false,kind)}
+    <div class="abs" style="left:6%;top:8%;width:64%"><p class="kicker">${p.date}</p></div>
+    <div class="abs" style="left:6%;top:12.5%;width:64%"><h2 class="pageTitle">${p.title}</h2></div>
+    ${stamp(72,7,22,String(i+1).padStart(2,'0'),p.place)}
+    ${p.photos.map((ph,k)=>polaroid(ph.s,...L[k],.1+k*.15,T[k%3],ph.c)).join('')}
+    ${stickers[(i*2)%5](80,87,14,8)}
+    ${stickers[(i*2+1)%5](-1,86,14,-10)}
+  </div>`;
+}
+function route(){
+  const pts=trip.route, d=pts.map((p,k)=>(k?'L':'M')+p[1]*3.9+' '+p[2]*5+60).join(' ');
+  return `<div class="stage route">${bg(9,false)}
+    <div class="abs" style="left:7%;top:8%;width:80%"><p class="kicker">the trail</p></div>
+    <div class="abs" style="left:7%;top:12.5%;width:80%"><h2 class="pageTitle">Where I climbed</h2></div>
+    <svg class="r" viewBox="0 0 390 650" preserveAspectRatio="none">
+      <g fill="none" stroke="#5F7F63" stroke-opacity=".28" stroke-width="1.3"><ellipse cx="270" cy="150" rx="70" ry="38"/><ellipse cx="270" cy="150" rx="44" ry="23"/><ellipse cx="270" cy="150" rx="20" ry="10"/><ellipse cx="110" cy="300" rx="80" ry="40"/><ellipse cx="110" cy="300" rx="50" ry="25"/></g>
+      <path d="${d}" stroke="#B4532A" stroke-width="3.5" stroke-dasharray="3 9" stroke-linecap="round" fill="none"/>
+      ${pts.map((p,k)=>`<g transform="translate(${p[1]*3.9} ${p[2]*5+60})"><circle r="12" fill="#B4532A" stroke="#fff" stroke-width="4"/><text y="4.5" text-anchor="middle" fill="#fff" font-size="12" font-weight="800" font-family="Nunito">${k+1}</text><text y="-20" text-anchor="middle" fill="#25382E" font-size="14" font-weight="800" font-family="Nunito">${p[0]}</text></g>`).join('')}
+    </svg>
+    ${compass(78,50,15,10)}
+  </div>`;
+}
+
+/* ---------- player ---------- */
+const pages=[cover(),...trip.pages.map(photoPage),route()];
+const track=document.getElementById('track'),dots=document.getElementById('dots');
+pages.forEach(h=>{const s=document.createElement('section');s.className='page';s.innerHTML=h;track.appendChild(s);dots.appendChild(document.createElement('i'))});
+let cur=0;
+const prev=document.getElementById('prev'),next=document.getElementById('next');
+function sync(){
+  cur=Math.round(track.scrollLeft/track.clientWidth);
+  [...dots.children].forEach((d,k)=>d.classList.toggle('on',k===cur));
+  prev.disabled=cur===0; next.disabled=cur===pages.length-1;
+}
+const go=k=>track.children[Math.max(0,Math.min(pages.length-1,k))].scrollIntoView({behavior:'smooth',inline:'start',block:'nearest'});
+track.addEventListener('scroll',sync,{passive:true});
+prev.onclick=()=>go(cur-1); next.onclick=()=>go(cur+1);
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')go(cur+1);if(e.key==='ArrowLeft')go(cur-1)});
+sync();
+</script>
+</body>
+</html>
