@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OnQuest · Winter Quest template</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Caveat:wght@500;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--font-sans:'Nunito',system-ui,sans-serif;--font-hand:'Caveat',cursive}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--font-sans);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:12px}
+.note{font:700 13px var(--font-sans);opacity:.75;text-align:center}
+.player{position:relative;width:min(94vw,400px)}
+.track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:22px;box-shadow:0 10px 30px rgba(0,0,0,.28);background:var(--paper)}
+.track::-webkit-scrollbar{display:none}
+.page{flex:0 0 100%;min-width:0;scroll-snap-align:start;container-type:inline-size}
+.stage{position:relative;width:100%;aspect-ratio:9/15;overflow:hidden;background:var(--paper)}
+.abs{position:absolute}
+.bg{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+.bird{animation:glide 7s ease-in-out infinite alternate}
+@keyframes glide{from{transform:translate(0,0)}to{transform:translate(16px,-7px)}}
+.drift{animation:drift 16s ease-in-out infinite alternate}
+@keyframes drift{from{transform:translateX(-12px)}to{transform:translateX(14px)}}
+.fall{animation:fall 9s linear infinite}
+@keyframes fall{from{transform:translateY(-30px)}to{transform:translateY(40px)}}
+.meta{font:800 3.4cqw/1.3 var(--font-sans);letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+.light .meta{color:#fff;opacity:.92}
+.light .kicker{color:var(--lt-kick,#fff)}
+.light .title,.light .pageTitle{color:var(--lt-title,#fff);text-shadow:0 .5cqw 1.6cqw rgba(0,0,30,.35)}
+.polaroid{position:absolute;background:#fff;padding:2.4cqw 2.4cqw 0;box-shadow:0 1.2cqw 3cqw rgba(0,0,0,.3);transform:rotate(var(--r,0deg));animation:drop .6s cubic-bezier(.2,.9,.3,1.2) both;animation-delay:var(--d,0s);z-index:3;color:var(--ink)}
+.polaroid .img{width:100%;aspect-ratio:var(--a,1);overflow:hidden;background:#cde}
+.polaroid .img svg{display:block;width:100%;height:100%}
+.polaroid .cap{font:700 5.6cqw/1 var(--font-hand);text-align:center;padding:2cqw 1cqw 2.6cqw;min-height:9cqw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tape{position:absolute;top:-3.2cqw;left:50%;width:22cqw;height:6.4cqw;transform:translateX(-50%) rotate(-3deg);opacity:.92}
+@keyframes drop{from{opacity:0;transform:translateY(-4cqw) rotate(var(--r,0deg)) scale(1.06)}to{opacity:1;transform:rotate(var(--r,0deg))}}
+.stamp{position:absolute;z-index:4;border:.8cqw dashed var(--accent2);color:var(--accent2);border-radius:2cqw;text-align:center;padding:1.4cqw 1cqw;transform:rotate(6deg);background:rgba(255,255,255,.82)}
+.stamp b{display:block;font:700 8cqw/1 var(--font-display)}
+.stamp span{font:800 2.6cqw/1.1 var(--font-sans);letter-spacing:.12em;text-transform:uppercase}
+.sticker{position:absolute;z-index:6;filter:drop-shadow(0 .4cqw .4cqw rgba(0,0,0,.22))}
+.nav{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px}
+.nav button{width:40px;height:40px;border-radius:50%;border:0;background:var(--accent);color:#fff;font:800 18px var(--font-sans);cursor:pointer}
+.nav button:disabled{opacity:.35;cursor:default}
+.dots{display:flex;gap:7px}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--ink);opacity:.25;transition:.2s}
+.dots i.on{opacity:1;background:var(--accent2);transform:scale(1.25)}
+.route svg.r{position:absolute;inset:0;width:100%;height:100%;z-index:2}
+@media (prefers-reduced-motion:reduce){.polaroid,.bird,.drift,.fall{animation:none}}
+:root{--paper:#6DB9DE;--ink:#17426B;--accent:#3B8FC4;--accent2:#D8433A;--font-display:'Dancing Script',cursive;--lt-kick:#E4F6FF;--lt-title:#FFFFFF}
+body{background:linear-gradient(#9AD3EE,#E6F4FB 60%,#fff)}
+.kicker{font:700 7cqw/1 var(--font-display);color:#E4F6FF;margin:0}
+.title{margin:0;font:700 13.5cqw/1 var(--font-display);color:#fff;text-wrap:balance}
+.pageTitle{margin:0;font:700 10.5cqw/1.05 var(--font-display);color:#fff}
+.stamp{background:rgba(255,255,255,.92)}
+
+
+/* calm backgrounds so photos pop */
+.bg{filter:blur(1.1px) saturate(.72);transform:scale(1.03)}
+.stage:not(.light) .bg{opacity:.6}
+.stage:not(.light) .kicker{filter:brightness(.74) saturate(1.15)}
+.stage.light .bg{filter:blur(1.1px) saturate(.78) brightness(.93)}
+.polaroid{box-shadow:0 1.6cqw 4.2cqw rgba(15,25,35,.42),0 0 0 .25cqw rgba(0,0,0,.05)!important}
+
+/* softer text */
+.title,.pageTitle{zoom:.88}
+.kicker{zoom:.92}
+.meta{zoom:.94}
+.polaroid .cap{zoom:.93}
+.light .title,.light .pageTitle,.night .title,.night .pageTitle{text-shadow:0 .3cqw 1cqw rgba(0,0,30,.22)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<filter id="paper" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".7" numOctaves="3" seed="5"/><feColorMatrix values="0 0 0 0 .45  0 0 0 0 .40  0 0 0 0 .28  2.2 0 0 0 -1.0"/></filter>
+<radialGradient id="glare"><stop offset="0" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<linearGradient id="wSnow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7CC4E6"/><stop offset="1" stop-color="#4FA3D2"/></linearGradient>
+<linearGradient id="wDusk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8FA7E3"/><stop offset="1" stop-color="#D5DFF7"/></linearGradient>
+<linearGradient id="wNight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0F1F46"/><stop offset="1" stop-color="#2D4A86"/></linearGradient>
+<linearGradient id="wAur" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#071A33"/><stop offset="1" stop-color="#1D4F63"/></linearGradient>
+<filter id="blur9" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>
+
+</defs></svg>
+<div class="note">Winter Quest template — swipe, or use the arrows / ← → keys</div>
+<div class="player">
+  <div class="track" id="track"></div>
+  <div class="nav">
+    <button id="prev" aria-label="Previous page">‹</button>
+    <div class="dots" id="dots"></div>
+    <button id="next" aria-label="Next page">›</button>
+  </div>
+</div>
+<script>
+/* ---------- helpers ---------- */
+const rng=s=>()=>(s=(s*16807)%2147483647)/2147483647;
+const svgBg=inner=>`<svg class="bg" viewBox="0 0 390 650" preserveAspectRatio="none" aria-hidden="true">${inner}</svg>`;
+const grain=(op=.3)=>`<rect width="390" height="650" filter="url(#paper)" opacity="${op}"/>`;
+const cloud=(x,y,s,fill='#fff',op=1,extra='')=>`<path ${extra} transform="translate(${x} ${y}) scale(${s})" d="M-34 14a14 14 0 0 1 2-28 20 20 0 0 1 38-4 16 16 0 0 1 8 32z" fill="${fill}" opacity="${op}"/>`;
+const bird=(x,y,s,r=0,c='#4a4a4a')=>`<path transform="translate(${x} ${y}) rotate(${r}) scale(${s})" d="M-14 2Q-8 -8 0 0Q8 -8 14 2Q8 -3 0 4Q-8 -3 -14 2z" fill="${c}"/>`;
+const stars=(n,seed,maxY,c='#fff')=>{const r=rng(seed*7+1);return Array.from({length:n},()=>{const x=r()*390,y=r()*maxY,k=r();return `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${(.6+k*1.3).toFixed(1)}" fill="${c}" opacity="${(.4+k*.6).toFixed(2)}"/>`}).join('')};
+function ridge(base,amp,seed,fill,stroke,snow){
+  const r=rng(seed*97+13),pts=[];const n=9;
+  for(let k=0;k<=n;k++){const x=-10+410*k/n,high=k%2===1;pts.push([x,base-amp*(high?.55+.45*r():.1+.2*r())]);}
+  const d='M-10 650 '+pts.map(p=>`L${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ')+' L400 650Z';
+  const line='M'+pts.map(p=>`${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' L');
+  const caps=snow?pts.filter((p,k)=>k%2===1&&p[1]<base-amp*.7).map(([x,y])=>`<path d="M${x} ${y}L${x-10} ${y+17}L${x-3} ${y+13}L${x} ${y+21}L${x+4} ${y+13}L${x+10} ${y+17}Z" fill="#fff" opacity=".85"/>`).join(''):'';
+  return `<path d="${d}" fill="${fill}"/>${stroke?`<path d="${line}" stroke="${stroke}" stroke-width="1.6" fill="none" opacity=".5" stroke-linejoin="round"/>`:''}${caps}`;
+}
+const st=(x,y,s,r,vb,body)=>`<svg class="sticker" viewBox="${vb}" style="left:${x}%;top:${y}%;width:${s}%;rotate:${r}deg">${body}</svg>`;
+const polaroid=(p,x,y,w,a,r,d,tape,cap)=>`<div class="polaroid" style="left:${x}%;top:${y}%;width:${w}%;--a:${a};--r:${r}deg;--d:${d}s">
+  <span class="tape" style="background:${tape}"></span><div class="img">${THEME.scenes[p]}</div><div class="cap">${cap||''}</div></div>`;
+const stamp=(x,y,w,big,small)=>`<div class="stamp" style="left:${x}%;top:${y}%;width:${w}%"><b>${big}</b><span>${small}</span></div>`;
+
+/* ---------- theme ---------- */
+const flake=(x,y,s,op=1)=>`<g transform="translate(${x} ${y}) scale(${s})" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="${op}">${[0,60,120].map(a=>`<path d="M0 -14V14" transform="rotate(${a})"/>`).join('')}${[0,60,120,180,240,300].map(a=>`<path d="M-3.5 -9L0 -12.5L3.5 -9" fill="none" transform="rotate(${a})"/>`).join('')}</g>`;
+const snowfall=(n,seed,op=.8)=>{const r=rng(seed*5+9);return `<g class="fall">${Array.from({length:n},()=>`<circle cx="${(r()*390).toFixed(0)}" cy="${(r()*640).toFixed(0)}" r="${(1.2+r()*2.4).toFixed(1)}" fill="#fff" opacity="${(op*(.4+r()*.6)).toFixed(2)}"/>`).join('')}</g>`};
+const snowPine=(x,y,k)=>`<g transform="translate(${x} ${y}) scale(${k})"><path d="M0 -60L18 -34H8L22 -14H10L26 8H-26L-10 -14H-22L-8 -34H-18z" fill="#2F6B5E"/><path d="M0 -60L9 -46L0 -42L-9 -46zM-8 -34L8 -34L12 -26L-12 -26zM-10 -14L10 -14L14 -6L-14 -6z" fill="#fff" opacity=".92"/><rect x="-3" y="8" width="6" height="8" fill="#6b4a2b"/></g>`;
+const drift=(y,amp,fill,top)=>top?`<path d="M-10 -10H400V${y}Q300 ${y+amp} 200 ${y}T-10 ${y}Z" fill="${fill}"/>`:`<path d="M-10 660H400V${y}Q300 ${y-amp} 200 ${y}T-10 ${y}Z" fill="${fill}"/>`;
+const THEME={
+  kinds:['snow','forest','cabin','aurora','snow'], light:['snow','forest','cabin','aurora'], stampBig:'❄', ink:'#17426B', pin:'#D8433A',
+  trip:{title:'Let it<br>Snow',handle:'alok',dateLabel:'22–27 Dec',statsLabel:'6 days · 2 slopes',destination:'Gulmarg',
+    tapes:['rgba(255,255,255,.75)','rgba(216,67,58,.55)','rgba(120,190,230,.7)'],
+    pages:[
+      {date:'Day 1 · 22 Dec',title:'First snowfall',photos:[{s:'snowman',c:'meet Frosty'},{s:'penguin',c:'snow angel crew'}],place:'Srinagar'},
+      {date:'Day 2 · 23 Dec',title:'Cocoa & cabins',photos:[{s:'cabin',c:'our little cabin'},{s:'rink',c:'frozen pond'},{s:'snowman',c:'rosy cheeks'}],place:'Gulmarg'},
+      {date:'Day 3 · 24 Dec',title:'Under the lights',photos:[{s:'aurora',c:'sky on fire'}],place:'Sonamarg'}],
+    route:[['Srinagar',22,74],['Gulmarg',40,54],['Pahalgam',62,40],['Sonamarg',78,20]],routeKicker:'the way',routeTitle:'Snowy trail'},
+  scenes:{
+    snowman:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="#8CCBEA"/><path d="M0 74Q30 66 60 74T100 70V100H0z" fill="#fff"/><circle cx="50" cy="66" r="17" fill="#fff" stroke="#d6ecf7" stroke-width="1.5"/><circle cx="50" cy="44" r="12" fill="#fff" stroke="#d6ecf7" stroke-width="1.5"/><path d="M38 36q12-12 24 0z" fill="#D8433A"/><circle cx="50" cy="26" r="3" fill="#fff"/><circle cx="46" cy="43" r="1.3" fill="#222"/><circle cx="54" cy="43" r="1.3" fill="#222"/><path d="M50 46l7 2-7 1z" fill="#FF8A3D"/><path d="M40 54q10 5 20 0v5q-10 5-20 0z" fill="#D8433A"/><circle cx="50" cy="64" r="1.4" fill="#222"/><circle cx="50" cy="71" r="1.4" fill="#222"/><g fill="#fff" opacity=".8"><circle cx="14" cy="16" r="1.4"/><circle cx="80" cy="22" r="1.6"/><circle cx="30" cy="40" r="1.2"/><circle cx="88" cy="50" r="1.4"/></g></svg>`,
+    penguin:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="#7CC4E6"/><path d="M0 72Q30 64 60 72T100 68V100H0z" fill="#fff"/><ellipse cx="50" cy="62" rx="17" ry="22" fill="#2b2b3a"/><ellipse cx="50" cy="68" rx="11" ry="15" fill="#fff"/><circle cx="44" cy="48" r="2" fill="#fff"/><circle cx="56" cy="48" r="2" fill="#fff"/><circle cx="44" cy="48" r=".9" fill="#222"/><circle cx="56" cy="48" r=".9" fill="#222"/><path d="M46 52l4 4 4-4z" fill="#FF8A3D"/><path d="M34 56q16 10 32 0v5q-16 10-32 0z" fill="#FF6B3D"/><path d="M33 62Q24 60 28 72" stroke="#2b2b3a" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M67 62Q76 60 72 72" stroke="#2b2b3a" stroke-width="5" fill="none" stroke-linecap="round"/></svg>`,
+    cabin:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="#1A2B57"/><g fill="#fff"><circle cx="12" cy="12" r="1"/><circle cx="40" cy="20" r="1.2"/><circle cx="70" cy="10" r="1"/><circle cx="88" cy="26" r="1.2"/></g><path d="M0 76Q30 68 60 76T100 72V100H0z" fill="#E9F3FA"/><rect x="28" y="52" width="44" height="28" fill="#7B4A2B"/><path d="M22 54L50 32L78 54z" fill="#F4F8FB"/><rect x="36" y="60" width="12" height="12" fill="#FFC857"/><rect x="54" y="60" width="10" height="20" fill="#4A2A12"/><circle cx="50" cy="66" r="14" fill="#FFC857" opacity=".18"/><path d="M12 80l4-20 4 20zM84 80l4-22 4 22z" fill="#2F6B5E"/></svg>`,
+    rink:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="#B9D7F2"/><path d="M0 40L26 22l16 18 18-14 40 20V100H0z" fill="#9AB6E0"/><path d="M0 60h100v40H0z" fill="#fff"/><ellipse cx="50" cy="76" rx="38" ry="14" fill="#CFEFFB" stroke="#9AD3EE" stroke-width="1.5"/><path d="M26 76q24-8 48 0" stroke="#fff" stroke-width="1.4" fill="none"/><path d="M34 80q16 6 32-2" stroke="#fff" stroke-width="1.2" fill="none"/><path d="M14 66l5-20 5 20zM80 68l5-22 5 22z" fill="#2F6B5E"/></svg>`,
+    aurora:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="#06192F"/><g fill="#fff"><circle cx="10" cy="10" r=".8"/><circle cx="30" cy="22" r=".8"/><circle cx="60" cy="8" r=".8"/><circle cx="86" cy="16" r=".8"/></g><path d="M0 34C25 16 50 44 100 20V44C60 66 30 34 0 56z" fill="#3FE0A0" opacity=".55"/><path d="M0 46C30 28 56 58 100 34V52C64 74 34 46 0 64z" fill="#8F6BFF" opacity=".45"/><path d="M-5 100L26 62l14 16 16-24 49 46z" fill="#E7F1F8"/><path d="M-5 100V88l40-8 30 8 40-6v18z" fill="#fff"/></svg>`
+  },
+  stickers:[
+    (x,y,s,r=0)=>st(x,y,s,r,'-20 -20 40 40','<g stroke="#fff" stroke-width="3.2" stroke-linecap="round" fill="none">'+[0,60,120].map(a=>`<path d="M0 -16V16" transform="rotate(${a})"/>`).join('')+'</g><circle r="3.5" fill="#fff"/>'),
+    (x,y,s,r=0)=>st(x,y,s,r,'0 0 80 80','<path d="M14 54Q14 18 40 18T66 54z" fill="#D8433A" stroke="#fff" stroke-width="4"/><rect x="10" y="50" width="60" height="12" rx="6" fill="#fff"/><circle cx="40" cy="14" r="7" fill="#fff"/><path d="M22 36h36M20 44h40" stroke="#fff" stroke-width="2.4" opacity=".7"/>'),
+    (x,y,s,r=0)=>st(x,y,s,r,'-30 -64 60 90','<path d="M0 -60L18 -34H8L22 -14H10L26 8H-26L-10 -14H-22L-8 -34H-18z" fill="#2F6B5E" stroke="#fff" stroke-width="4" stroke-linejoin="round"/><path d="M0 -58L8 -46L0 -42L-8 -46z" fill="#fff"/>'),
+    (x,y,s,r=0)=>st(x,y,s,r,'0 0 80 100','<circle cx="40" cy="68" r="22" fill="#fff" stroke="#BFE0F2" stroke-width="3"/><circle cx="40" cy="36" r="16" fill="#fff" stroke="#BFE0F2" stroke-width="3"/><path d="M26 28q14-14 28 0z" fill="#D8433A"/><circle cx="35" cy="36" r="1.8" fill="#222"/><circle cx="45" cy="36" r="1.8" fill="#222"/><path d="M40 40l9 3-9 2z" fill="#FF8A3D"/><path d="M26 48q14 7 28 0v6q-14 7-28 0z" fill="#D8433A"/>'),
+    (x,y,s,r=0)=>st(x,y,s,r,'0 0 80 80','<path d="M40 8l9 20 22 3-16 15 4 22-19-11-19 11 4-22L9 31l22-3z" fill="#FFD45E" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>')
+  ],
+  bg(k,seed){
+    const r=rng(seed*3+1);
+    if(k==='snow')return svgBg(`<rect width="390" height="650" fill="url(#wSnow)"/>${grain(.12)}${drift(60,34,'#CFE9F6',true)}${drift(52,34,'#fff',true)}${drift(615,34,'#CFE9F6',false)}${drift(622,34,'#fff',false)}${flake(372,178,1.3)}${flake(345,250,1.5,.9)}${flake(70,430,1.1,.8)}${flake(330,500,1.2,.85)}${flake(25,296,.9,.8)}${snowfall(46,seed)}`);
+    if(k==='forest')return svgBg(`<rect width="390" height="650" fill="url(#wDusk)"/>${grain(.1)}${ridge(500,170,seed,'#B3C4EE',null,true)}${ridge(560,120,seed+2,'#8EA7D8',null,false)}${Array.from({length:12},(_,i)=>snowPine(14+i*34+r()*10,600+r()*30,.9+r()*.5)).join('')}${drift(618,26,'#fff',false)}${flake(60,200,1.2,.9)}${flake(320,160,1,.9)}${snowfall(40,seed)}`);
+    if(k==='cabin')return svgBg(`<rect width="390" height="650" fill="url(#wNight)"/>${stars(60,seed,360)}<circle cx="200" cy="34" r="50" fill="url(#glare)" opacity=".45"/><circle cx="200" cy="34" r="16" fill="#FFF3C4"/>${ridge(560,130,seed,'#3C5A92',null,true)}${drift(590,24,'#E9F3FA',false)}<g transform="translate(250 590)"><rect x="-50" y="-34" width="100" height="40" fill="#5E3A22"/><path d="M-60 -32L0 -78L60 -32z" fill="#F4F8FB"/><rect x="-34" y="-22" width="22" height="20" fill="#FFC857"/><rect x="14" y="-26" width="18" height="32" fill="#3a2314"/><circle cx="-23" cy="-12" r="34" fill="#FFC857" opacity=".16"/></g>${snowPine(60,610,1.4)}${snowPine(110,620,1)}${snowfall(54,seed,.9)}`);
+    return svgBg(`<rect width="390" height="650" fill="url(#wAur)"/>${stars(70,seed,330)}<g filter="url(#blur9)"><path d="M-20 230C90 120 200 300 410 160V260C220 380 100 230 -20 340z" fill="#3FE0A0" opacity=".6"/><path d="M-20 300C110 190 220 350 410 230V300C240 430 110 290 -20 390z" fill="#8F6BFF" opacity=".5"/></g>${ridge(570,160,seed,'#DCE9F3',null,false)}${ridge(610,110,seed+2,'#fff',null,false)}${snowPine(70,628,1.3)}${snowPine(330,630,1.5)}${snowfall(30,seed,.7)}`);
+  }
+};
+
+
+/* ---------- pages ---------- */
+const trip=THEME.trip, T=trip.tapes, S=THEME.stickers;
+const cls=k=>THEME.light.includes(k)?'stage light':'stage';
+function cover(){
+  const k=THEME.kinds[0];
+  return `<div class="${cls(k)}">${THEME.bg(k,1)}
+    <div class="abs" style="left:7%;top:10%;width:70%"><p class="kicker">a Quest by @${trip.handle}</p></div>
+    <div class="abs" style="left:7%;top:14.5%;width:88%"><h1 class="title">${trip.title}</h1></div>
+    <div class="abs" style="left:7%;top:31%;width:88%"><span class="meta">${trip.dateLabel} · ${trip.statsLabel}</span></div>
+    ${THEME.single?'':polaroid(trip.pages[1].photos[0].s,53,47,43,1,8,.35,T[1],'')+polaroid(trip.pages[0].photos[1].s,4,49,43,1,-9,.25,T[2],'')}
+    ${THEME.single?polaroid(trip.pages[0].photos[0].s,14,47,60,.95,-2,.1,T[0],`Welcome to ${trip.destination}`):polaroid(trip.pages[0].photos[0].s,17,38,64,.95,-2,.1,T[0],`Welcome to ${trip.destination}`)}
+    ${THEME.single?stamp(70,88,24,THEME.stampBig,trip.destination):stamp(68,82,26,THEME.stampBig,trip.destination)}
+    ${THEME.cs===false?'':THEME.cs?S[THEME.cs[0]](THEME.cs[1],THEME.cs[2],THEME.cs[3],0):S[3](72,6,20,0)}
+  </div>`;
+}
+function photoPage(p,i){
+  const n=p.photos.length, k=THEME.kinds[i+1];
+  const L={1:[[9,27,82,.82,-2]],2:[[5,25,62,.95,-4],[36,55,58,1.05,5]],3:[[4,25,58,1,-4],[44,40,52,.95,5],[8,64,46,1.1,-2]]}[n];
+  return `<div class="${cls(k)}">${THEME.bg(k,i+2)}
+    <div class="abs" style="left:6%;top:8%;width:64%"><p class="kicker">${p.date}</p></div>
+    <div class="abs" style="left:6%;top:12.5%;width:64%"><h2 class="pageTitle">${p.title}</h2></div>
+    ${stamp(72,7,22,String(i+1).padStart(2,'0'),p.place)}
+    ${p.photos.map((ph,j)=>polaroid(ph.s,...L[j],.1+j*.15,T[j%3],ph.c)).join('')}
+    ${S[(i*2)%5](80,87,14,8)}
+    ${S[(i*2+1)%5](-1,86,14,-10)}
+  </div>`;
+}
+function route(){
+  const k=THEME.kinds[4], lt=THEME.light.includes(k);
+  const pts=trip.route, d=pts.map((p,j)=>(j?'L':'M')+p[1]*3.9+' '+(p[2]*5+60)).join(' ');
+  return `<div class="${cls(k)} route">${THEME.bg(k,9)}
+    <div class="abs" style="left:7%;top:8%;width:80%"><p class="kicker">${trip.routeKicker}</p></div>
+    <div class="abs" style="left:7%;top:12.5%;width:80%"><h2 class="pageTitle">${trip.routeTitle}</h2></div>
+    <svg class="r" viewBox="0 0 390 650" preserveAspectRatio="none">
+      <path d="${d}" stroke="${THEME.pin}" stroke-width="3.5" stroke-dasharray="3 9" stroke-linecap="round" fill="none"/>
+      ${pts.map((p,j)=>`<g transform="translate(${p[1]*3.9} ${p[2]*5+60})"><circle r="12" fill="${THEME.pin}" stroke="#fff" stroke-width="4"/><text y="4.5" text-anchor="middle" fill="#fff" font-size="12" font-weight="800" font-family="Nunito">${j+1}</text><text y="-20" text-anchor="middle" fill="${lt?'#fff':THEME.ink}" font-size="14" font-weight="800" font-family="Nunito">${p[0]}</text></g>`).join('')}
+    </svg>
+    ${S[0](78,50,15,10)}
+  </div>`;
+}
+
+/* ---------- player ---------- */
+const pages=[cover(),...trip.pages.map(photoPage),route()];
+const track=document.getElementById('track'),dots=document.getElementById('dots');
+pages.forEach(h=>{const s=document.createElement('section');s.className='page';s.innerHTML=h;track.appendChild(s);dots.appendChild(document.createElement('i'))});
+let cur=0;
+const prev=document.getElementById('prev'),next=document.getElementById('next');
+function sync(){
+  cur=Math.round(track.scrollLeft/track.clientWidth);
+  [...dots.children].forEach((d,k)=>d.classList.toggle('on',k===cur));
+  prev.disabled=cur===0; next.disabled=cur===pages.length-1;
+}
+const go=k=>track.children[Math.max(0,Math.min(pages.length-1,k))].scrollIntoView({behavior:'smooth',inline:'start',block:'nearest'});
+track.addEventListener('scroll',sync,{passive:true});
+prev.onclick=()=>go(cur-1); next.onclick=()=>go(cur+1);
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')go(cur+1);if(e.key==='ArrowLeft')go(cur-1)});
+sync();
+</script>
+</body>
+</html>

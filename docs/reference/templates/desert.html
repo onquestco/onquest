@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OnQuest · Desert Quest template</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Caveat:wght@500;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--font-sans:'Nunito',system-ui,sans-serif;--font-hand:'Caveat',cursive}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--font-sans);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:12px}
+.note{font:700 13px var(--font-sans);opacity:.75;text-align:center}
+.player{position:relative;width:min(94vw,400px)}
+.track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:22px;box-shadow:0 10px 30px rgba(0,0,0,.28);background:var(--paper)}
+.track::-webkit-scrollbar{display:none}
+.page{flex:0 0 100%;min-width:0;scroll-snap-align:start;container-type:inline-size}
+.stage{position:relative;width:100%;aspect-ratio:9/15;overflow:hidden;background:var(--paper)}
+.abs{position:absolute}
+.bg{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+.bird{animation:glide 7s ease-in-out infinite alternate}
+@keyframes glide{from{transform:translate(0,0)}to{transform:translate(16px,-7px)}}
+.drift{animation:drift 16s ease-in-out infinite alternate}
+@keyframes drift{from{transform:translateX(-12px)}to{transform:translateX(14px)}}
+.fall{animation:fall 9s linear infinite}
+@keyframes fall{from{transform:translateY(-30px)}to{transform:translateY(40px)}}
+.meta{font:800 3.4cqw/1.3 var(--font-sans);letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+.light .meta{color:#fff;opacity:.92}
+.light .kicker{color:var(--lt-kick,#fff)}
+.light .title,.light .pageTitle{color:var(--lt-title,#fff);text-shadow:0 .5cqw 1.6cqw rgba(0,0,30,.35)}
+.polaroid{position:absolute;background:#fff;padding:2.4cqw 2.4cqw 0;box-shadow:0 1.2cqw 3cqw rgba(0,0,0,.3);transform:rotate(var(--r,0deg));animation:drop .6s cubic-bezier(.2,.9,.3,1.2) both;animation-delay:var(--d,0s);z-index:3;color:var(--ink)}
+.polaroid .img{width:100%;aspect-ratio:var(--a,1);overflow:hidden;background:#cde}
+.polaroid .img svg{display:block;width:100%;height:100%}
+.polaroid .cap{font:700 5.6cqw/1 var(--font-hand);text-align:center;padding:2cqw 1cqw 2.6cqw;min-height:9cqw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tape{position:absolute;top:-3.2cqw;left:50%;width:22cqw;height:6.4cqw;transform:translateX(-50%) rotate(-3deg);opacity:.92}
+@keyframes drop{from{opacity:0;transform:translateY(-4cqw) rotate(var(--r,0deg)) scale(1.06)}to{opacity:1;transform:rotate(var(--r,0deg))}}
+.stamp{position:absolute;z-index:4;border:.8cqw dashed var(--accent2);color:var(--accent2);border-radius:2cqw;text-align:center;padding:1.4cqw 1cqw;transform:rotate(6deg);background:rgba(255,255,255,.82)}
+.stamp b{display:block;font:700 8cqw/1 var(--font-display)}
+.stamp span{font:800 2.6cqw/1.1 var(--font-sans);letter-spacing:.12em;text-transform:uppercase}
+.sticker{position:absolute;z-index:6;filter:drop-shadow(0 .4cqw .4cqw rgba(0,0,0,.22))}
+.nav{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px}
+.nav button{width:40px;height:40px;border-radius:50%;border:0;background:var(--accent);color:#fff;font:800 18px var(--font-sans);cursor:pointer}
+.nav button:disabled{opacity:.35;cursor:default}
+.dots{display:flex;gap:7px}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--ink);opacity:.25;transition:.2s}
+.dots i.on{opacity:1;background:var(--accent2);transform:scale(1.25)}
+.route svg.r{position:absolute;inset:0;width:100%;height:100%;z-index:2}
+@media (prefers-reduced-motion:reduce){.polaroid,.bird,.drift,.fall{animation:none}}
+:root{--paper:#EAD7AC;--ink:#6B3F26;--accent:#A5663F;--accent2:#B4532A;--font-display:'Poppins',sans-serif;--lt-kick:#F6C99B;--lt-title:#FFF3D6}
+body{background:linear-gradient(#EAD7AC,#F2E6C6 55%,#D8A67A)}
+.kicker{font:600 3.8cqw/1 var(--font-display);letter-spacing:.3em;text-transform:uppercase;color:var(--accent2);margin:0}
+.title{margin:0;font:700 12cqw/1.04 var(--font-display);color:#8A4E2C;text-wrap:balance}
+.pageTitle{margin:0;font:700 7.4cqw/1.1 var(--font-display);color:#8A4E2C}
+.stamp{background:rgba(250,240,214,.85)}
+
+
+/* calm backgrounds so photos pop */
+.bg{filter:blur(1.1px) saturate(.72);transform:scale(1.03)}
+.stage:not(.light) .bg{opacity:.6}
+.stage:not(.light) .kicker{filter:brightness(.74) saturate(1.15)}
+.stage.light .bg{filter:blur(1.1px) saturate(.78) brightness(.93)}
+.polaroid{box-shadow:0 1.6cqw 4.2cqw rgba(15,25,35,.42),0 0 0 .25cqw rgba(0,0,0,.05)!important}
+
+/* softer text */
+.title,.pageTitle{zoom:.88}
+.kicker{zoom:.92}
+.meta{zoom:.94}
+.polaroid .cap{zoom:.93}
+.light .title,.light .pageTitle,.night .title,.night .pageTitle{text-shadow:0 .3cqw 1cqw rgba(0,0,30,.22)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<filter id="paper" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".7" numOctaves="3" seed="5"/><feColorMatrix values="0 0 0 0 .45  0 0 0 0 .40  0 0 0 0 .28  2.2 0 0 0 -1.0"/></filter>
+<radialGradient id="glare"><stop offset="0" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<linearGradient id="dSun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE6A8"/><stop offset="1" stop-color="#F6BE72"/></linearGradient>
+<linearGradient id="dDusk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F3D5BC"/><stop offset="1" stop-color="#DE9577"/></linearGradient>
+<linearGradient id="dNight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#171F4F"/><stop offset=".6" stop-color="#3A3F7A"/><stop offset="1" stop-color="#6C5A8C"/></linearGradient>
+
+</defs></svg>
+<div class="note">Desert Quest template — swipe, or use the arrows / ← → keys</div>
+<div class="player">
+  <div class="track" id="track"></div>
+  <div class="nav">
+    <button id="prev" aria-label="Previous page">‹</button>
+    <div class="dots" id="dots"></div>
+    <button id="next" aria-label="Next page">›</button>
+  </div>
+</div>
+<script>
+/* ---------- helpers ---------- */
+const rng=s=>()=>(s=(s*16807)%2147483647)/2147483647;
+const svgBg=inner=>`<svg class="bg" viewBox="0 0 390 650" preserveAspectRatio="none" aria-hidden="true">${inner}</svg>`;
+const grain=(op=.3)=>`<rect width="390" height="650" filter="url(#paper)" opacity="${op}"/>`;
+const cloud=(x,y,s,fill='#fff',op=1,extra='')=>`<path ${extra} transform="translate(${x} ${y}) scale(${s})" d="M-34 14a14 14 0 0 1 2-28 20 20 0 0 1 38-4 16 16 0 0 1 8 32z" fill="${fill}" opacity="${op}"/>`;
+const bird=(x,y,s,r=0,c='#4a4a4a')=>`<path transform="translate(${x} ${y}) rotate(${r}) scale(${s})" d="M-14 2Q-8 -8 0 0Q8 -8 14 2Q8 -3 0 4Q-8 -3 -14 2z" fill="${c}"/>`;
+const stars=(n,seed,maxY,c='#fff')=>{const r=rng(seed*7+1);return Array.from({length:n},()=>{const x=r()*390,y=r()*maxY,k=r();return `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${(.6+k*1.3).toFixed(1)}" fill="${c}" opacity="${(.4+k*.6).toFixed(2)}"/>`}).join('')};
+function ridge(base,amp,seed,fill,stroke,snow){
+  const r=rng(seed*97+13),pts=[];const n=9;
+  for(let k=0;k<=n;k++){const x=-10+410*k/n,high=k%2===1;pts.push([x,base-amp*(high?.55+.45*r():.1+.2*r())]);}
+  const d='M-10 650 '+pts.map(p=>`L${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ')+' L400 650Z';
+  const line='M'+pts.map(p=>`${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' L');
+  const caps=snow?pts.filter((p,k)=>k%2===1&&p[1]<base-amp*.7).map(([x,y])=>`<path d="M${x} ${y}L${x-10} ${y+17}L${x-3} ${y+13}L${x} ${y+21}L${x+4} ${y+13}L${x+10} ${y+17}Z" fill="#fff" opacity=".85"/>`).join(''):'';
+  return `<path d="${d}" fill="${fill}"/>${stroke?`<path d="${line}" stroke="${stroke}" stroke-width="1.6" fill="none" opacity=".5" stroke-linejoin="round"/>`:''}${caps}`;
+}
+const st=(x,y,s,r,vb,body)=>`<svg class="sticker" viewBox="${vb}" style="left:${x}%;top:${y}%;width:${s}%;rotate:${r}deg">${body}</svg>`;
+const polaroid=(p,x,y,w,a,r,d,tape,cap)=>`<div class="polaroid" style="left:${x}%;top:${y}%;width:${w}%;--a:${a};--r:${r}deg;--d:${d}s">
+  <span class="tape" style="background:${tape}"></span><div class="img">${THEME.scenes[p]}</div><div class="cap">${cap||''}</div></div>`;
+const stamp=(x,y,w,big,small)=>`<div class="stamp" style="left:${x}%;top:${y}%;width:${w}%"><b>${big}</b><span>${small}</span></div>`;
+
+/* ---------- theme ---------- */
+const dune=(y,amp,fill,o=0)=>`<path d="M-10 ${y}C${60+o} ${y-amp},${140+o} ${y-amp},${210+o} ${y}S340 ${y+amp*.3} 400 ${y-amp*.6}V650H-10Z" fill="${fill}"/>`;
+const sparkle=(x,y,s,c='#8A4E2C',op=1)=>`<path transform="translate(${x} ${y}) scale(${s})" d="M0 -12Q2 -2 12 0Q2 2 0 12Q-2 2 -12 0Q-2 -2 0 -12z" fill="${c}" opacity="${op}"/>`;
+const moon=(x,y,s,c='#7A4A2E')=>`<path transform="translate(${x} ${y}) scale(${s})" d="M10 -20A22 22 0 1 0 10 20A17 17 0 1 1 10 -20z" fill="${c}"/>`;
+const palm=(x,y,s,trunk='#3b2a1a',leaf='#2F3B22')=>`<g transform="translate(${x} ${y}) scale(${s})"><path d="M0 0C4 -40 2 -70 8 -104" stroke="${trunk}" stroke-width="6" fill="none" stroke-linecap="round"/><g fill="${leaf}" transform="translate(8 -104)"><path d="M0 0C-16 -18 -38 -16 -52 -2C-34 -6 -16 -6 0 0z"/><path d="M0 0C16 -18 38 -16 52 -2C34 -6 16 -6 0 0z"/><path d="M0 0C-8 -26 2 -40 20 -44C12 -30 8 -16 0 0z"/><path d="M0 0C-24 -4 -40 8 -44 24C-28 12 -14 8 0 0z"/><path d="M0 0C22 -4 38 8 42 24C26 12 12 8 0 0z"/></g></g>`;
+const camel=(x,y,s,c)=>`<g transform="translate(${x} ${y}) scale(${s})" fill="${c}"><path d="M-22 -14C-16 -26 -8 -26 -2 -14C4 -24 10 -22 12 -12L20 -26L24 -24L18 -8C20 0 16 6 14 6V22H10V8H-4V22H-8V8H-16V22H-20V4C-24 0 -24 -8 -22 -14z"/></g>`;
+const cactus=(x,y,s,c)=>`<g transform="translate(${x} ${y}) scale(${s})" fill="${c}"><rect x="-4" y="-40" width="8" height="40" rx="4"/><path d="M-4 -18H-12A4 4 0 0 1 -16 -22V-30H-12V-22H-4zM4 -24H12A4 4 0 0 0 16 -28V-36H12V-28H4z"/></g>`;
+const THEME={
+  cs:[1,76,5,14], kinds:['dunes','sun','dusk','night','dunes'], light:['night'], stampBig:'☾', ink:'#6B3F26', pin:'#B4532A',
+  trip:{title:'Into the<br>Dunes',handle:'alok',dateLabel:'2–6 Feb',statsLabel:'5 days · 1 camel',destination:'Jaisalmer',
+    tapes:['rgba(217,170,120,.85)','rgba(180,83,42,.5)','rgba(250,240,214,.85)'],
+    pages:[
+      {date:'Day 1 · 2 Feb',title:'Camel caravan',photos:[{s:'caravan',c:'slow & steady'},{s:'oasis',c:'a little oasis'}],place:'Sam'},
+      {date:'Day 2 · 3 Feb',title:'Golden hour',photos:[{s:'dunes',c:'endless sand'},{s:'oasis',c:'noon shade'},{s:'caravan',c:'long shadows'}],place:'Khuri'},
+      {date:'Day 3 · 4 Feb',title:'Stars over Sam',photos:[{s:'camp',c:'desert camp'}],place:'Sam Dunes'}],
+    route:[['Jodhpur',22,74],['Pokaran',40,54],['Jaisalmer',62,40],['Sam Dunes',78,20]],routeKicker:'the trail',routeTitle:'Across the sand'},
+  scenes:{
+    caravan:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="#F3D5BC"/><circle cx="74" cy="30" r="10" fill="#FFE2B0"/><path d="M0 70Q30 56 60 68T100 62V100H0z" fill="#C77C62"/><path d="M0 84Q40 72 100 82V100H0z" fill="#A85C4A"/><g fill="#3b2a2a">${[[24,68,.55],[48,66,.55],[72,64,.55]].map(([x,y,k])=>`<g transform="translate(${x} ${y}) scale(${k})"><path d="M-22 -14C-16 -26 -8 -26 -2 -14C4 -24 10 -22 12 -12L20 -26L24 -24L18 -8C20 0 16 6 14 6V22H10V8H-4V22H-8V8H-16V22H-20V4C-24 0 -24 -8 -22 -14z"/></g>`).join('')}</g></svg>`,
+    oasis:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="#FBE6A8"/><path d="M0 60Q30 50 60 58T100 54V100H0z" fill="#F2C277"/><ellipse cx="50" cy="76" rx="30" ry="9" fill="#5FB7C4"/><ellipse cx="50" cy="75" rx="20" ry="4" fill="#A6E0E6" opacity=".7"/><path d="M26 74C28 56 26 44 30 30" stroke="#3b2a1a" stroke-width="3" fill="none"/><g fill="#3F7D45"><path d="M30 30C20 22 12 24 6 32C16 28 24 28 30 30z"/><path d="M30 30C40 22 48 24 54 32C44 28 36 28 30 30z"/><path d="M30 30C26 18 32 12 40 12C36 20 34 24 30 30z"/></g><path d="M70 74C70 62 72 54 74 46" stroke="#3b2a1a" stroke-width="2.4" fill="none"/><g fill="#3F7D45"><path d="M74 46C66 40 60 42 56 48C64 45 70 45 74 46z"/><path d="M74 46C82 40 88 42 92 48C84 45 78 45 74 46z"/></g></svg>`,
+    dunes:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="url(#dSun)"/><circle cx="66" cy="34" r="16" fill="#F28C3B"/><circle cx="66" cy="34" r="24" fill="none" stroke="#F6B25C" stroke-width="1.4" opacity=".6"/><path d="M-5 68Q30 40 62 62T105 56V100H-5z" fill="#E5A458"/><path d="M-5 84Q36 62 74 80T105 74V100H-5z" fill="#C97F45"/></svg>`,
+    camp:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="url(#dNight)"/><g fill="#fff"><circle cx="12" cy="12" r="1"/><circle cx="32" cy="24" r="1.2"/><circle cx="58" cy="10" r="1"/><circle cx="82" cy="22" r="1.3"/><circle cx="46" cy="32" r=".9"/></g><path transform="translate(78 16) scale(.4)" d="M10 -20A22 22 0 1 0 10 20A17 17 0 1 1 10 -20z" fill="#FFF3C4"/><path d="M-5 74Q30 60 60 72T105 66V100H-5z" fill="#2A2E62"/><path d="M-5 88Q36 78 105 86V100H-5z" fill="#1B2048"/><path d="M26 86L44 56 62 86z" fill="#E9B44C" stroke="#FFF3C4" stroke-width="1.6" stroke-linejoin="round"/><path d="M44 56L38 86H50z" fill="#B4532A"/><path d="M76 90q-5-9 0-17 2 7 7 7-2 7-7 10z" fill="#FF8A3D"/></svg>`
+  },
+  stickers:[
+    (x,y,s,r=0)=>st(x,y,s,r,'-24 -24 48 48','<path d="M10 -20A22 22 0 1 0 10 20A17 17 0 1 1 10 -20z" fill="#7A4A2E" stroke="#FFF3D6" stroke-width="3.5" stroke-linejoin="round"/>'),
+    (x,y,s,r=0)=>st(x,y,s,r,'-16 -16 32 32','<path d="M0 -12Q2 -2 12 0Q2 2 0 12Q-2 2 -12 0Q-2 -2 0 -12z" fill="#B4532A" stroke="#FFF3D6" stroke-width="2.4" stroke-linejoin="round"/>'),
+    (x,y,s,r=0)=>st(x,y,s,r,'-60 -120 120 130',`<path d="M0 0C4 -40 2 -70 8 -104" stroke="#5a3d22" stroke-width="7" fill="none" stroke-linecap="round"/><g fill="#3F7D45" stroke="#FFF3D6" stroke-width="3" stroke-linejoin="round" transform="translate(8 -104)"><path d="M0 0C-16 -18 -38 -16 -52 -2C-34 -6 -16 -6 0 0z"/><path d="M0 0C16 -18 38 -16 52 -2C34 -6 16 -6 0 0z"/><path d="M0 0C-8 -26 2 -40 20 -44C12 -30 8 -16 0 0z"/></g>`),
+    (x,y,s,r=0)=>st(x,y,s,r,'-20 -44 40 48','<g fill="#5E8C4A" stroke="#FFF3D6" stroke-width="3" stroke-linejoin="round"><rect x="-5" y="-40" width="10" height="40" rx="5"/><path d="M-5 -18H-12A4 4 0 0 1 -16 -22V-30H-10V-24H-5zM5 -24H12A4 4 0 0 0 16 -28V-36H10V-30H5z"/></g>'),
+    (x,y,s,r=0)=>st(x,y,s,r,'-40 -40 80 80','<g stroke="#FFF3D6" stroke-width="3" fill="#F28C3B"><circle r="18"/></g><g stroke="#F6B25C" stroke-width="4" stroke-linecap="round">'+Array.from({length:8},(_,k)=>{const a=k*Math.PI/4;return `<path d="M${(Math.cos(a)*24).toFixed(1)} ${(Math.sin(a)*24).toFixed(1)}L${(Math.cos(a)*33).toFixed(1)} ${(Math.sin(a)*33).toFixed(1)}"/>`}).join('')+'</g>')
+  ],
+  bg(k,seed){
+    if(k==='dunes')return svgBg(`<rect width="390" height="650" fill="#EAD7AC"/>${grain(.3)}${moon(332,150,1.3)}${sparkle(320,330,1.4)}${sparkle(350,370,.9)}${sparkle(60,420,.8)}${dune(560,70,'#D3A57C',40)}${dune(595,60,'#B9784F',-30)}${dune(630,40,'#CB9A72',10)}${palm(46,625,.95)}`);
+    if(k==='sun')return svgBg(`<rect width="390" height="650" fill="url(#dSun)"/>${grain(.25)}<circle cx="280" cy="330" r="130" fill="none" stroke="#F6B25C" stroke-width="2" opacity=".5"/><circle cx="280" cy="330" r="100" fill="none" stroke="#F6B25C" stroke-width="2" opacity=".6"/><circle cx="280" cy="330" r="70" fill="#F28C3B"/>${sparkle(60,200,1.2)}${sparkle(90,250,.7)}${sparkle(340,150,1)}${dune(540,80,'#F2C277',30)}${dune(585,70,'#E5A458',-20)}${dune(628,50,'#C97F45',10)}`);
+    if(k==='dusk')return svgBg(`<rect width="390" height="650" fill="url(#dDusk)"/>${grain(.25)}<circle cx="110" cy="450" r="150" fill="url(#glare)" opacity=".55"/><circle cx="110" cy="450" r="34" fill="#FFE2B0"/>${sparkle(300,180,1.2,'#8A4E2C',.8)}${sparkle(340,230,.7,'#8A4E2C',.8)}${dune(540,70,'#C77C62',20)}${[[70,528,.9],[110,526,.9],[150,530,.9]].map(([x,y,s])=>camel(x,y,s,'#5a3030')).join('')}${dune(590,60,'#A85C4A',-20)}${cactus(320,580,1.1,'#5E3030')}${dune(634,40,'#7E3F3A',10)}`);
+    return svgBg(`<rect width="390" height="650" fill="url(#dNight)"/>${grain(.12)}${stars(70,seed,360)}<circle cx="200" cy="36" r="50" fill="url(#glare)" opacity=".4"/>${moon(200,36,1.05,'#FFF3C4')}${sparkle(60,200,1.2,'#FFF3D6')}${sparkle(100,260,.7,'#FFF3D6')}${sparkle(350,300,.9,'#FFF3D6')}${dune(560,70,'#3B3F7A',40)}${dune(600,60,'#2A2E62',-30)}${dune(636,40,'#1B2048',10)}${palm(330,632,.9,'#12163a','#12163a')}`);
+  }
+};
+
+
+/* ---------- pages ---------- */
+const trip=THEME.trip, T=trip.tapes, S=THEME.stickers;
+const cls=k=>THEME.light.includes(k)?'stage light':'stage';
+function cover(){
+  const k=THEME.kinds[0];
+  return `<div class="${cls(k)}">${THEME.bg(k,1)}
+    <div class="abs" style="left:7%;top:10%;width:70%"><p class="kicker">a Quest by @${trip.handle}</p></div>
+    <div class="abs" style="left:7%;top:14.5%;width:88%"><h1 class="title">${trip.title}</h1></div>
+    <div class="abs" style="left:7%;top:31%;width:88%"><span class="meta">${trip.dateLabel} · ${trip.statsLabel}</span></div>
+    ${THEME.single?'':polaroid(trip.pages[1].photos[0].s,53,47,43,1,8,.35,T[1],'')+polaroid(trip.pages[0].photos[1].s,4,49,43,1,-9,.25,T[2],'')}
+    ${THEME.single?polaroid(trip.pages[0].photos[0].s,14,47,60,.95,-2,.1,T[0],`Welcome to ${trip.destination}`):polaroid(trip.pages[0].photos[0].s,17,38,64,.95,-2,.1,T[0],`Welcome to ${trip.destination}`)}
+    ${THEME.single?stamp(70,88,24,THEME.stampBig,trip.destination):stamp(68,82,26,THEME.stampBig,trip.destination)}
+    ${THEME.cs===false?'':THEME.cs?S[THEME.cs[0]](THEME.cs[1],THEME.cs[2],THEME.cs[3],0):S[3](72,6,20,0)}
+  </div>`;
+}
+function photoPage(p,i){
+  const n=p.photos.length, k=THEME.kinds[i+1];
+  const L={1:[[9,27,82,.82,-2]],2:[[5,25,62,.95,-4],[36,55,58,1.05,5]],3:[[4,25,58,1,-4],[44,40,52,.95,5],[8,64,46,1.1,-2]]}[n];
+  return `<div class="${cls(k)}">${THEME.bg(k,i+2)}
+    <div class="abs" style="left:6%;top:8%;width:64%"><p class="kicker">${p.date}</p></div>
+    <div class="abs" style="left:6%;top:12.5%;width:64%"><h2 class="pageTitle">${p.title}</h2></div>
+    ${stamp(72,7,22,String(i+1).padStart(2,'0'),p.place)}
+    ${p.photos.map((ph,j)=>polaroid(ph.s,...L[j],.1+j*.15,T[j%3],ph.c)).join('')}
+    ${S[(i*2)%5](80,87,14,8)}
+    ${S[(i*2+1)%5](-1,86,14,-10)}
+  </div>`;
+}
+function route(){
+  const k=THEME.kinds[4], lt=THEME.light.includes(k);
+  const pts=trip.route, d=pts.map((p,j)=>(j?'L':'M')+p[1]*3.9+' '+(p[2]*5+60)).join(' ');
+  return `<div class="${cls(k)} route">${THEME.bg(k,9)}
+    <div class="abs" style="left:7%;top:8%;width:80%"><p class="kicker">${trip.routeKicker}</p></div>
+    <div class="abs" style="left:7%;top:12.5%;width:80%"><h2 class="pageTitle">${trip.routeTitle}</h2></div>
+    <svg class="r" viewBox="0 0 390 650" preserveAspectRatio="none">
+      <path d="${d}" stroke="${THEME.pin}" stroke-width="3.5" stroke-dasharray="3 9" stroke-linecap="round" fill="none"/>
+      ${pts.map((p,j)=>`<g transform="translate(${p[1]*3.9} ${p[2]*5+60})"><circle r="12" fill="${THEME.pin}" stroke="#fff" stroke-width="4"/><text y="4.5" text-anchor="middle" fill="#fff" font-size="12" font-weight="800" font-family="Nunito">${j+1}</text><text y="-20" text-anchor="middle" fill="${lt?'#fff':THEME.ink}" font-size="14" font-weight="800" font-family="Nunito">${p[0]}</text></g>`).join('')}
+    </svg>
+    ${S[0](78,50,15,10)}
+  </div>`;
+}
+
+/* ---------- player ---------- */
+const pages=[cover(),...trip.pages.map(photoPage),route()];
+const track=document.getElementById('track'),dots=document.getElementById('dots');
+pages.forEach(h=>{const s=document.createElement('section');s.className='page';s.innerHTML=h;track.appendChild(s);dots.appendChild(document.createElement('i'))});
+let cur=0;
+const prev=document.getElementById('prev'),next=document.getElementById('next');
+function sync(){
+  cur=Math.round(track.scrollLeft/track.clientWidth);
+  [...dots.children].forEach((d,k)=>d.classList.toggle('on',k===cur));
+  prev.disabled=cur===0; next.disabled=cur===pages.length-1;
+}
+const go=k=>track.children[Math.max(0,Math.min(pages.length-1,k))].scrollIntoView({behavior:'smooth',inline:'start',block:'nearest'});
+track.addEventListener('scroll',sync,{passive:true});
+prev.onclick=()=>go(cur-1); next.onclick=()=>go(cur+1);
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')go(cur+1);if(e.key==='ArrowLeft')go(cur-1)});
+sync();
+</script>
+</body>
+</html>

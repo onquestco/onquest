@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- Design source: claude.ai artifact "OnQuest · Roadtrip Quest template" (https://claude.ai/artifact/5xUy6ZFzsqPkZue72syTGT), version 1795461839-973f, copied 25 Nov 2026. Visual source of truth for the Roadtrip template. Page backgrounds by page: cover=day, photo pages=sunset/hills/night, route=day (THEME.kinds). -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -51,9 +50,24 @@ body{font-family:var(--font-sans);color:var(--ink);display:flex;flex-direction:c
 :root{--paper:#BFE3F8;--ink:#4A2A12;--accent:#F28C1B;--accent2:#E5532D;--font-display:'Lilita One',cursive;--lt-kick:#FFE9A0;--lt-title:#FFD27A}
 body{background:linear-gradient(#8CC9F2,#DDF0FB 60%,#CDE9B4)}
 .kicker{font:800 4.2cqw/1 var(--font-sans);letter-spacing:.12em;text-transform:uppercase;color:var(--accent2);margin:0}
-.title{margin:0;font:400 12.5cqw/1.02 var(--font-display);color:#F28C1B;-webkit-text-stroke:.7cqw #7A3B0C;paint-order:stroke fill;letter-spacing:.02em;text-wrap:balance}
-.pageTitle{margin:0;font:400 7.4cqw/1.08 var(--font-display);color:#F28C1B;-webkit-text-stroke:.45cqw #7A3B0C;paint-order:stroke fill;letter-spacing:.02em}
-.light .title,.light .pageTitle{-webkit-text-stroke:.45cqw #4A2A12}
+.title{margin:0;font:400 12.5cqw/1.02 var(--font-display);color:#D9680C;-webkit-text-stroke:.3cqw #7A3B0C;paint-order:stroke fill;letter-spacing:.02em;text-wrap:balance}
+.pageTitle{margin:0;font:400 7.4cqw/1.08 var(--font-display);color:#D9680C;-webkit-text-stroke:.2cqw #7A3B0C;paint-order:stroke fill;letter-spacing:.02em}
+.light .title,.light .pageTitle{-webkit-text-stroke:.2cqw #4A2A12}
+
+
+/* calm backgrounds so photos pop */
+.bg{filter:blur(1.1px) saturate(.72);transform:scale(1.03)}
+.stage:not(.light) .bg{opacity:.6}
+.stage:not(.light) .kicker{filter:brightness(.74) saturate(1.15)}
+.stage.light .bg{filter:blur(1.1px) saturate(.78) brightness(.93)}
+.polaroid{box-shadow:0 1.6cqw 4.2cqw rgba(15,25,35,.42),0 0 0 .25cqw rgba(0,0,0,.05)!important}
+
+/* softer text */
+.title,.pageTitle{zoom:.88}
+.kicker{zoom:.92}
+.meta{zoom:.94}
+.polaroid .cap{zoom:.93}
+.light .title,.light .pageTitle,.night .title,.night .pageTitle{text-shadow:0 .3cqw 1cqw rgba(0,0,30,.22)}
 </style>
 </head>
 <body>
@@ -63,6 +77,7 @@ body{background:linear-gradient(#8CC9F2,#DDF0FB 60%,#CDE9B4)}
 <linearGradient id="skyDay" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#79BDF0"/><stop offset="1" stop-color="#D3ECFB"/></linearGradient>
 <linearGradient id="skySet" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5B4B9A"/><stop offset=".55" stop-color="#F27A54"/><stop offset="1" stop-color="#FFC66B"/></linearGradient>
 <linearGradient id="skyNight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0E1B3D"/><stop offset="1" stop-color="#3A4F8C"/></linearGradient>
+
 </defs></svg>
 <div class="note">Roadtrip Quest template — swipe, or use the arrows / ← → keys</div>
 <div class="player">
@@ -132,6 +147,7 @@ const THEME={
   }
 };
 
+
 /* ---------- pages ---------- */
 const trip=THEME.trip, T=trip.tapes, S=THEME.stickers;
 const cls=k=>THEME.light.includes(k)?'stage light':'stage';
@@ -141,11 +157,10 @@ function cover(){
     <div class="abs" style="left:7%;top:10%;width:70%"><p class="kicker">a Quest by @${trip.handle}</p></div>
     <div class="abs" style="left:7%;top:14.5%;width:88%"><h1 class="title">${trip.title}</h1></div>
     <div class="abs" style="left:7%;top:31%;width:88%"><span class="meta">${trip.dateLabel} · ${trip.statsLabel}</span></div>
-    ${polaroid(trip.pages[1].photos[0].s,53,47,43,1,8,.35,T[1],'')}
-    ${polaroid(trip.pages[0].photos[1].s,4,49,43,1,-9,.25,T[2],'')}
-    ${polaroid(trip.pages[0].photos[0].s,17,38,64,.95,-2,.1,T[0],`Welcome to ${trip.destination}`)}
-    ${stamp(68,82,26,THEME.stampBig,trip.destination)}
-    ${THEME.cs?S[THEME.cs[0]](THEME.cs[1],THEME.cs[2],THEME.cs[3],0):S[3](72,6,20,0)}
+    ${THEME.single?'':polaroid(trip.pages[1].photos[0].s,53,47,43,1,8,.35,T[1],'')+polaroid(trip.pages[0].photos[1].s,4,49,43,1,-9,.25,T[2],'')}
+    ${THEME.single?polaroid(trip.pages[0].photos[0].s,14,47,60,.95,-2,.1,T[0],`Welcome to ${trip.destination}`):polaroid(trip.pages[0].photos[0].s,17,38,64,.95,-2,.1,T[0],`Welcome to ${trip.destination}`)}
+    ${THEME.single?stamp(70,88,24,THEME.stampBig,trip.destination):stamp(68,82,26,THEME.stampBig,trip.destination)}
+    ${THEME.cs===false?'':THEME.cs?S[THEME.cs[0]](THEME.cs[1],THEME.cs[2],THEME.cs[3],0):S[3](72,6,20,0)}
   </div>`;
 }
 function photoPage(p,i){
