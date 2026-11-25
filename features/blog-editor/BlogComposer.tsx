@@ -144,7 +144,7 @@ function ComposerScreen({ store, saver, quests, writer }: ScreenProps) {
           <>
             <TitleField store={store} />
             <PhotoRow store={store} />
-            <BodyField store={store} />
+            <BodyField store={store} onToast={setToast} />
             <PlaceRow store={store} saver={saver} />
             <LinkQuestRow store={store} saver={saver} quests={quests} />
           </>

@@ -55,6 +55,19 @@ describe('BlogComposer', () => {
     expect(order).toEqual([...order].sort((left, right) => left - right));
   });
 
+  it('has the formatting toolbar right above the text: 14 buttons of 44px with names and shortcuts', () => {
+    const html = renderToStaticMarkup(createElement(BlogComposer, { initial: initial(), quests: [], writer }));
+    const toolbar = html.slice(html.indexOf('role="toolbar"'), html.indexOf('>Text</label>'));
+    expect(html).toContain('role="toolbar" aria-label="Formatting"');
+    expect(html.indexOf('Add photos')).toBeLessThan(html.indexOf('role="toolbar"'));
+    expect(toolbar.match(/<button /g)).toHaveLength(14);
+    expect(toolbar.match(/size-11/g)).toHaveLength(14);
+    expect(toolbar).toContain('aria-label="Bold (Ctrl+B)" title="Bold (Ctrl+B)" aria-pressed="false"');
+    expect(toolbar).toContain('overflow-x-auto');
+    // Nothing to undo yet.
+    expect(toolbar).toMatch(/aria-label="Undo \(Ctrl\+Z\)"[^>]*disabled=""/);
+  });
+
   it('a new blog starts empty, with nothing saved yet and the Title placeholder', () => {
     const html = renderToStaticMarkup(
       createElement(BlogComposer, {

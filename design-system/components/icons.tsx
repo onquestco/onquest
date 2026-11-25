@@ -117,3 +117,73 @@ export const SearchIcon = ({ size = 20 }: Props) => (
     <path d="m20 20-3.5-3.5" />
   </svg>
 );
+
+// The blog editor's formatting toolbar (blogs-editor spec §6.1).
+export const BoldIcon = ({ size = 24 }: Props) => (
+  <svg {...base(size)} strokeWidth={2.5}>
+    <path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z" />
+  </svg>
+);
+export const ItalicIcon = ({ size = 24 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M10 5h8M6 19h8M14 5l-4 14" />
+  </svg>
+);
+export const StrikethroughIcon = ({ size = 24 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M4 12h16M16.5 7.5C16 6 14.4 5 12.2 5 9.6 5 8 6.3 8 8.2c0 1.4.9 2.4 2.6 3M8 16.5c.6 1.6 2.3 2.5 4.4 2.5 2.6 0 4.1-1.3 4.1-3.2 0-.6-.2-1.2-.5-1.6" />
+  </svg>
+);
+export const CodeIcon = ({ size = 24 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M8 7l-5 5 5 5M16 7l5 5-5 5" />
+  </svg>
+);
+/** "H" plus the level's digit. */
+export const HeadingIcon = ({ size = 24, level }: Props & { level: 1 | 2 | 3 }) => (
+  <svg {...base(size)}>
+    <path d="M3 6v12M11 6v12M3 12h8" />
+    {level === 1 && <path d="M16 10l2.5-2v10" />}
+    {level === 2 && <path d="M15.5 10a2.5 2.5 0 0 1 5 0c0 2-5 4-5 8h5" />}
+    {level === 3 && <path d="M15.5 8h5l-3 4a3 3 0 1 1-2 5" />}
+  </svg>
+);
+export const BulletListIcon = ({ size = 24 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M9 6h11M9 12h11M9 18h11" />
+    <circle cx="4.5" cy="6" r="1" fill="currentColor" />
+    <circle cx="4.5" cy="12" r="1" fill="currentColor" />
+    <circle cx="4.5" cy="18" r="1" fill="currentColor" />
+  </svg>
+);
+export const NumberedListIcon = ({ size = 24 }: Props) => (
+  <svg {...base(size)} strokeWidth={1.75}>
+    <path d="M10 6h10M10 12h10M10 18h10M4 5l1.5-1v4.5M3.5 14a1.5 1.5 0 0 1 3 0c0 1.2-3 2-3 4h3" />
+  </svg>
+);
+export const QuoteIcon = ({ size = 24 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M5 7h4v4c0 3-1.5 5-4 6M14 7h4v4c0 3-1.5 5-4 6" />
+  </svg>
+);
+export const LinkIcon = ({ size = 24 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
+  </svg>
+);
+/** An eye with a line through it: hidden until tapped. */
+export const SpoilerIcon = ({ size = 24 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M3 3l18 18M10.6 6.1Q11.3 6 12 6c5 0 9 6 9 6a16 16 0 0 1-2.6 3.2M6.6 6.6C4.2 8.2 3 12 3 12s4 6 9 6c1.6 0 3-.4 4.3-1.1M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+  </svg>
+);
+export const UndoIcon = ({ size = 24 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M9 14L4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3" />
+  </svg>
+);
+export const RedoIcon = ({ size = 24 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M15 14l5-5-5-5M20 9H9a5 5 0 0 0 0 10h3" />
+  </svg>
+);
