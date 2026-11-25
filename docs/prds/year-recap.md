@@ -1,6 +1,6 @@
 # Year Recap ("Your Year in Quests")
 
-Owner: Product (OnQuest) · Status: **Draft**, waiting for Alok's approval · Date: 25 Nov 2026
+Owner: Product (OnQuest) · Status: **Approved** 25 Nov 2026 (the guesses in §14 are accepted as written) · Date: 25 Nov 2026
 Design: claude.ai artifact https://claude.ai/artifact/HKKAwnjgb6K7gbPuVV58EC (source copy in the tripp Project: `claude/onquest-year-recap-template.html`)
 
 ## 1. Problem
