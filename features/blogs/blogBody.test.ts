@@ -146,20 +146,26 @@ describe('BlogBody: formatting', () => {
   it('a spoiler is a covered button with its text in the HTML', () => {
     const html = render('The ending: >!he was the guide!<');
     expect(html).toMatch(
-      /<button type="button" aria-expanded="false" aria-label="Spoiler. Tap to reveal"[^>]*>he was the guide<\/button>/,
+      /<button type="button" aria-expanded="false" aria-label="Spoiler. Tap to reveal"[^>]*><span data-nosnippet="true">he was the guide<\/span><\/button>/,
     );
+  });
+
+  it('a covered spoiler stays out of search snippets and stays covered in forced-colours mode', () => {
+    const html = render('The ending: >!he was the guide!< and [the >!secret!< place](https://casa.example.in)');
+    expect(html.match(/data-nosnippet="true"/g)).toHaveLength(2);
+    expect(html.match(/forced-color-adjust-none/g)).toHaveLength(2);
   });
 
   it('a link inside a spoiler is text until it is revealed (no <a> in a button)', () => {
     const html = render('>!stay at [Casa](https://casa.example.in)!<');
-    expect(html).toMatch(/<button[^>]*>stay at <span class="underline">Casa<\/span><\/button>/);
+    expect(html).toMatch(/<button[^>]*><span data-nosnippet="true">stay at <span class="underline">Casa<\/span><\/span><\/button>/);
     expect(html).not.toContain('<a ');
   });
 
   it('a spoiler inside a link stays covered without a button (no button in an <a>)', () => {
     const html = render('[the >!secret!< place](https://casa.example.in)');
     expect(html).toMatch(
-      /<a [^>]*>the <span aria-hidden="true" class="[^"]*bg-ink[^"]*">secret<\/span><span class="sr-only">\(spoiler\)<\/span> place<\/a>/,
+      /<a [^>]*>the <span aria-hidden="true" data-nosnippet="true" class="[^"]*bg-ink[^"]*">secret<\/span><span class="sr-only">\(spoiler\)<\/span> place<\/a>/,
     );
     expect(html).not.toContain('<button');
   });

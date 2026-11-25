@@ -5,9 +5,12 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 // A spoiler (`>!text!<`, blogs-editor spec §6.2): covered until tapped. Its text is rendered on the
 // server like the rest of the blog, only drawn in the cover's own colour. Once revealed it becomes
 // plain text, so links inside it work (a button can't hold a link), and focus moves onto it so a
-// keyboard or screen reader user stays in place.
+// keyboard or screen reader user stays in place. data-nosnippet keeps the covered text out of
+// search-result snippets; it stays in the HTML, so the page is still crawled in full.
 
-const COVER = 'rounded-sm bg-ink px-0.5 text-ink box-decoration-clone select-none';
+// forced-color-adjust-none: in Windows High Contrast and other forced-colours modes the browser
+// would swap in system colours and show the text uncovered.
+const COVER = 'rounded-sm bg-ink px-0.5 text-ink box-decoration-clone select-none forced-color-adjust-none';
 const FADE = 'transition-colors duration-200 motion-reduce:transition-none';
 
 type Props = {
@@ -30,6 +33,7 @@ export function BlogSpoiler({ covered, revealed }: Props) {
         ref={shown}
         tabIndex={-1}
         data-spoiler="revealed"
+        data-nosnippet
         className={`rounded-sm bg-brand-wash px-0.5 box-decoration-clone outline-none ${FADE}`}
       >
         {revealed}
@@ -45,7 +49,8 @@ export function BlogSpoiler({ covered, revealed }: Props) {
       onClick={() => setOpen(true)}
       className={`${COVER} ${FADE} inline cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-brand-strong`}
     >
-      {covered}
+      {/* Google reads data-nosnippet on span, div and section only, so it sits inside the button. */}
+      <span data-nosnippet>{covered}</span>
     </button>
   );
 }
@@ -57,7 +62,7 @@ export function BlogSpoiler({ covered, revealed }: Props) {
 export function CoveredSpoiler({ children }: { children: ReactNode }) {
   return (
     <>
-      <span aria-hidden className={COVER}>
+      <span aria-hidden data-nosnippet className={COVER}>
         {children}
       </span>
       <span className="sr-only">(spoiler)</span>
