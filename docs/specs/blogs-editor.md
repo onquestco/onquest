@@ -7,7 +7,7 @@
 | Build mode | Backend + Frontend split (BL-06 backend; BL-07 single builder, frontend; BL-08, BL-09 frontend) |
 | Tracker IDs | OQ-25, OQ-26 · BL-06 #40, BL-07 #41, BL-08 #42, BL-09 #43 |
 
-**Readiness.** The tickets have testable acceptance criteria and out of scope. They have no metric, states or UX test plan; this spec fills the states (§6), UX tests (§11) and the delete copy, which the brief left to the Tech Lead. Nothing blocks the build. D1 needs the CTO's choice before BL-08 merges.
+**Readiness.** The tickets have testable acceptance criteria and out of scope. They have no metric, states or UX test plan; this spec fills the states (§6), UX tests (§11) and the delete copy, which the brief left to the Tech Lead. Nothing blocks the build. **D1 decided 25 Nov 2026 by the CTO: option A** (read every body as the new format; the prod count found 2 bodies with block syntax, accepted as intended lists). The spoiler stays in scope.
 
 **No migration.** Neither ticket needs a migration or any change to RLS, grants or functions, provided the CTO picks D1 option A (recommended). Option B needs migration 18.
 
