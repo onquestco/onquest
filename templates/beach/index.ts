@@ -6,7 +6,7 @@ import { TripPage } from './TripPage';
 const beach = {
   id: 'beach',
   name: 'Beach',
-  status: 'live',
+  status: 'retired',
   defaults: { title: 'Salt in the Air, Sand in My Hair', closingHeadline: 'Nowhere else to be.' },
   theme,
   TripPage,

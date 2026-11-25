@@ -1,6 +1,7 @@
 import type { GeoPlace } from '@/lib/geo';
 import { PHOTOS_PER_PAGE } from '@/lib/trip/limits';
 import type { QuestDocument } from '@/lib/trip/schema';
+import { DEFAULT_TEMPLATE_ID } from '@/templates/registry';
 import { arrangePages, type Arrangement } from './arrange';
 import { applyPlaces } from './applyPlaces';
 import { buildDocument } from './buildDocument';
@@ -58,7 +59,7 @@ export async function arrangeQuest(
     failed = true;
     arrangement = pickOrder(photos.map((photo) => photo.id));
   }
-  let document = buildDocument('beach', photos, arrangement, deps.createId, startedAt);
+  let document = buildDocument(DEFAULT_TEMPLATE_ID, photos, arrangement, deps.createId, startedAt);
 
   const located = picked.flatMap((photo) =>
     photo.gps ? [{ ...photo.gps, photoId: photo.id, takenAt: photo.takenAt }] : [],

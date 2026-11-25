@@ -28,7 +28,8 @@ export type Theme = {
 export type Template = {
   id: string;
   name: string;
-  status: 'live' | 'coming-soon';
+  /** retired = still renders existing Quests, never offered in the template picker. */
+  status: 'live' | 'coming-soon' | 'retired';
   /** Used by toTripData() when the traveler leaves these empty. */
   defaults: { title: string; closingHeadline: string };
   theme: Theme;

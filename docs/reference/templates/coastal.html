@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<!-- Design source: claude.ai artifact "OnQuest · Coastal Quest template" (https://claude.ai/artifact/USqXDdZZQQyZjWQNrVf4qN), version 1795460914-59ad, copied 25 Nov 2026. The visual source of truth for the Coastal template. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OnQuest · Coastal Quest template</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Nunito:wght@400;700;800&family=Pacifico&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FFF8E1; --ink:#103A4A; --accent:#1FA3B8; --accent2:#E8323C;
+  --sand:#F6DDB0; --cream:#FFFDF3; --sky:#8EE3EF;
+  --font-script:'Pacifico',cursive; --font-sans:'Nunito',system-ui,sans-serif; --font-hand:'Caveat',cursive;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:linear-gradient(#aee9f1,#e9f7f4 45%,#F6DDB0);font-family:var(--font-sans);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:12px}
+.note{font:700 13px var(--font-sans);opacity:.7;text-align:center}
+.player{position:relative;width:min(94vw,400px)}
+.track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:22px;box-shadow:0 10px 30px rgba(16,58,74,.25);background:var(--paper)}
+.track::-webkit-scrollbar{display:none}
+.page{flex:0 0 100%;min-width:0;scroll-snap-align:start;container-type:inline-size}
+.stage{position:relative;width:100%;aspect-ratio:9/15;overflow:hidden;background:var(--bg,var(--paper))}
+.abs{position:absolute}
+.bg{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+.wave{animation:drift 10s linear infinite}
+@keyframes drift{to{transform:translateX(-390px)}}
+.gull{animation:glide 7s ease-in-out infinite alternate}
+@keyframes glide{from{transform:translate(0,0)}to{transform:translate(18px,-6px)}}
+.light .kicker{color:#E6FBFF}
+.light .title,.light .pageTitle{color:#fff;text-shadow:0 .6cqw 2cqw rgba(6,70,92,.5)}
+.light .meta{color:#fff;opacity:.95;text-shadow:0 .3cqw 1cqw rgba(6,70,92,.5)}
+.light .pageNumber{color:#fff}
+/* text */
+.kicker{font:500 6cqw/1 var(--font-hand);color:var(--accent);margin:0}
+.title{margin:0;font:400 13cqw/1.05 var(--font-script);color:var(--ink);text-wrap:balance}
+.pageTitle{margin:0;font:400 8cqw/1.15 var(--font-script);color:var(--ink)}
+.meta{font:700 3.6cqw/1.3 var(--font-sans);opacity:.75}
+.pageNumber{font:700 6cqw/1 var(--font-hand);opacity:.6}
+.note-hand{font:500 6.4cqw/1.15 var(--font-hand);color:var(--ink);margin:0}
+/* polaroid */
+.polaroid{position:absolute;background:#fff;padding:2.4cqw 2.4cqw 0;box-shadow:0 1.2cqw 3cqw rgba(16,58,74,.28);animation:drop .6s cubic-bezier(.2,.9,.3,1.2) both;animation-delay:var(--d,0s)}
+.polaroid .img{width:100%;aspect-ratio:var(--a,1);overflow:hidden;background:var(--sky)}
+.polaroid .img svg{display:block;width:100%;height:100%}
+.polaroid .cap{font:700 5.6cqw/1 var(--font-hand);text-align:center;padding:2cqw 1cqw 2.6cqw;min-height:9cqw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tape{position:absolute;top:-3.2cqw;left:50%;width:22cqw;height:6.4cqw;transform:translateX(-50%) rotate(-3deg);opacity:.9}
+@keyframes drop{from{opacity:0;transform:translateY(-4cqw) rotate(var(--r,0deg)) scale(1.06)}to{opacity:1;transform:rotate(var(--r,0deg))}}
+.polaroid{transform:rotate(var(--r,0deg))}
+/* stamp */
+.stamp{position:absolute;border:.8cqw dashed var(--accent2);color:var(--accent2);border-radius:2cqw;text-align:center;padding:1.4cqw 1cqw;transform:rotate(7deg);background:rgba(255,253,243,.7)}
+.stamp b{display:block;font:400 8cqw/1 var(--font-script)}
+.stamp span{font:800 2.6cqw/1.1 var(--font-sans);letter-spacing:.12em;text-transform:uppercase}
+.sticker{position:absolute;z-index:6;filter:drop-shadow(0 .4cqw .4cqw rgba(0,0,0,.2))}
+.sea{position:absolute;left:0;bottom:0;width:100%;z-index:1}
+.openbtn{position:absolute;right:5cqw;bottom:4cqw;z-index:8;border:0;border-radius:99px;background:var(--accent);color:#fff;font:800 3.8cqw var(--font-sans);padding:2.2cqw 4.2cqw;cursor:pointer}
+/* nav */
+.nav{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px}
+.nav button{width:40px;height:40px;border-radius:50%;border:0;background:var(--accent);color:#fff;font:800 18px var(--font-sans);cursor:pointer}
+.nav button:disabled{opacity:.35;cursor:default}
+.dots{display:flex;gap:7px}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--ink);opacity:.25;transition:.2s}
+.dots i.on{opacity:1;background:var(--accent2);transform:scale(1.25)}
+/* route */
+.route svg{width:100%;height:100%}
+.pin{font:700 3.4cqw var(--font-sans)}
+@media (prefers-reduced-motion:reduce){.polaroid,.wave,.gull{animation:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<linearGradient id="sandG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBEAC6"/><stop offset="1" stop-color="#F0CF98"/></linearGradient>
+<linearGradient id="seaD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0B7C9B"/><stop offset=".55" stop-color="#26B4CB"/><stop offset="1" stop-color="#9FE8F0"/></linearGradient>
+<linearGradient id="seaU" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A6EAF1"/><stop offset=".45" stop-color="#2DBBD0"/><stop offset="1" stop-color="#0B7C9B"/></linearGradient>
+<radialGradient id="glare"><stop offset="0" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<filter id="ripple" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".008 .09" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 .62  0 0 0 0 .45  0 0 0 0 .22  1.6 0 0 0 -.6"/></filter>
+<filter id="grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="7"/><feColorMatrix values="0 0 0 0 .5  0 0 0 0 .36  0 0 0 0 .18  2.4 0 0 0 -1.05"/></filter>
+<filter id="caustic" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".014 .034" numOctaves="3" seed="11"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  4 0 0 0 -1.85"/></filter>
+</defs></svg>
+<div class="note">Coastal Quest template — swipe, or use the arrows / ← → keys</div>
+<div class="player">
+  <div class="track" id="track"></div>
+  <div class="nav">
+    <button id="prev" aria-label="Previous page">‹</button>
+    <div class="dots" id="dots"></div>
+    <button id="next" aria-label="Next page">›</button>
+  </div>
+</div>
+
+<script>
+/* ---------- sample trip ---------- */
+const trip = {
+  title:'Sun, Sea & Sand', handle:'alok', dateLabel:'12–16 Nov', statsLabel:'5 days · 4 beaches', destination:'Goa',
+  tapes:['rgba(142,227,239,.85)','rgba(244,115,154,.55)','rgba(255,212,94,.8)'],
+  backgrounds:['#FFF8E1','#D9F5F8','#FFE8D6','#CFEFF4','#FFF1C9'],
+  pages:[
+    {date:'Day 1 · 12 Nov', title:'Golden hour at Palolem', photos:[{s:'sunset',c:'first sunset'},{s:'shells',c:'shell hunting'}], place:'Palolem'},
+    {date:'Day 2 · 13 Nov', title:'Boats & breakfast', photos:[{s:'boats',c:'fishing boats'},{s:'palms',c:'palm shade'},{s:'bay',c:'blue bay'}], place:'Agonda'},
+    {date:'Day 3 · 14 Nov', title:'Lazy lagoon day', photos:[{s:'bay',c:'the clearest water'}], place:'Butterfly Beach'}
+  ],
+  route:[['Palolem',20,70],['Agonda',45,40],['Butterfly',70,58],['Cola',80,22]]
+};
+
+/* ---------- illustrations (stand-ins for user photos) ---------- */
+const scenes = {
+  sunset:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb46b"/><stop offset=".6" stop-color="#ffe3a3"/></linearGradient></defs><rect width="100" height="62" fill="url(#g1)"/><circle cx="50" cy="52" r="15" fill="#fff3c4"/><rect y="58" width="100" height="26" fill="#1FA3B8"/><path d="M0 64q12-5 25 0t25 0 25 0 25 0" stroke="#8EE3EF" stroke-width="2" fill="none"/><path d="M0 72q12-5 25 0t25 0 25 0 25 0" stroke="#8EE3EF" stroke-width="2" fill="none"/><rect y="82" width="100" height="18" fill="#F6DDB0"/></svg>`,
+  shells:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="#F6DDB0"/><path d="M0 0h100v26q-12 8-25 0t-25 0-25 0-25 0z" fill="#8EE3EF"/><g stroke="#fff" stroke-width="2"><path d="M30 70c-12-4-14-20-2-28 14 6 14 22 2 28z" fill="#f4a6a0"/><path d="M68 62c-8-2-12-14-4-20 10 4 12 16 4 20z" fill="#ffd1a9"/></g><g fill="#e8c48a"><circle cx="50" cy="84" r="2"/><circle cx="15" cy="88" r="1.6"/><circle cx="85" cy="82" r="2"/></g><path d="M52 46l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z" fill="#FF8A5B" stroke="#fff" stroke-width="1.5"/></svg>`,
+  boats:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="55" fill="#BDEBF2"/><circle cx="82" cy="20" r="9" fill="#FFE27A"/><rect y="52" width="100" height="48" fill="#1FA3B8"/><path d="M0 66q12-5 25 0t25 0 25 0 25 0" stroke="#8EE3EF" stroke-width="2" fill="none"/><path d="M14 58h38l-6 12H20z" fill="#E8323C"/><path d="M33 58V38l14 18z" fill="#fff"/><path d="M60 72h30l-5 9H65z" fill="#FFD45E"/><path d="M75 72V56l10 14z" fill="#fff"/></svg>`,
+  palms:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="70" fill="#D9F5F8"/><rect y="68" width="100" height="32" fill="#F6DDB0"/><path d="M30 90C34 60 38 40 42 28" stroke="#8a5a2b" stroke-width="4" fill="none"/><g fill="#2E9B5B"><path d="M42 28c-14-12-26-6-32 4 14-4 22 0 32-4z"/><path d="M42 28c14-12 26-6 32 4-14-4-22 0-32-4z"/><path d="M42 28c-6-16 2-24 12-26-4 10-6 18-12 26z"/><path d="M42 28c-10-2-18 8-18 18 8-8 14-10 18-18z"/></g><path d="M70 92C70 74 72 62 74 52" stroke="#8a5a2b" stroke-width="3" fill="none"/><g fill="#3cae6c"><path d="M74 52c-10-8-18-4-22 3 10-2 16 0 22-3z"/><path d="M74 52c10-8 18-4 22 3-10-2-16 0-22-3z"/></g></svg>`,
+  bay:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8EE3EF"/><stop offset="1" stop-color="#1FA3B8"/></linearGradient></defs><rect width="100" height="100" fill="#CFF3F8"/><rect y="36" width="100" height="44" fill="url(#g2)"/><path d="M0 36q15-14 30-4t30-6 40 10v4H0z" fill="#2E9B5B"/><rect y="78" width="100" height="22" fill="#F6DDB0"/><path d="M0 78q12-5 25 0t25 0 25 0 25 0" stroke="#fff" stroke-width="2.4" fill="none"/><circle cx="20" cy="18" r="8" fill="#FFE27A"/></svg>`
+};
+
+/* ---------- decor ---------- */
+const sunSticker=(x,y,s,r=0)=>`<svg class="sticker" viewBox="0 0 80 80" style="left:${x}%;top:${y}%;width:${s}%;rotate:${r}deg"><g stroke="#FFD45E" stroke-width="5" stroke-linecap="round">${[...Array(8)].map((_,k)=>{const a=k*Math.PI/4;return `<path d="M${40+Math.cos(a)*25} ${40+Math.sin(a)*25}L${40+Math.cos(a)*34} ${40+Math.sin(a)*34}"/>`}).join('')}</g><circle cx="40" cy="40" r="19" fill="#FFD45E" stroke="#fff" stroke-width="5"/></svg>`;
+const shellSticker=(x,y,s,r=0)=>`<svg class="sticker" viewBox="0 0 80 80" style="left:${x}%;top:${y}%;width:${s}%;rotate:${r}deg"><path d="M40 12C18 22 10 48 22 64H58C70 48 62 22 40 12z" fill="#f4a6a0" stroke="#fff" stroke-width="5"/><path d="M40 16v46M30 20l-6 42M50 20l6 42" stroke="#fff" stroke-width="2.4" fill="none"/></svg>`;
+const palmSticker=(x,y,s,r=0)=>`<svg class="sticker" viewBox="0 0 90 90" style="left:${x}%;top:${y}%;width:${s}%;rotate:${r}deg"><path d="M44 86C46 64 46 50 48 36" stroke="#8a5a2b" stroke-width="6" fill="none" stroke-linecap="round"/><g fill="#2E9B5B" stroke="#fff" stroke-width="3" stroke-linejoin="round"><path d="M48 36C34 22 18 26 10 38c16-4 28-2 38-2z"/><path d="M48 36c14-14 30-10 36 2-16-4-28-4-36-2z"/><path d="M48 36C40 20 46 8 58 6c-4 12-6 20-10 30z"/></g></svg>`;
+const starSticker=(x,y,s,r=0)=>`<svg class="sticker" viewBox="0 0 80 80" style="left:${x}%;top:${y}%;width:${s}%;rotate:${r}deg"><path d="M40 8l9 20 22 3-16 15 4 22-19-11-19 11 4-22L9 31l22-3z" fill="#FF8A5B" stroke="#fff" stroke-width="5" stroke-linejoin="round"/></svg>`;
+const melonSticker=(x,y,s,r=0)=>`<svg class="sticker" viewBox="0 0 90 70" style="left:${x}%;top:${y}%;width:${s}%;rotate:${r}deg"><path d="M6 14h78a39 39 0 0 1-78 0z" fill="#E8323C" stroke="#fff" stroke-width="5" stroke-linejoin="round"/><path d="M12 18h66a33 33 0 0 1-66 0z" fill="#E8323C"/><path d="M6 14a39 39 0 0 0 78 0" fill="none" stroke="#2E9B5B" stroke-width="5"/><g fill="#103A4A"><ellipse cx="30" cy="30" rx="2" ry="3.4"/><ellipse cx="45" cy="38" rx="2" ry="3.4"/><ellipse cx="60" cy="30" rx="2" ry="3.4"/></g></svg>`;
+let _n=0;
+function bg(dir,y,amp,seed){
+  const id='c'+(++_n), top=dir==='top', sg=top?1:-1;
+  const edge=top?`M0 0H390V${y}Q292 ${y+amp} 195 ${y}T0 ${y}Z`:`M0 650H390V${y}Q292 ${y-amp} 195 ${y}T0 ${y}Z`;
+  const line=`M0 ${y}Q98 ${y-sg*amp} 195 ${y}T390 ${y}`;
+  const s0=top?y+50:20, s1=top?640:y-50, sy=f=>s0+(s1-s0)*f;
+  const rows=[.22,.5,.78].map((f,k)=>{const yy=top?y*f:y+(650-y)*f;
+    return `<g class="wave" style="animation-duration:${9+k*4}s;animation-direction:${k%2?'reverse':'normal'}"><path d="M0 ${yy}q32.5 -10 65 0${'t65 0'.repeat(11)}" stroke="#fff" stroke-opacity="${.55-k*.12}" stroke-width="2.4" fill="none"/></g>`}).join('');
+  const star=(x,yy,r)=>`<path transform="translate(${x} ${yy}) rotate(${r}) scale(.6)" d="M0 -22l6 14 15 2-11 10 3 15-13-8-13 8 3-15-11-10 15-2z" fill="#FF8A5B" stroke="#fff" stroke-width="3"/>`;
+  const shell=(x,yy,r)=>`<g transform="translate(${x} ${yy}) rotate(${r}) scale(.42)"><path d="M0 -26C-22 -16 -30 10 -18 26H18C30 10 22 -16 0 -26z" fill="#f4a6a0" stroke="#fff" stroke-width="5"/><path d="M0 -22V24M-10 -18l-6 42M10 -18l6 42" stroke="#fff" stroke-width="2.5" fill="none"/></g>`;
+  const feet=(x,yy)=>[0,1,2,3,4].map(k=>`<ellipse cx="${x+(k%2?9:-9)}" cy="${yy+k*20}" rx="4.4" ry="8" transform="rotate(${k%2?8:-8} ${x+(k%2?9:-9)} ${yy+k*20})" fill="#a9824c" opacity=".26"/>`).join('');
+  const peb=[[.1,.4],[.16,.46],[.9,.15],[.84,.2],[.55,.97]].map(([a,b])=>`<ellipse cx="${a*390}" cy="${sy(b)}" rx="${3+a*3}" ry="2.2" fill="#9c8363" opacity=".55"/>`).join('');
+  const gulls=seed===1?`<g class="gull" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"><path d="M232 128q7 -8 14 0q7 -8 14 0"/><path d="M290 164q5 -6 10 0q5 -6 10 0"/></g><circle cx="318" cy="58" r="96" fill="url(#glare)"/>`:'';
+  return `<svg class="bg" viewBox="0 0 390 650" preserveAspectRatio="none" aria-hidden="true">
+    <rect width="390" height="650" fill="url(#sandG)"/>
+    <rect width="390" height="650" filter="url(#ripple)" opacity=".55"/>
+    <rect width="390" height="650" filter="url(#grain)" opacity=".8"/>
+    ${star(52,sy(.86),-14)}${shell(338,sy(.62),18)}${feet(300,sy(.74))}${peb}
+    <path d="${line}" stroke="#a9824c" stroke-width="30" fill="none" opacity=".2" transform="translate(0 ${sg*18})"/>
+    <clipPath id="${id}"><path d="${edge}"/></clipPath>
+    <g clip-path="url(#${id})"><rect width="390" height="650" fill="url(#${top?'seaD':'seaU'})"/><rect width="390" height="650" filter="url(#caustic)" opacity=".6"/>${rows}${gulls}</g>
+    <path d="${line}" stroke="#fff" stroke-width="8" stroke-dasharray=".1 11" stroke-linecap="round" fill="none"/>
+    <path d="${line}" stroke="#fff" stroke-width="3.4" opacity=".9" fill="none" transform="translate(0 ${-sg*7})"/>
+  </svg>`;
+}
+const stickers=[palmSticker,shellSticker,starSticker,melonSticker,sunSticker];
+
+const polaroid=(p,x,y,w,a,r,d,tape,cap)=>`<div class="polaroid" style="left:${x}%;top:${y}%;width:${w}%;--a:${a};--r:${r}deg;--d:${d}s">
+  <span class="tape" style="background:${tape}"></span><div class="img">${scenes[p]}</div><div class="cap">${cap||''}</div></div>`;
+const stamp=(x,y,w,big,small)=>`<div class="stamp" style="left:${x}%;top:${y}%;width:${w}%"><b>${big}</b><span>${small}</span></div>`;
+const T=trip.tapes;
+
+/* ---------- pages ---------- */
+function cover(){
+  return `<div class="stage light">${bg('top',290,14,1)}
+    ${sunSticker(76,2,18,12)}
+    <div class="abs" style="left:6%;top:4%;width:70%"><p class="kicker">a Quest by @${trip.handle}</p></div>
+    <div class="abs" style="left:6%;top:9%;width:78%"><h1 class="title">${trip.title}</h1></div>
+    <div class="abs" style="left:6%;top:25%;width:88%"><span class="meta">${trip.dateLabel} · ${trip.statsLabel}</span></div>
+    ${polaroid('palms',52,41,44,1,8,.35,T[1],'')}
+    ${polaroid('shells',3,43,44,1,-9,.25,T[2],'')}
+    ${polaroid('sunset',17,30,64,.95,-2,.1,T[0],`Welcome to ${trip.destination}`)}
+    ${stamp(68,76,26,'☀',trip.destination)}
+  </div>`;
+}
+function photoPage(p,i){
+  const n=p.photos.length, top=i%2===1;
+  const L={1:[[9,25,82,.82,-2]],2:[[5,23,62,.95,-4],[36,56,58,1.05,5]],3:[[4,23,58,1,-4],[44,38,52,.95,5],[8,63,46,1.15,-2]]}[n];
+  return `<div class="stage ${top?'light':''}">${bg(top?'top':'bottom',top?125:505,12,i+2)}
+    <div class="abs" style="left:6%;top:4%;width:64%"><p class="kicker">${p.date}</p></div>
+    <div class="abs" style="left:6%;top:9%;width:64%"><h2 class="pageTitle">${p.title}</h2></div>
+    ${stamp(72,4,22,String(i+1).padStart(2,'0'),p.place)}
+    ${p.photos.map((ph,k)=>polaroid(ph.s,...L[k],.1+k*.15,T[k%3],ph.c)).join('')}
+    ${stickers[(i*2)%5](80,86,15,8)}
+    ${stickers[(i*2+1)%5](-1,85,14,-10)}
+  </div>`;
+}
+function route(){
+  const pts=trip.route, d=pts.map((p,k)=>(k?'L':'M')+p[1]*3.9+' '+p[2]*5).join(' ');
+  return `<div class="stage route">${bg('bottom',455,14,9)}
+    <div class="abs" style="left:6%;top:4%;width:80%"><p class="kicker">the route</p></div>
+    <div class="abs" style="left:6%;top:9%;width:80%"><h2 class="pageTitle">Where I went</h2></div>
+    <svg viewBox="0 0 390 650" preserveAspectRatio="none" class="abs" style="inset:0">
+      <path d="${d}" stroke="var(--accent2)" stroke-width="3.5" stroke-dasharray="3 9" stroke-linecap="round" fill="none"/>
+      ${pts.map((p,k)=>`<g transform="translate(${p[1]*3.9} ${p[2]*5})"><circle r="12" fill="var(--accent2)" stroke="#fff" stroke-width="4"/><text y="4.5" text-anchor="middle" fill="#fff" font-size="12" font-weight="800" font-family="Nunito">${k+1}</text><text y="-20" text-anchor="middle" fill="#103A4A" font-size="14" font-weight="800" font-family="Nunito">${p[0]}</text></g>`).join('')}
+    </svg>
+    ${shellSticker(78,84,16,8)}
+  </div>`;
+}
+
+/* ---------- player ---------- */
+const pages=[cover(),...trip.pages.map(photoPage),route()];
+const track=document.getElementById('track'),dots=document.getElementById('dots');
+pages.forEach(h=>{const s=document.createElement('section');s.className='page';s.innerHTML=h;track.appendChild(s);dots.appendChild(document.createElement('i'))});
+let cur=0;
+const prev=document.getElementById('prev'),next=document.getElementById('next');
+function sync(){
+  cur=Math.round(track.scrollLeft/track.clientWidth);
+  [...dots.children].forEach((d,k)=>d.classList.toggle('on',k===cur));
+  prev.disabled=cur===0; next.disabled=cur===pages.length-1;
+}
+const go=k=>track.children[Math.max(0,Math.min(pages.length-1,k))].scrollIntoView({behavior:'smooth',inline:'start',block:'nearest'});
+track.addEventListener('scroll',sync,{passive:true});
+prev.onclick=()=>go(cur-1); next.onclick=()=>go(cur+1);
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')go(cur+1);if(e.key==='ArrowLeft')go(cur-1)});
+sync();
+</script>
+</body>
+</html>
