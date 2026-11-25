@@ -15,6 +15,19 @@
   z-index: 0;
   width: 100%;
   height: 100%;
+  /* Final design round (docs/reference/templates/CHANGES-final.md §1): calmer scenery so the photos
+     stand out. A plain CSS filter on the scenery (one cheap GPU pass that the Instagram export keeps),
+     never an SVG filter. The blur is the design's 1.1px on its 400px player, in cqw so the 810–920px
+     export frames look the same; the 3% scale hides the blurred edges. */
+  filter: blur(0.28cqw) saturate(0.72);
+  transform: scale(1.03);
+}
+/* Only the night page is `light`; the others show their scenery at 60% over the paper. */
+.background.dim {
+  opacity: 0.6;
+}
+.background.lit {
+  filter: blur(0.28cqw) saturate(0.78) brightness(0.93);
 }
 
 /* Everything above the scenery. Same box as the page, so % positions and cqw sizes are unchanged. */
@@ -27,9 +40,11 @@
   z-index: 5;
 }
 
+/* Final design round: title and page title ×0.88, kicker ×0.92, meta ×0.94 (the design uses zoom;
+   sizes here are the zoomed values). */
 .kicker {
   margin: 0;
-  font: 600 3.8cqw/1 var(--font-script);
+  font: 600 3.496cqw/1 var(--font-script);
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: #b4532a;
@@ -37,24 +52,29 @@
 }
 .title {
   margin: 0;
-  font: 700 12cqw/1.04 var(--font-script);
+  font: 700 10.56cqw/1.04 var(--font-script);
   color: #8a4e2c;
   text-wrap: balance;
   overflow-wrap: anywhere;
 }
 .pageTitle {
   margin: 0;
-  font: 700 7.4cqw/1.1 var(--font-script);
+  font: 700 6.512cqw/1.1 var(--font-script);
   color: #8a4e2c;
   overflow-wrap: anywhere;
 }
 .meta {
-  margin: 4cqw 0 0;
-  font: 800 3.4cqw/1.3 var(--font-sans);
+  margin: 3.76cqw 0 0;
+  font: 800 3.196cqw/1.3 var(--font-sans);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #6b3f26;
   opacity: 0.75;
+}
+
+/* Pages without light text: the kicker a little darker over the paler scenery. */
+.layer:not(.light) .kicker {
+  filter: brightness(0.74) saturate(1.15);
 }
 
 /* Text under the night sky: the design's --lt-kick and --lt-title. */
@@ -68,7 +88,7 @@
 .light .title,
 .light .pageTitle {
   color: #fff3d6;
-  text-shadow: 0 0.5cqw 1.6cqw rgba(0, 0, 30, 0.35);
+  text-shadow: 0 0.3cqw 1cqw rgba(0, 0, 30, 0.22);
 }
 
 /* The design's polaroid: a slightly thinner border, a bold handwritten caption and a wider tape.
@@ -76,10 +96,19 @@
    the photo's frame is its first <span>, the caption its <i>, the tape its ::before. */
 .layer [data-draggable] > span:first-child {
   padding: 2.4cqw 2.4cqw 10.2cqw;
+  box-shadow:
+    0 1.6cqw 4.2cqw rgba(15, 25, 35, 0.42),
+    0 0 0 0.25cqw rgba(0, 0, 0, 0.05);
 }
+/* The design's stronger shadow and faint outline replace the shared drop shadow (no doubled shadow,
+   and one live filter less per photo). */
+.layer [data-draggable] {
+  filter: none;
+}
+/* The design's caption ×0.93 (it uses zoom; sizes here are the zoomed values). */
 .layer [data-draggable] i {
-  bottom: 2.6cqw;
-  font: 700 5.6cqw/1 var(--font-hand);
+  bottom: 2.418cqw;
+  font: 700 5.208cqw/1 var(--font-hand);
   color: var(--ink);
 }
 .layer [data-draggable]::before {

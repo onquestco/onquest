@@ -22,7 +22,7 @@ export function CoverPage({ trip }: { trip: TripData }) {
 
   return (
     <Stage label={trip.shortTitle}>
-      <Background variant="cover" />
+      <Background variant="cover" light />
       <div className={`${styles.layer} ${styles.light}`}>
         <Sun x={76} y={2} size={18} rotate={12} />
         <div className={styles.block} style={{ left: '6%', top: '4%', width: '70%' }}>

@@ -19,7 +19,7 @@ export function RoutePage({ trip }: { trip: TripData }) {
 
   return (
     <Stage label="Rainy route">
-      <Background scene="storm" seed={9} />
+      <Background scene="storm" seed={9} light />
       <div className={`${styles.layer} ${styles.light}`}>
         <div className={styles.block} style={{ left: '7%', top: '8%', width: '80%' }}>
           <p className={styles.kicker}>the way</p>

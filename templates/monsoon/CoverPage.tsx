@@ -20,7 +20,7 @@ export function CoverPage({ trip }: { trip: TripData }) {
 
   return (
     <Stage background={theme.colors.paper} label={trip.shortTitle}>
-      <Background scene="storm" seed={1} />
+      <Background scene="storm" seed={1} light />
       <div className={`${styles.layer} ${styles.light}`}>
         <div className={styles.block} style={{ left: '7%', top: '10%', width: '70%' }}>
           <p className={styles.kicker}>a Quest by @{trip.traveler.handle}</p>
