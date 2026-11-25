@@ -750,6 +750,40 @@ export const SERVER_EVENTS = {
       "max": 300
     }
   },
+  "blog_deleted": {
+    "blog_id": {
+      "type": "STRING",
+      "required": true
+    },
+    "status": {
+      "type": "STRING",
+      "required": true,
+      "values": [
+        "draft"
+      ]
+    },
+    "photos": {
+      "type": "INT64",
+      "required": true,
+      "min": 0,
+      "max": 10
+    },
+    "chars_bucket": {
+      "type": "STRING",
+      "required": true,
+      "values": [
+        "0",
+        "1-500",
+        "501-2000",
+        "2001-5000",
+        "5001-10000"
+      ]
+    },
+    "has_quest": {
+      "type": "BOOL",
+      "required": true
+    }
+  },
   "blog_draft_saved": {
     "blog_id": {
       "type": "STRING",

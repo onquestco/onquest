@@ -18,6 +18,7 @@ vi.mock('@/features/editor/publishActions', () => ({
   setQuestVisibility: vi.fn(),
 }));
 vi.mock('@/features/blogs/actions', () => ({ deleteBlog: vi.fn(), setBlogComments: vi.fn(), setBlogVisibility: vi.fn() }));
+vi.mock('@/features/blog-editor/actions', () => ({ deleteBlogDraft: vi.fn() }));
 
 const render = (props: Partial<Parameters<typeof YourQuestsView>[0]> = {}) =>
   renderToStaticMarkup(createElement(YourQuestsView, { initial: [], ...props }));
@@ -31,7 +32,7 @@ describe('YourQuestsView Quests · Blogs (blogs spec §6.3, PRD B5)', () => {
     );
   });
 
-  it('with blogs: the switch, drafts with "Continue editing" opening the composer, ⋯ on posted ones', () => {
+  it('with blogs: the switch, drafts with "Continue editing" opening the composer, ⋯ on every row', () => {
     const draft = blog(1, { status: 'draft', path: undefined, title: 'Untitled blog' });
     const html = render({ blogs: [draft, blog(2, { visibility: 'private' })] });
     expect(html).toContain('aria-label="Quests or blogs"');
@@ -40,7 +41,8 @@ describe('YourQuestsView Quests · Blogs (blogs spec §6.3, PRD B5)', () => {
     expect(html).toContain('>Draft</span>');
     expect(html).toContain('>Private</span>');
     expect(html).toContain('aria-label="Manage Goa on 15k, part 2"');
-    expect(html).not.toContain('aria-label="Manage Untitled blog"');
+    // A draft's ⋯ offers Continue editing and Delete draft (blogs-editor spec §6.3).
+    expect(html).toContain('aria-label="Manage Untitled blog"');
   });
 
   it('with access and no blogs: the switch and "No blogs yet. Write about a trip."', () => {

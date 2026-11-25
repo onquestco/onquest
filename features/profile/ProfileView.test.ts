@@ -29,6 +29,7 @@ vi.mock('@/features/editor/publishActions', () => ({
   setQuestVisibility: vi.fn(),
 }));
 vi.mock('./actions', () => ({ setFollow: vi.fn() }));
+vi.mock('@/features/blog-editor/actions', () => ({ deleteBlogDraft: vi.fn() }));
 vi.mock('@/features/blogs/actions', () => ({
   deleteBlog: vi.fn(),
   setBlogComments: vi.fn(),
