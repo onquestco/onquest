@@ -30,14 +30,18 @@ export function PhotoPage({ trip, page, pageNumber }: Props) {
   const scene = SCENES[pageIndex % SCENES.length] ?? 'lush';
   const photos = page.photos.slice(0, 3);
   const slots = PAGE_LAYOUTS[Math.max(1, photos.length) as 1 | 2 | 3];
+  const light = LIGHT.includes(scene);
+  // Pages without light text show their scenery at 60% (monsoon.module.css). The design puts it over
+  // the dark navy paper, which turns the pale sky and mist mid-blue under the ink titles (about 4:1,
+  // and 1.4:1 for the orange date). Over the scene's own pale colour the page stays light and readable.
   const background = theme.dayBackgrounds[pageIndex % theme.dayBackgrounds.length];
   const keyPart = page.part === 1 ? `monsoon:day-${index}` : `monsoon:day-${index}-part-${page.part}`;
   const lastPlace = page.places.at(-1)?.name;
 
   return (
     <Stage background={background} label={page.title}>
-      <Background scene={scene} seed={pageIndex + 2} />
-      <div className={`${styles.layer} ${LIGHT.includes(scene) ? styles.light : ''}`}>
+      <Background scene={scene} seed={pageIndex + 2} light={light} />
+      <div className={`${styles.layer} ${light ? styles.light : ''}`}>
         {page.dateLabel && (
           <div className={styles.block} style={{ left: '6%', top: '8%', width: '64%' }}>
             <p className={styles.kicker}>{page.dateLabel}</p>

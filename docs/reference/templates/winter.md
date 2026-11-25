@@ -1,3 +1,5 @@
+Superseded by winter.html (final design, 25 Nov 2026)
+
 # Winter design reference
 
 Design source: claude.ai artifact "OnQuest · Winter Quest template" (https://claude.ai/artifact/5sGKHMSZhueqDBn7RsWeYP), version 1795461847-f417, copied 25 Nov 2026.

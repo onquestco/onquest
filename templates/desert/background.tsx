@@ -47,10 +47,15 @@ const CARAVAN = [
   { x: 150, y: 530 },
 ];
 
-type Props = { scene: Scene; seed: number };
+type Props = {
+  scene: Scene;
+  seed: number;
+  /** A page with light text: the scenery at full strength. Others show it at 60% (see the CSS). */
+  light?: boolean;
+};
 
 /** One page's scenery. `seed` is the design's per-page number, so every night has its own stars. */
-export function Background({ scene, seed }: Props) {
+export function Background({ scene, seed, light = false }: Props) {
   // Many pages share one HTML document, so every id is unique per page.
   const id = `desert${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const url = (name: string) => `url(#${id}-${name})`;
@@ -58,7 +63,7 @@ export function Background({ scene, seed }: Props) {
 
   return (
     <svg
-      className={styles.background}
+      className={`${styles.background} ${light ? styles.lit : styles.dim}`}
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       preserveAspectRatio="none"
       data-scene={scene}

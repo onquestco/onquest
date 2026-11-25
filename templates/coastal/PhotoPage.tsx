@@ -26,13 +26,16 @@ export function PhotoPage({ trip, page, pageNumber }: Props) {
   const seaOnTop = pageIndex % 2 === 1;
   const photos = page.photos.slice(0, 3);
   const slots = PAGE_LAYOUTS[Math.max(1, photos.length) as 1 | 2 | 3];
-  const background = theme.dayBackgrounds[pageIndex % theme.dayBackgrounds.length];
+  // Pages without light text show their beach at 60% over the paper, as in the design.
+  const background = seaOnTop
+    ? theme.dayBackgrounds[pageIndex % theme.dayBackgrounds.length]
+    : theme.colors.paper;
   const keyPart = page.part === 1 ? `coastal:day-${index}` : `coastal:day-${index}-part-${page.part}`;
   const lastPlace = page.places.at(-1)?.name;
 
   return (
     <Stage background={background} label={page.title}>
-      <Background variant={seaOnTop ? 'top' : 'bottom'} />
+      <Background variant={seaOnTop ? 'top' : 'bottom'} light={seaOnTop} />
       <div className={`${styles.layer} ${seaOnTop ? styles.light : ''}`}>
         {page.dateLabel && (
           <div className={styles.block} style={{ left: '6%', top: '4%', width: '64%' }}>

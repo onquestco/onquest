@@ -6,6 +6,7 @@ import shared from '../shared/scrapbook.module.css';
 import styles from './desert.module.css';
 import { Background } from './background';
 import { MoonSticker } from './decor';
+import { theme } from './theme';
 
 /**
  * "Across the sand" in the Desert look: the design's terracotta dashes and numbered pins over the dunes,
@@ -18,7 +19,7 @@ export function RoutePage({ trip }: { trip: TripData }) {
   const where = trip.destination ? `Map of ${trip.destination}` : 'Map';
 
   return (
-    <Stage label="Across the sand">
+    <Stage background={theme.colors.paper} label="Across the sand">
       <Background scene="dunes" seed={9} />
       <div className={styles.layer}>
         <div className={styles.block} style={{ left: '7%', top: '8%', width: '80%' }}>

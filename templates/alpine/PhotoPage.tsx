@@ -27,7 +27,10 @@ export function PhotoPage({ trip, page, pageNumber }: Props) {
   const scene = SCENES[pageIndex % SCENES.length] ?? 'forest';
   const photos = page.photos.slice(0, 3);
   const slots = PAGE_LAYOUTS[Math.max(1, photos.length) as 1 | 2 | 3];
-  const background = theme.dayBackgrounds[pageIndex % theme.dayBackgrounds.length];
+  // The scenery shows at 60% (alpine.module.css). The design puts it over the paper on every page,
+  // which turns the night sky pale grey under white text; the night page keeps its own dark blue.
+  const background =
+    scene === 'night' ? theme.dayBackgrounds[pageIndex % theme.dayBackgrounds.length] : theme.colors.paper;
   const keyPart = page.part === 1 ? `alpine:day-${index}` : `alpine:day-${index}-part-${page.part}`;
   const lastPlace = page.places.at(-1)?.name;
 

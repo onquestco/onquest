@@ -60,8 +60,11 @@ function Texture({ id, width, height, file }: { id: string; width: number; heigh
   );
 }
 
-/** The page's beach. `cover` adds gulls and sun glare on the water. */
-export function Background({ variant }: { variant: BackgroundVariant }) {
+/**
+ * The page's beach. `cover` adds gulls and sun glare on the water. `light` pages (light text over
+ * the sea) show it at full strength; the others at 60% over the paper (see coastal.module.css).
+ */
+export function Background({ variant, light = false }: { variant: BackgroundVariant; light?: boolean }) {
   // Many pages share one HTML document, so every id is unique per page.
   const id = `coastal${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const { side, edge, swell } = SHORES[variant];
@@ -77,7 +80,7 @@ export function Background({ variant }: { variant: BackgroundVariant }) {
 
   return (
     <svg
-      className={styles.background}
+      className={`${styles.background} ${light ? styles.lit : styles.dim}`}
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       preserveAspectRatio="none"
       aria-hidden

@@ -6,6 +6,7 @@ import shared from '../shared/scrapbook.module.css';
 import styles from './roadtrip.module.css';
 import { Background } from './background';
 import { SunSticker } from './decor';
+import { theme } from './theme';
 
 /**
  * "Miles covered" in the Roadtrip look: the design's red dashes and numbered pins over the day sky,
@@ -18,7 +19,7 @@ export function RoutePage({ trip }: { trip: TripData }) {
   const where = trip.destination ? `Map of ${trip.destination}` : 'Map';
 
   return (
-    <Stage label="Miles covered">
+    <Stage background={theme.colors.paper} label="Miles covered">
       <Background scene="day" seed={9} />
       <div className={styles.layer}>
         <div className={styles.block} style={{ left: '7%', top: '8%', width: '80%' }}>

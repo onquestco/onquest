@@ -1,3 +1,5 @@
+Superseded by monsoon.html (final design, 25 Nov 2026)
+
 # Monsoon design reference
 
 Design source: claude.ai artifact "OnQuest · Monsoon Quest template" (https://claude.ai/artifact/2H4WTEdxhoPzZFFxTydyX9), version 1795462002-3028, copied 25 Nov 2026.

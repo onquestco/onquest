@@ -7,6 +7,7 @@ import styles from './alpine.module.css';
 import { Background } from './background';
 import { Compass } from './decor';
 import { HEIGHT, WIDTH } from './scenery';
+import { theme } from './theme';
 
 // The design's faint topographic rings, in its 390 × 650 box: [cx, cy, rx, ry].
 const CONTOURS = [
@@ -28,7 +29,7 @@ export function RoutePage({ trip }: { trip: TripData }) {
   const where = trip.destination ? `Map of ${trip.destination}` : 'Map';
 
   return (
-    <Stage label="Where I climbed">
+    <Stage background={theme.colors.paper} label="Where I climbed">
       <Background scene="mist" seed={9} />
       <svg className={styles.contours} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="none" aria-hidden>
         <g fill="none" stroke="#5F7F63" strokeOpacity=".28" strokeWidth="1.3">

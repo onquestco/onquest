@@ -6,6 +6,7 @@ import shared from '../shared/scrapbook.module.css';
 import { Background } from './background';
 import styles from './coastal.module.css';
 import { Shell } from './decor';
+import { theme } from './theme';
 
 /**
  * "Where I went" in the Coastal look: the design's red dashes and numbered pins on the sand, laid
@@ -18,7 +19,7 @@ export function RoutePage({ trip }: { trip: TripData }) {
   const where = trip.destination ? `Map of ${trip.destination}` : 'Map';
 
   return (
-    <Stage label="Where I went">
+    <Stage background={theme.colors.paper} label="Where I went">
       <Background variant="route" />
       <div className={styles.layer}>
         <div className={styles.block} style={{ left: '6%', top: '4%', width: '80%' }}>

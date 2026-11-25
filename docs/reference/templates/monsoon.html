@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OnQuest · Monsoon Quest template</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;800&family=Caveat:wght@500;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--font-sans:'Nunito',system-ui,sans-serif;--font-hand:'Caveat',cursive}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--font-sans);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:12px}
+.note{font:700 13px var(--font-sans);opacity:.75;text-align:center}
+.player{position:relative;width:min(94vw,400px)}
+.track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:22px;box-shadow:0 10px 30px rgba(0,0,0,.28);background:var(--paper)}
+.track::-webkit-scrollbar{display:none}
+.page{flex:0 0 100%;min-width:0;scroll-snap-align:start;container-type:inline-size}
+.stage{position:relative;width:100%;aspect-ratio:9/15;overflow:hidden;background:var(--paper)}
+.abs{position:absolute}
+.bg{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+.bird{animation:glide 7s ease-in-out infinite alternate}
+@keyframes glide{from{transform:translate(0,0)}to{transform:translate(16px,-7px)}}
+.drift{animation:drift 16s ease-in-out infinite alternate}
+@keyframes drift{from{transform:translateX(-12px)}to{transform:translateX(14px)}}
+.fall{animation:fall 9s linear infinite}
+@keyframes fall{from{transform:translateY(-30px)}to{transform:translateY(40px)}}
+.meta{font:800 3.4cqw/1.3 var(--font-sans);letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+.light .meta{color:#fff;opacity:.92}
+.light .kicker{color:var(--lt-kick,#fff)}
+.light .title,.light .pageTitle{color:var(--lt-title,#fff);text-shadow:0 .5cqw 1.6cqw rgba(0,0,30,.35)}
+.polaroid{position:absolute;background:#fff;padding:2.4cqw 2.4cqw 0;box-shadow:0 1.2cqw 3cqw rgba(0,0,0,.3);transform:rotate(var(--r,0deg));animation:drop .6s cubic-bezier(.2,.9,.3,1.2) both;animation-delay:var(--d,0s);z-index:3;color:var(--ink)}
+.polaroid .img{width:100%;aspect-ratio:var(--a,1);overflow:hidden;background:#cde}
+.polaroid .img svg{display:block;width:100%;height:100%}
+.polaroid .cap{font:700 5.6cqw/1 var(--font-hand);text-align:center;padding:2cqw 1cqw 2.6cqw;min-height:9cqw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tape{position:absolute;top:-3.2cqw;left:50%;width:22cqw;height:6.4cqw;transform:translateX(-50%) rotate(-3deg);opacity:.92}
+@keyframes drop{from{opacity:0;transform:translateY(-4cqw) rotate(var(--r,0deg)) scale(1.06)}to{opacity:1;transform:rotate(var(--r,0deg))}}
+.stamp{position:absolute;z-index:4;border:.8cqw dashed var(--accent2);color:var(--accent2);border-radius:2cqw;text-align:center;padding:1.4cqw 1cqw;transform:rotate(6deg);background:rgba(255,255,255,.82)}
+.stamp b{display:block;font:700 8cqw/1 var(--font-display)}
+.stamp span{font:800 2.6cqw/1.1 var(--font-sans);letter-spacing:.12em;text-transform:uppercase}
+.sticker{position:absolute;z-index:6;filter:drop-shadow(0 .4cqw .4cqw rgba(0,0,0,.22))}
+.nav{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px}
+.nav button{width:40px;height:40px;border-radius:50%;border:0;background:var(--accent);color:#fff;font:800 18px var(--font-sans);cursor:pointer}
+.nav button:disabled{opacity:.35;cursor:default}
+.dots{display:flex;gap:7px}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--ink);opacity:.25;transition:.2s}
+.dots i.on{opacity:1;background:var(--accent2);transform:scale(1.25)}
+.route svg.r{position:absolute;inset:0;width:100%;height:100%;z-index:2}
+@media (prefers-reduced-motion:reduce){.polaroid,.bird,.drift,.fall{animation:none}}
+:root{--paper:#0F3A63;--ink:#0F3A63;--accent:#2468AB;--accent2:#F29B1E;--font-display:'Montserrat',sans-serif;--lt-kick:#BFE6FF;--lt-title:#FFFFFF}
+body{background:linear-gradient(#0F3A63,#2468AB 55%,#BFE6F8)}
+.note{color:#fff}
+.kicker{font:500 3.8cqw/1 var(--font-display);letter-spacing:.42em;text-transform:uppercase;color:var(--accent2);margin:0}
+.title{margin:0;font:800 11.5cqw/1.02 var(--font-display);letter-spacing:.01em;text-transform:uppercase;color:var(--ink);text-wrap:balance}
+.pageTitle{margin:0;font:800 6.2cqw/1.1 var(--font-display);text-transform:uppercase;color:var(--ink)}
+.meta{letter-spacing:.2em}
+
+
+/* calm backgrounds so photos pop */
+.bg{filter:blur(1.1px) saturate(.72);transform:scale(1.03)}
+.stage:not(.light) .bg{opacity:.6}
+.stage:not(.light) .kicker{filter:brightness(.74) saturate(1.15)}
+.stage.light .bg{filter:blur(1.1px) saturate(.78) brightness(.93)}
+.polaroid{box-shadow:0 1.6cqw 4.2cqw rgba(15,25,35,.42),0 0 0 .25cqw rgba(0,0,0,.05)!important}
+
+/* softer text */
+.title,.pageTitle{zoom:.88}
+.kicker{zoom:.92}
+.meta{zoom:.94}
+.polaroid .cap{zoom:.93}
+.light .title,.light .pageTitle,.night .title,.night .pageTitle{text-shadow:0 .3cqw 1cqw rgba(0,0,30,.22)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<filter id="paper" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".7" numOctaves="3" seed="5"/><feColorMatrix values="0 0 0 0 .45  0 0 0 0 .40  0 0 0 0 .28  2.2 0 0 0 -1.0"/></filter>
+<radialGradient id="glare"><stop offset="0" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<linearGradient id="mStorm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0E3560"/><stop offset="1" stop-color="#0A2748"/></linearGradient>
+<linearGradient id="mLush" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#215E49"/><stop offset="1" stop-color="#12392C"/></linearGradient>
+<linearGradient id="mSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#BFE6F8"/><stop offset="1" stop-color="#EAF6FC"/></linearGradient>
+<linearGradient id="mMist" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D5E6EA"/><stop offset="1" stop-color="#9CC3CF"/></linearGradient>
+<filter id="cut" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity=".38"/></filter>
+
+</defs></svg>
+<div class="note">Monsoon Quest template — swipe, or use the arrows / ← → keys</div>
+<div class="player">
+  <div class="track" id="track"></div>
+  <div class="nav">
+    <button id="prev" aria-label="Previous page">‹</button>
+    <div class="dots" id="dots"></div>
+    <button id="next" aria-label="Next page">›</button>
+  </div>
+</div>
+<script>
+/* ---------- helpers ---------- */
+const rng=s=>()=>(s=(s*16807)%2147483647)/2147483647;
+const svgBg=inner=>`<svg class="bg" viewBox="0 0 390 650" preserveAspectRatio="none" aria-hidden="true">${inner}</svg>`;
+const grain=(op=.3)=>`<rect width="390" height="650" filter="url(#paper)" opacity="${op}"/>`;
+const cloud=(x,y,s,fill='#fff',op=1,extra='')=>`<path ${extra} transform="translate(${x} ${y}) scale(${s})" d="M-34 14a14 14 0 0 1 2-28 20 20 0 0 1 38-4 16 16 0 0 1 8 32z" fill="${fill}" opacity="${op}"/>`;
+const bird=(x,y,s,r=0,c='#4a4a4a')=>`<path transform="translate(${x} ${y}) rotate(${r}) scale(${s})" d="M-14 2Q-8 -8 0 0Q8 -8 14 2Q8 -3 0 4Q-8 -3 -14 2z" fill="${c}"/>`;
+const stars=(n,seed,maxY,c='#fff')=>{const r=rng(seed*7+1);return Array.from({length:n},()=>{const x=r()*390,y=r()*maxY,k=r();return `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${(.6+k*1.3).toFixed(1)}" fill="${c}" opacity="${(.4+k*.6).toFixed(2)}"/>`}).join('')};
+function ridge(base,amp,seed,fill,stroke,snow){
+  const r=rng(seed*97+13),pts=[];const n=9;
+  for(let k=0;k<=n;k++){const x=-10+410*k/n,high=k%2===1;pts.push([x,base-amp*(high?.55+.45*r():.1+.2*r())]);}
+  const d='M-10 650 '+pts.map(p=>`L${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ')+' L400 650Z';
+  const line='M'+pts.map(p=>`${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' L');
+  const caps=snow?pts.filter((p,k)=>k%2===1&&p[1]<base-amp*.7).map(([x,y])=>`<path d="M${x} ${y}L${x-10} ${y+17}L${x-3} ${y+13}L${x} ${y+21}L${x+4} ${y+13}L${x+10} ${y+17}Z" fill="#fff" opacity=".85"/>`).join(''):'';
+  return `<path d="${d}" fill="${fill}"/>${stroke?`<path d="${line}" stroke="${stroke}" stroke-width="1.6" fill="none" opacity=".5" stroke-linejoin="round"/>`:''}${caps}`;
+}
+const st=(x,y,s,r,vb,body)=>`<svg class="sticker" viewBox="${vb}" style="left:${x}%;top:${y}%;width:${s}%;rotate:${r}deg">${body}</svg>`;
+const polaroid=(p,x,y,w,a,r,d,tape,cap)=>`<div class="polaroid" style="left:${x}%;top:${y}%;width:${w}%;--a:${a};--r:${r}deg;--d:${d}s">
+  <span class="tape" style="background:${tape}"></span><div class="img">${THEME.scenes[p]}</div><div class="cap">${cap||''}</div></div>`;
+const stamp=(x,y,w,big,small)=>`<div class="stamp" style="left:${x}%;top:${y}%;width:${w}%"><b>${big}</b><span>${small}</span></div>`;
+
+/* ---------- theme ---------- */
+const band=(y,amp,fill,top,off=0)=>{const d=`${y}Q${40+off} ${y-amp} ${90+off} ${y}T${190+off} ${y}T${290+off} ${y}T${390+off} ${y}T${490+off} ${y}`;return top?`<path filter="url(#cut)" d="M-60 ${y}Q${-20+off} ${y-amp} ${30+off} ${y}T${190+off} ${y}T${290+off} ${y}T${390+off} ${y}T${490+off} ${y}V-20H-60Z" fill="${fill}"/>`:`<path filter="url(#cut)" d="M-60 ${y}Q${-20+off} ${y-amp} ${30+off} ${y}T${190+off} ${y}T${290+off} ${y}T${390+off} ${y}T${490+off} ${y}V670H-60Z" fill="${fill}"/>`};
+const drop=(x,y,s,c='#6CC4F2',op=1)=>`<path transform="translate(${x} ${y}) scale(${s})" d="M0 -9C5 -2 7 2 7 5A7 7 0 0 1 -7 5C-7 2 -5 -2 0 -9z" fill="${c}" opacity="${op}"/>`;
+const rain=(n,seed,c='#fff',op=.3)=>{const r=rng(seed*13+4);return `<g class="fall" stroke="${c}" stroke-width="1.6" stroke-linecap="round" opacity="${op}">${Array.from({length:n},()=>{const x=r()*400,y=r()*620;return `<path d="M${x.toFixed(0)} ${y.toFixed(0)}l-6 22"/>`}).join('')}</g>`};
+const drops=(n,seed,c='#6CC4F2')=>{const r=rng(seed*17+2);return Array.from({length:n},()=>drop((r()*370+10).toFixed(0),(r()*560+60).toFixed(0),.7+r()*.8,c,.9)).join('')};
+const bolt=(x,y,s)=>`<path filter="url(#cut)" transform="translate(${x} ${y}) scale(${s})" d="M12 0L-8 34H4L-6 66L22 24H8L18 0z" fill="#F8C21B"/>`;
+const umbrellaSvg=(x,y,s,c,r=0)=>`<g transform="translate(${x} ${y}) rotate(${r}) scale(${s})"><path d="M-34 0A34 34 0 0 1 34 0Q24 -6 17 0Q10 -6 0 0Q-10 -6 -17 0Q-24 -6 -34 0z" fill="${c}" stroke="#fff" stroke-width="3"/><path d="M0 0V34Q0 42 8 42" stroke="#444" stroke-width="3" fill="none" stroke-linecap="round"/></g>`;
+const leaf=(x,y,s,r,c)=>`<path transform="translate(${x} ${y}) rotate(${r}) scale(${s})" d="M0 -20C16 -10 16 10 0 20C-16 10 -16 -10 0 -20z" fill="${c}"/>`;
+const THEME={
+  cs:false, single:true, kinds:['storm','lush','sky','umbrella','storm'], light:['storm','lush'], stampBig:'☔', ink:'#0F3A63', pin:'#F29B1E',
+  trip:{title:'Monsoon<br>Diaries',handle:'alok',dateLabel:'12–15 Jul',statsLabel:'4 days · 6 waterfalls',destination:'Munnar',
+    tapes:['rgba(108,196,242,.75)','rgba(242,155,30,.65)','rgba(255,255,255,.8)'],
+    pages:[
+      {date:'Day 1 · 12 Jul',title:'Chasing waterfalls',photos:[{s:'falls',c:'roaring falls'},{s:'umbrella',c:'dodging puddles'}],place:'Munnar'},
+      {date:'Day 2 · 13 Jul',title:'Chai & rain',photos:[{s:'window',c:'window seat'},{s:'paddy',c:'green on green'},{s:'umbrella',c:'the red umbrella'}],place:'Thekkady'},
+      {date:'Day 3 · 14 Jul',title:'Mist & green',photos:[{s:'paddy',c:'valley after rain'}],place:'Vagamon'}],
+    route:[['Kochi',22,74],['Munnar',40,54],['Thekkady',62,40],['Alleppey',78,20]],routeKicker:'the way',routeTitle:'Rainy route'},
+  scenes:{
+    falls:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="#2E6B55"/><path d="M0 0H100V30Q50 38 0 30z" fill="#1E4F3E"/><path d="M0 70Q30 40 40 20H60Q70 40 100 70V100H0z" fill="#3E8A62"/><path d="M42 20H58L62 78H38z" fill="#fff" opacity=".92"/><path d="M46 20L47 78M52 20L53 78" stroke="#BFE6F8" stroke-width="1.4"/><ellipse cx="50" cy="82" rx="26" ry="8" fill="#BFE6F8"/><ellipse cx="50" cy="80" rx="14" ry="4" fill="#fff" opacity=".8"/><g stroke="#fff" opacity=".4" stroke-width="1"><path d="M10 6l-3 9M30 10l-3 9M70 4l-3 9M90 12l-3 9"/></g></svg>`,
+    umbrella:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="url(#mMist)"/><rect y="74" width="100" height="26" fill="#6F8F9B"/><ellipse cx="30" cy="86" rx="14" ry="3.6" fill="#9CC3CF"/><ellipse cx="72" cy="92" rx="18" ry="4" fill="#9CC3CF"/><path d="M26 56A24 24 0 0 1 74 56Q66 51 62 56Q56 51 50 56Q44 51 38 56Q32 51 26 56z" fill="#F29B1E" stroke="#fff" stroke-width="2"/><path d="M50 56V84Q50 90 56 90" stroke="#444" stroke-width="2.2" fill="none" stroke-linecap="round"/><g fill="#6CC4F2"><path d="M12 20l-2 7a2.4 2.4 0 1 0 4 0z"/><path d="M88 34l-2 7a2.4 2.4 0 1 0 4 0z"/><path d="M20 48l-2 7a2.4 2.4 0 1 0 4 0z"/></g></svg>`,
+    window:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="#B7CFD8"/><rect x="10" y="8" width="80" height="56" rx="4" fill="#DDEBF0" stroke="#fff" stroke-width="3"/><path d="M50 8V64M10 36H90" stroke="#fff" stroke-width="2.4"/><g fill="#6CC4F2" opacity=".85"><circle cx="24" cy="20" r="2"/><circle cx="36" cy="30" r="1.6"/><circle cx="64" cy="18" r="2"/><circle cx="76" cy="46" r="1.8"/><circle cx="22" cy="50" r="1.6"/></g><path d="M0 64H100V100H0z" fill="#8A5A3C"/><path d="M38 66H62L59 90H41z" fill="#fff"/><path d="M40 70H60L58.6 80H41.4z" fill="#B06F3F"/><path d="M62 70q8 0 8 6t-8 6" stroke="#fff" stroke-width="2.4" fill="none"/><path d="M46 62q-2-5 2-8M54 62q-2-5 2-8" stroke="#fff" stroke-width="1.4" fill="none" opacity=".8"/></svg>`,
+    paddy:`<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="#D2E6E2"/><path d="M0 46L24 28l16 14 20-20 40 28V100H0z" fill="#7DB0A0"/><path d="M0 60Q30 50 60 58T100 54V100H0z" fill="#58A55E"/><path d="M0 74Q30 66 60 72T100 70V100H0z" fill="#3E8A4E"/><path d="M0 88Q30 82 60 86T100 84V100H0z" fill="#2B6E3F"/><g stroke="#fff" opacity=".5" stroke-width="1"><path d="M12 4l-3 9M34 10l-3 9M64 6l-3 9M88 14l-3 9"/></g></svg>`
+  },
+  stickers:[
+    (x,y,s,r=0)=>st(x,y,s,r,'-12 -14 24 30','<path d="M0 -12C6 -3 9 2 9 6A9 9 0 0 1 -9 6C-9 2 -6 -3 0 -12z" fill="#6CC4F2" stroke="#fff" stroke-width="2.4"/>'),
+    (x,y,s,r=0)=>st(x,y,s,r,'0 0 100 60','<path d="M24 52a16 16 0 0 1 2-32 22 22 0 0 1 42-4 18 18 0 0 1 8 36z" fill="#4AA3E8" stroke="#fff" stroke-width="3"/>'),
+    (x,y,s,r=0)=>st(x,y,s,r,'-40 -4 80 56','<path d="M-34 0A34 34 0 0 1 34 0Q24 -6 17 0Q10 -6 0 0Q-10 -6 -17 0Q-24 -6 -34 0z" fill="#F29B1E" stroke="#fff" stroke-width="3"/><path d="M0 0V34Q0 42 8 42" stroke="#444" stroke-width="3" fill="none" stroke-linecap="round"/>'),
+    (x,y,s,r=0)=>st(x,y,s,r,'0 0 40 70','<path d="M22 4L4 38H16L8 66L34 26H20L30 4z" fill="#F8C21B" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>'),
+    (x,y,s,r=0)=>st(x,y,s,r,'-24 -24 48 48','<path d="M0 -20C16 -10 16 10 0 20C-16 10 -16 -10 0 -20z" fill="#58A55E" stroke="#fff" stroke-width="3"/><path d="M0 -16V16" stroke="#fff" stroke-width="2"/>')
+  ],
+  bg(k,seed){
+    if(k==='storm'&&seed===1)return svgBg(`<rect width="390" height="650" fill="url(#mStorm)"/>${grain(.1)}${band(70,20,'#2468AB',true,-20)}${band(44,18,'#6CC4F2',true,10)}${cloud(300,250,2.2,'#4AA3E8',1,'filter="url(#cut)"')}${bolt(292,262,1.15)}${drops(6,seed)}${band(626,18,'#12457A',false,10)}`);
+    if(k==='storm')return svgBg(`<rect width="390" height="650" fill="url(#mStorm)"/>${grain(.1)}${band(140,24,'#17497F',true,seed*6)}${band(112,24,'#2468AB',true,-30)}${band(84,24,'#3A8FD0',true,20)}${band(54,22,'#6CC4F2',true,-10)}<g class="drift">${cloud(100,300,1.5,'#2468AB',1,'filter="url(#cut)"')}${cloud(330,420,1.7,'#2468AB',1,'filter="url(#cut)"')}${cloud(40,470,1.1,'#1B5A99',1,'filter="url(#cut)"')}</g>${cloud(250,250,2.5,'#4AA3E8',1,'filter="url(#cut)"')}${bolt(238,282,1.5)}${drops(16,seed)}${band(612,22,'#12457A',false,10)}${band(634,20,'#0C3560',false,-20)}`);
+    if(k==='lush')return svgBg(`<rect width="390" height="650" fill="url(#mLush)"/>${grain(.1)}${rain(40,seed)}${band(120,22,'#2F7A5B',true,10)}${band(94,22,'#4C9A62',true,-20)}${band(520,28,'#3F9A5C',false,10)}${band(560,26,'#2E8456',false,-30)}${band(596,24,'#256F4A',false,20)}${band(630,20,'#1B5A45',false,-10)}${leaf(60,480,1.4,-30,'#6DBB6E')}${leaf(330,500,1.2,25,'#6DBB6E')}${leaf(200,520,.9,-8,'#4C9A62')}`);
+    if(k==='sky')return svgBg(`<rect width="390" height="650" fill="url(#mSky)"/>${grain(.1)}<g class="drift">${cloud(90,170,2,'#fff',1,'filter="url(#cut)"')}${cloud(300,250,1.6,'#fff',1,'filter="url(#cut)"')}</g>${drops(14,seed,'#4EA5DE')}${band(540,26,'#79C3EC',false,10)}${band(572,24,'#4EA5DE',false,-30)}${band(602,22,'#2F86C8',false,20)}${band(632,20,'#1E67A8',false,-10)}`);
+    return svgBg(`<rect width="390" height="650" fill="url(#mMist)"/>${grain(.1)}${rain(36,seed,'#4EA5DE',.45)}${umbrellaSvg(80,190,1.1,'#F29B1E',-12)}${umbrellaSvg(310,150,.9,'#E5532D',14)}${umbrellaSvg(250,330,.8,'#2F86C8',-6)}${band(590,22,'#6F8F9B',false,0)}<g fill="none" stroke="#fff" opacity=".6" stroke-width="2"><ellipse cx="90" cy="626" rx="20" ry="5"/><ellipse cx="90" cy="626" rx="34" ry="9"/><ellipse cx="300" cy="620" rx="18" ry="4.5"/><ellipse cx="300" cy="620" rx="30" ry="8"/></g>`);
+  }
+};
+
+
+/* ---------- pages ---------- */
+const trip=THEME.trip, T=trip.tapes, S=THEME.stickers;
+const cls=k=>THEME.light.includes(k)?'stage light':'stage';
+function cover(){
+  const k=THEME.kinds[0];
+  return `<div class="${cls(k)}">${THEME.bg(k,1)}
+    <div class="abs" style="left:7%;top:10%;width:70%"><p class="kicker">a Quest by @${trip.handle}</p></div>
+    <div class="abs" style="left:7%;top:14.5%;width:88%"><h1 class="title">${trip.title}</h1></div>
+    <div class="abs" style="left:7%;top:31%;width:88%"><span class="meta">${trip.dateLabel} · ${trip.statsLabel}</span></div>
+    ${THEME.single?'':polaroid(trip.pages[1].photos[0].s,53,47,43,1,8,.35,T[1],'')+polaroid(trip.pages[0].photos[1].s,4,49,43,1,-9,.25,T[2],'')}
+    ${THEME.single?polaroid(trip.pages[0].photos[0].s,14,47,60,.95,-2,.1,T[0],`Welcome to ${trip.destination}`):polaroid(trip.pages[0].photos[0].s,17,38,64,.95,-2,.1,T[0],`Welcome to ${trip.destination}`)}
+    ${THEME.single?stamp(70,88,24,THEME.stampBig,trip.destination):stamp(68,82,26,THEME.stampBig,trip.destination)}
+    ${THEME.cs===false?'':THEME.cs?S[THEME.cs[0]](THEME.cs[1],THEME.cs[2],THEME.cs[3],0):S[3](72,6,20,0)}
+  </div>`;
+}
+function photoPage(p,i){
+  const n=p.photos.length, k=THEME.kinds[i+1];
+  const L={1:[[9,27,82,.82,-2]],2:[[5,25,62,.95,-4],[36,55,58,1.05,5]],3:[[4,25,58,1,-4],[44,40,52,.95,5],[8,64,46,1.1,-2]]}[n];
+  return `<div class="${cls(k)}">${THEME.bg(k,i+2)}
+    <div class="abs" style="left:6%;top:8%;width:64%"><p class="kicker">${p.date}</p></div>
+    <div class="abs" style="left:6%;top:12.5%;width:64%"><h2 class="pageTitle">${p.title}</h2></div>
+    ${stamp(72,7,22,String(i+1).padStart(2,'0'),p.place)}
+    ${p.photos.map((ph,j)=>polaroid(ph.s,...L[j],.1+j*.15,T[j%3],ph.c)).join('')}
+    ${S[(i*2)%5](80,87,14,8)}
+    ${S[(i*2+1)%5](-1,86,14,-10)}
+  </div>`;
+}
+function route(){
+  const k=THEME.kinds[4], lt=THEME.light.includes(k);
+  const pts=trip.route, d=pts.map((p,j)=>(j?'L':'M')+p[1]*3.9+' '+(p[2]*5+60)).join(' ');
+  return `<div class="${cls(k)} route">${THEME.bg(k,9)}
+    <div class="abs" style="left:7%;top:8%;width:80%"><p class="kicker">${trip.routeKicker}</p></div>
+    <div class="abs" style="left:7%;top:12.5%;width:80%"><h2 class="pageTitle">${trip.routeTitle}</h2></div>
+    <svg class="r" viewBox="0 0 390 650" preserveAspectRatio="none">
+      <path d="${d}" stroke="${THEME.pin}" stroke-width="3.5" stroke-dasharray="3 9" stroke-linecap="round" fill="none"/>
+      ${pts.map((p,j)=>`<g transform="translate(${p[1]*3.9} ${p[2]*5+60})"><circle r="12" fill="${THEME.pin}" stroke="#fff" stroke-width="4"/><text y="4.5" text-anchor="middle" fill="#fff" font-size="12" font-weight="800" font-family="Nunito">${j+1}</text><text y="-20" text-anchor="middle" fill="${lt?'#fff':THEME.ink}" font-size="14" font-weight="800" font-family="Nunito">${p[0]}</text></g>`).join('')}
+    </svg>
+    ${S[0](78,50,15,10)}
+  </div>`;
+}
+
+/* ---------- player ---------- */
+const pages=[cover(),...trip.pages.map(photoPage),route()];
+const track=document.getElementById('track'),dots=document.getElementById('dots');
+pages.forEach(h=>{const s=document.createElement('section');s.className='page';s.innerHTML=h;track.appendChild(s);dots.appendChild(document.createElement('i'))});
+let cur=0;
+const prev=document.getElementById('prev'),next=document.getElementById('next');
+function sync(){
+  cur=Math.round(track.scrollLeft/track.clientWidth);
+  [...dots.children].forEach((d,k)=>d.classList.toggle('on',k===cur));
+  prev.disabled=cur===0; next.disabled=cur===pages.length-1;
+}
+const go=k=>track.children[Math.max(0,Math.min(pages.length-1,k))].scrollIntoView({behavior:'smooth',inline:'start',block:'nearest'});
+track.addEventListener('scroll',sync,{passive:true});
+prev.onclick=()=>go(cur-1); next.onclick=()=>go(cur+1);
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')go(cur+1);if(e.key==='ArrowLeft')go(cur-1)});
+sync();
+</script>
+</body>
+</html>

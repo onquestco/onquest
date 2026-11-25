@@ -1,3 +1,5 @@
+Superseded by desert.html (final design, 25 Nov 2026)
+
 # Desert design reference
 
 Design source: claude.ai artifact "OnQuest · Desert Quest template" (https://claude.ai/artifact/92ZUhdmomd6QfpHTUzhDSS), version 1795461841-e299, copied 25 Nov 2026.

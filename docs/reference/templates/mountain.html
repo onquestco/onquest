@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- Design source: claude.ai artifact "OnQuest · Mountain Quest template" (https://claude.ai/artifact/N4ukoN4vp8Yr9HQynsRWD9), version 1795461348-4692, copied 25 Nov 2026. Visual source of truth for the new Mountain template. Note: the design references url(#glare) without defining it (sunrise and night pages); use a soft white radial glow. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -55,6 +54,20 @@ body{background:linear-gradient(#e7f0ea,#f3f1e4 60%,#d8e3d2);font-family:var(--f
 .dots i.on{opacity:1;background:var(--accent2);transform:scale(1.25)}
 .route svg.r{position:absolute;inset:0;width:100%;height:100%;z-index:2}
 @media (prefers-reduced-motion:reduce){.polaroid,.bird,.mist{animation:none}}
+
+/* calm backgrounds so photos pop */
+.bg{filter:blur(1.1px) saturate(.72);transform:scale(1.03)}
+.stage:not(.light) .bg{opacity:.6}
+.stage:not(.light) .kicker{filter:brightness(.74) saturate(1.15)}
+.stage.light .bg{filter:blur(1.1px) saturate(.78) brightness(.93)}
+.polaroid{box-shadow:0 1.6cqw 4.2cqw rgba(15,25,35,.42),0 0 0 .25cqw rgba(0,0,0,.05)!important}
+
+/* softer text */
+.title,.pageTitle{zoom:.88}
+.kicker{zoom:.92}
+.meta{zoom:.94}
+.polaroid .cap{zoom:.93}
+.light .title,.light .pageTitle,.night .title,.night .pageTitle{text-shadow:0 .3cqw 1cqw rgba(0,0,30,.22)}
 </style>
 </head>
 <body>
