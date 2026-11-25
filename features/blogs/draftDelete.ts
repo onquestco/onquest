@@ -4,7 +4,8 @@ import type { ActionResult } from '@/lib/action';
 // What "Delete draft" does with deleteBlogDraft's answer (blogs-editor spec §6.3), kept apart from
 // the sheet so each outcome can be tested.
 
-type DeleteResult = ActionResult<{ deleted: true } | { deleted: false; error: 'not_found' | 'published' }>;
+// Loose on purpose: TypeScript infers the action's result with `error` possibly undefined.
+type DeleteResult = ActionResult<{ deleted: boolean; error?: 'not_found' | 'published' }>;
 
 /**
  * deleted: the row goes (also when it was already gone: there's nothing left to show).
