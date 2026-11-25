@@ -6,7 +6,7 @@ import { TripPage } from './TripPage';
 const mountain = {
   id: 'mountain',
   name: 'Mountain',
-  status: 'live',
+  status: 'retired',
   defaults: { title: 'Above the Clouds', closingHeadline: 'The mountains are calling.' },
   theme,
   TripPage,

@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { buttonClassName } from '@/design-system/components/Button';
 import { TopBar } from '@/design-system/components/TopBar';
 import { goaTrip } from '@/lib/demo/goaTrip';
-import { templates } from '@/templates/registry';
+import { getTemplate, pickableTemplates } from '@/templates/registry';
+import type { Template } from '@/templates/types';
 import { useDraft } from './draftStore';
 import { LostDraft } from './LostDraft';
 import { ScaledFrame } from './ScaledFrame';
@@ -15,11 +16,19 @@ const SAMPLE = { ...goaTrip, title: 'Three days in Goa' };
 // Drawn at a phone's width, then scaled down to the card.
 const COVER_WIDTH = 390;
 
+/**
+ * Live templates, plus a draft's retired Beach or old Mountain so it keeps its look. A published
+ * Quest only shows the look it has: switching it to another is not offered yet (templates spec D4).
+ */
+export function templateChoices(currentId: string, isPublished: boolean): Template[] {
+  return isPublished ? [getTemplate(currentId)] : pickableTemplates(currentId);
+}
+
 /** Screen 6: each template shown as its own cover page, in its own colours, fonts and decorations. */
 export function ChooseTemplate({ tripKey }: { tripKey: string }) {
-  const { key, document, setDocument } = useDraft();
+  const { key, document, published, setDocument } = useDraft();
   if (key !== tripKey || !document) return <LostDraft />;
-  const live = Object.values(templates).filter((template) => template.status === 'live');
+  const choices = templateChoices(document.templateId, Boolean(published));
 
   return (
     <>
@@ -27,7 +36,7 @@ export function ChooseTemplate({ tripKey }: { tripKey: string }) {
       <main className="mx-auto flex min-h-svh max-w-lg flex-col gap-4 bg-surface px-4 pt-4 pb-28">
         <h2 className="text-lead font-semibold text-ink">Pick a look for your Quest</h2>
         <div role="radiogroup" aria-label="Template" className="flex flex-col gap-4">
-          {live.map((template) => {
+          {choices.map((template) => {
             const selected = document.templateId === template.id;
             return (
               <button

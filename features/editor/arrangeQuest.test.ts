@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { GeoPlace } from '@/lib/geo';
 import { arrangeQuest, type ArrangeDeps } from './arrangeQuest';
+
+// The template registry loads each template's fonts, which only work inside a Next.js build.
+vi.mock('next/font/google', () => import('@/templates/shared/nextFontStub'));
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 
@@ -56,6 +59,11 @@ const picked = [
 ];
 
 describe('arrangeQuest', () => {
+  it('starts a new Quest in Coastal, the default template (templates spec AC4)', async () => {
+    const result = await arrangeQuest(picked, undefined, deps().fake);
+    expect(result.document.templateId).toBe('coastal');
+  });
+
   it('sorts, names places, saves, then town-only captions when the collage gives nothing', async () => {
     const { fake, calls, saved } = deps();
     const result = await arrangeQuest(picked, undefined, fake);

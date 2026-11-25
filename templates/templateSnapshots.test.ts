@@ -8,34 +8,37 @@ import beach from './beach';
 import mountain from './mountain';
 import type { Template } from './types';
 
-// next/font only works inside a Next.js build. A stand-in that returns a stable class name per
-// font keeps the markup comparable. vi.mock is hoisted, so the factory can't use outer names.
-vi.mock('next/font/google', () => {
-  const font = (name: string) => (options: { variable: string }) => ({
-    className: name,
-    variable: `${name}${options.variable}`,
-    style: { fontFamily: name },
-  });
-  const names = [
-    'Bitter',
-    'Caveat',
-    'Courier_Prime',
-    'DM_Sans',
-    'Kaushan_Script',
-    'Nunito',
-    'Pacifico',
-    'Playfair_Display',
-    'Satisfy',
-    'Special_Elite',
-    'Work_Sans',
-  ];
-  return Object.fromEntries(names.map((name) => [name, font(name)]));
-});
+vi.mock('next/font/google', () => import('./shared/nextFontStub'));
 
 // Published Beach and old-Mountain Quests must look exactly as they did before Coastal (templates
-// spec AC3). The fingerprints below were taken from main before any template change; a different
-// fingerprint means existing pages or their Instagram export would change.
-const EXPECTED: Record<string, string> = {};
+// spec AC3). The fingerprints below were taken in CI from main (082377e) before any template change;
+// a different fingerprint means existing pages or their Instagram export would change.
+const EXPECTED: Record<string, string> = {
+  'beach/carousel/full': 'a96ad4d31583ab75',
+  'beach/carousel/goa': '9429971af7e3203c',
+  'beach/carousel/old': '0980e79cd134bbfb',
+  'beach/carousel/small': 'de38abcc4039eba4',
+  'beach/page/full': 'cdc105386249c520',
+  'beach/page/goa': '15759a1bcd1c5599',
+  'beach/page/old': '4f48c7e2847ec790',
+  'beach/page/small': '8cddc3fe26a43871',
+  'beach/story/full': '61dcd4f139ecb8c2',
+  'beach/story/goa': '61dcd4f139ecb8c2',
+  'beach/story/old': '61dcd4f139ecb8c2',
+  'beach/story/small': '4615954c4a407103',
+  'mountain/carousel/full': '5bd25f64c2f10f50',
+  'mountain/carousel/goa': '0a63d27ca259238a',
+  'mountain/carousel/old': '7725271ce14110d9',
+  'mountain/carousel/small': '6d1d8292656c52ed',
+  'mountain/page/full': 'a4286e6487379a11',
+  'mountain/page/goa': '4bbb5cc11c66915c',
+  'mountain/page/old': 'af68e2b1d17b3ab4',
+  'mountain/page/small': 'e72bf0640a53f868',
+  'mountain/story/full': '3c51f1465b1b6b27',
+  'mountain/story/goa': '3c51f1465b1b6b27',
+  'mountain/story/old': '3c51f1465b1b6b27',
+  'mountain/story/small': 'be1efda4d70c6126',
+};
 
 const fingerprint = (node: ReactNode) =>
   createHash('sha256').update(renderToStaticMarkup(node)).digest('hex').slice(0, 16);

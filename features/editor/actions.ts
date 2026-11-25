@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { action } from '@/lib/action';
 import { QuestCreateSourceSchema } from '@/lib/analytics/sources';
 import { QuestDocumentSchema } from '@/lib/trip/schema';
+import { DEFAULT_TEMPLATE_ID } from '@/templates/registry';
 import { saveError } from './dbErrors';
 import { documentProblem } from './documentRules';
 
@@ -19,7 +20,7 @@ const CreateSchema = z.object({
 
 /** On "Next" in Pick photos: the trip and its draft exist from here on. */
 export const createQuest = action(CreateSchema, async ({ key }, { user, db }) => {
-  const { data, error } = await db.rpc('create_trip', { p_key: key });
+  const { data, error } = await db.rpc('create_trip', { p_key: key, p_template_id: DEFAULT_TEMPLATE_ID });
   const problem = saveError(error);
   if (problem === 'exists') return { created: false as const, error: 'exists' as const };
   if (error) throw new Error('Could not create Quest');
