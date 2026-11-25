@@ -4,8 +4,10 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/design-system/components/Button';
 import { Chip } from '@/design-system/components/Chip';
 import { SearchIcon } from '@/design-system/components/icons';
+import type { BlogCard } from '@/lib/blog/cards';
 import { SearchResultsSchema, type GuideCard, type Person, type SearchResults } from '@/lib/social/schema';
 import type { QuestCard } from '@/lib/trip/cards';
+import { BlogStoryRows } from './BlogStoryRows';
 import { GuideCards } from './GuideCards';
 import { PeopleList } from './PeopleList';
 import { QuestGrid } from './QuestGrid';
@@ -15,6 +17,8 @@ type Props = {
   chips: string[];
   trending: QuestCard[];
   guides: GuideCard[];
+  /** Public blogs, best first (list_explore_blogs); after the guides (decided 23 Nov). */
+  blogs?: BlogCard[];
   travellers: Person[];
 };
 
@@ -32,8 +36,8 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-/** Screen 13: place chips, trending, guides and travellers; search replaces them while typing. */
-export function ExploreView({ signedIn, chips: placeChips, trending, guides, travellers }: Props) {
+/** Screen 13: place chips, trending, stories (guides, then blogs) and travellers; search replaces them while typing. */
+export function ExploreView({ signedIn, chips: placeChips, trending, guides, blogs = [], travellers }: Props) {
   const chips = placeChips.length >= 3 ? placeChips : STARTER_CHIPS;
   const [text, setText] = useState('');
   const [results, setResults] = useState<SearchResults | null>(null);
@@ -67,7 +71,9 @@ export function ExploreView({ signedIn, chips: placeChips, trending, guides, tra
   }, [query]);
 
   const searching = query.length >= MIN;
-  const empty = results && results.quests.length + results.people.length + results.guides.length === 0;
+  const empty =
+    results &&
+    results.quests.length + results.people.length + results.guides.length + results.blogs.length === 0;
 
   return (
     <main className="mx-auto flex max-w-lg md:max-w-3xl flex-col gap-4 px-4 py-4">
@@ -119,9 +125,11 @@ export function ExploreView({ signedIn, chips: placeChips, trending, guides, tra
               <PeopleList people={results.people} source="search" signedIn={signedIn} />
             </Section>
           )}
-          {results && results.guides.length > 0 && (
+          {/* Stories: OnQuest guides, then public blogs (PRD B8). */}
+          {results && results.guides.length + results.blogs.length > 0 && (
             <Section title="Stories and guides">
-              <GuideCards guides={results.guides} />
+              {results.guides.length > 0 && <GuideCards guides={results.guides} />}
+              {results.blogs.length > 0 && <BlogStoryRows blogs={results.blogs} />}
             </Section>
           )}
         </div>
@@ -141,9 +149,10 @@ export function ExploreView({ signedIn, chips: placeChips, trending, guides, tra
               <QuestGrid quests={trending} showLikes />
             </Section>
           )}
-          {guides.length > 0 && (
+          {guides.length + blogs.length > 0 && (
             <Section title="Stories and guides">
-              <GuideCards guides={guides} />
+              {guides.length > 0 && <GuideCards guides={guides} />}
+              {blogs.length > 0 && <BlogStoryRows blogs={blogs} />}
             </Section>
           )}
           {travellers.length > 0 && (
@@ -151,7 +160,7 @@ export function ExploreView({ signedIn, chips: placeChips, trending, guides, tra
               <PeopleList people={travellers} source="explore" signedIn={signedIn} />
             </Section>
           )}
-          {trending.length === 0 && guides.length === 0 && travellers.length === 0 && (
+          {trending.length === 0 && guides.length === 0 && blogs.length === 0 && travellers.length === 0 && (
             <p className="text-body text-ink-muted">
               Nothing to explore yet. Be the first to publish a Quest.
             </p>

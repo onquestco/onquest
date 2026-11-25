@@ -6,10 +6,12 @@ import { PlusIcon } from '@/design-system/components/icons';
 import { placeholderImage } from '@/lib/demo/placeholderImages';
 import { Segmented } from '@/design-system/components/Segmented';
 import { Toast } from '@/design-system/components/Toast';
+import type { BlogCard } from '@/lib/blog/cards';
 import type { QuestCard } from '@/lib/trip/cards';
 import { ManageQuestSheet } from './ManageQuestSheet';
 import { matchesFilter, type QuestFilter as Filter } from './questFilters';
 import { QuestTile, tileMeta } from './QuestTile';
+import { YourBlogsList } from './YourBlogsList';
 
 const EMPTY: Record<Filter, string> = {
   all: 'No Quests yet. Your next trip starts here.',
@@ -17,8 +19,52 @@ const EMPTY: Record<Filter, string> = {
   drafts: 'No drafts. Quests you start and leave show up here.',
 };
 
-/** Screen 20: every Quest you've made, with All / Published / Drafts and ⋯ on published ones. */
-export function YourQuestsView({ initial, manage }: { initial: QuestCard[]; manage?: string }) {
+type Props = {
+  initial: QuestCard[];
+  manage?: string;
+  /** Your blogs, drafts included (list_my_blogs). */
+  blogs?: BlogCard[];
+  /** has_feature_access('blogs'). */
+  canWriteBlogs?: boolean;
+};
+
+/**
+ * Screen 20: every Quest you've made, and every blog behind a Quests · Blogs switch (blogs spec
+ * §6.3). The switch shows only to people who can write a blog or have one; without it the tab is
+ * exactly as before.
+ */
+export function YourQuestsView({ initial, manage, blogs = [], canWriteBlogs = false }: Props) {
+  const [tab, setTab] = useState<'quests' | 'blogs'>('quests');
+  if (!canWriteBlogs && blogs.length === 0)
+    return (
+      <main className="mx-auto flex max-w-lg md:max-w-3xl flex-col gap-6 px-4 py-4">
+        <YourQuests initial={initial} manage={manage} />
+      </main>
+    );
+  return (
+    <main className="mx-auto flex max-w-lg md:max-w-3xl flex-col gap-6 px-4 py-4">
+      <Segmented
+        label="Quests or blogs"
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: 'quests', label: 'Quests' },
+          { value: 'blogs', label: 'Blogs' },
+        ]}
+      />
+      {/* Both stay mounted, so switching back keeps the filter and an open ⋯ as they were. */}
+      <div hidden={tab !== 'quests'} className="flex flex-col gap-6">
+        <YourQuests initial={initial} manage={manage} />
+      </div>
+      <div hidden={tab !== 'blogs'} className="flex flex-col gap-6">
+        <YourBlogsList blogs={blogs} canWriteBlogs={canWriteBlogs} />
+      </div>
+    </main>
+  );
+}
+
+/** All / Published / Drafts and ⋯ on every Quest. */
+function YourQuests({ initial, manage }: { initial: QuestCard[]; manage?: string }) {
   const [filter, setFilter] = useState<Filter>('all');
   const [quests, setQuests] = useState(initial);
   // The server's list after a reload (e.g. a conflict): take it.
@@ -34,7 +80,7 @@ export function YourQuestsView({ initial, manage }: { initial: QuestCard[]; mana
   const open = quests.find((quest) => quest.key === managing);
 
   return (
-    <main className="mx-auto flex max-w-lg md:max-w-3xl flex-col gap-6 px-4 py-4">
+    <>
       <Link
         href="/quests/new?source=quests_tab"
         className="flex items-center gap-4 rounded-lg border-2 border-dashed border-brand-strong bg-brand-wash p-4"
@@ -106,6 +152,6 @@ export function YourQuestsView({ initial, manage }: { initial: QuestCard[]; mana
         />
       )}
       {notice && <Toast message={notice} onDismiss={() => setNotice(undefined)} />}
-    </main>
+    </>
   );
 }

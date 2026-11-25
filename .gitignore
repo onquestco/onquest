@@ -6,3 +6,8 @@ out
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
+
+# Playwright sessions saved by hand for tests/e2e (they hold sign-in tokens)
+tests/e2e/.auth/
+test-results/
+playwright-report/

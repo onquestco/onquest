@@ -3,9 +3,15 @@
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
 
-const ViewerSchema = z.object({ signedIn: z.boolean(), isSelf: z.boolean(), following: z.boolean() });
+const ViewerSchema = z.object({
+  signedIn: z.boolean(),
+  isSelf: z.boolean(),
+  following: z.boolean(),
+  /** Own profile only: may start a blog (has_feature_access). Absent from older responses. */
+  canWriteBlogs: z.boolean().default(false),
+});
 export type ProfileViewer = z.infer<typeof ViewerSchema>;
-const SIGNED_OUT: ProfileViewer = { signedIn: false, isSelf: false, following: false };
+const SIGNED_OUT: ProfileViewer = { signedIn: false, isSelf: false, following: false, canWriteBlogs: false };
 
 /** Who is looking at this cached profile: asked after load, never cached (spec C §3.7). */
 export function useProfileViewer(profileKey: string): ProfileViewer | null {
