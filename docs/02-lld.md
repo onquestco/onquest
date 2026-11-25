@@ -53,7 +53,8 @@ features/                             one folder per product area
   account/     actions.ts  HandleForm.tsx  DeleteAccount.tsx
   blogs/       blog page, owner view and ⋯ actions: actions.ts  getBlog.ts  getBlogStatus.ts
                getLinkedQuest.ts  getOwnBlog.ts  refreshBlog.ts  (docs/specs/blogs.md)
-  blog-editor/ composer: actions.ts (saveBlogDraft, discardBlogDraft, searchBlogPlaces)  getBlogDraft.ts
+  blog-editor/ composer: actions.ts (saveBlogDraft, discardBlogDraft, deleteBlogDraft, searchBlogPlaces)  getBlogDraft.ts
+               FormatToolbar.tsx  formatCommands.ts  (docs/specs/blogs-editor.md)
 
 templates/
   types.ts                            Template, Theme
@@ -74,6 +75,7 @@ lib/
   dates.ts             formatDateRange
   slug.ts              slugify + unlisted suffix
   blog/                limits.ts  schema.ts (BlogDocument, get_blog rows)  cards.ts  toBlogData.ts
+                       markdown.ts (body subset → blocks, plain text)  linkParts.ts
   analytics.ts         typed track()
   demo-trip.ts         Goa sample data
 
@@ -512,6 +514,7 @@ Cache refresh: tag pages with `trip:{id}` and `profile:{ownerId}` and refresh th
 |---|---|---|---|---|
 | `saveBlogDraft` | `{ key, basedOn: string \| null, document: BlogDocumentSchema }` | `{ saved: true, savedAt, created }` | `conflict`, `not_found`, `too_many_photos`, `too_long`, `no_access` (create only), `exists` (key used) | None (draft only) |
 | `discardBlogDraft` | `{ key }` | `{ discarded: true }` | `not_found`, `published` | None |
+| `deleteBlogDraft` (`docs/specs/blogs-editor.md`) | `{ key }` | `{ deleted: true }` | `not_found`, `published` | None for a never-posted blog; same as `deleteBlog` if it was posted meanwhile |
 | `publishBlog` | `{ key, basedOnDraft, basedOnBlog, visibility \| null }` | `{ published: true, savedAt, slug, path, firstPublish }` | `conflict`, `not_found`, `empty`, `uploading` (client only), `invalid_visibility` | `blog-url`, `profile`, `blog-social`, `blog-quests`, `explore`; photo sweep in `after()` |
 | `setBlogVisibility` | `{ key, basedOn, visibility }` | `{ saved: true, savedAt }` | `conflict`, `not_found`, `not_published` | Same as publish |
 | `setBlogComments` | `{ key, basedOn, on }` | `{ saved: true, savedAt }` | `conflict`, `not_found` | `blog-social` |
