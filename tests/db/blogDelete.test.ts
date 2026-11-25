@@ -68,6 +68,21 @@ describe('delete_blog', () => {
     expect(await count('select count(*) n from public.blogs where key = $1', [key])).toBe(0);
   });
 
+  it('removes a draft and its archived autosaves, with no tombstone (Delete draft, OQ-25)', async () => {
+    const key = randomUUID();
+    await blogs.create(ALEX, key);
+    await blogs.saveDraft(ALEX, key, (await blogs.tokens(ALEX, key)).draft, blogDocument({ body: 'Day one' }));
+    await blogs.saveDraft(ALEX, key, (await blogs.tokens(ALEX, key)).draft, blogDocument({ body: 'Day two' }));
+    expect(await count('select count(*) n from public.blog_drafts_archive where key = $1', [key])).toBe(2);
+    const tombstones = await count('select count(*) n from public.removed_blog_urls');
+
+    expect(await blogs.remove(ALEX, key)).toMatchObject({ slug: null });
+    for (const table of TABLES) {
+      expect(await count(`select count(*) n from public.${table} where key = $1`, [key])).toBe(0);
+    }
+    expect(await count('select count(*) n from public.removed_blog_urls')).toBe(tombstones);
+  });
+
   it('removes its likes, comments and notifications too, live and archived (migration 17)', async () => {
     const { key } = await blogs.posted(ALEX, { slug: 'well-liked' });
     await blogs.like(STRANGER, key);

@@ -6,8 +6,10 @@ import { Toast } from '@/design-system/components/Toast';
 import type { BlogCard } from '@/lib/blog/cards';
 import { BlogRow } from './BlogRow';
 import { ManageBlogSheet, type ManagedBlog } from './ManageBlogSheet';
+import { ManageDraftSheet, type ManagedDraft } from './ManageDraftSheet';
+import { NoBlogsYet } from './NoBlogsYet';
 
-/** What the ⋯ menu needs from an own card, or null for a draft (drafts open the composer instead). */
+/** What the posted blog's ⋯ menu needs from an own card, or null for a draft (ManageDraftSheet). */
 export function managedFromCard(blog: BlogCard): ManagedBlog | null {
   if (blog.status !== 'published' || !blog.path) return null;
   return {
@@ -20,9 +22,15 @@ export function managedFromCard(blog: BlogCard): ManagedBlog | null {
   };
 }
 
+/** What a never-posted blog's ⋯ menu needs, or null for a posted one. */
+export function draftFromCard(blog: BlogCard): ManagedDraft | null {
+  if (blog.status !== 'draft') return null;
+  return { key: blog.key, title: blog.title, ownerKey: blog.owner.key };
+}
+
 type Props = {
   blogs: BlogCard[];
-  /** Your own list: tags, ⋯ on posted blogs, drafts open the composer. */
+  /** Your own list: tags, and ⋯ on every row (a draft's menu offers Continue editing and Delete draft). */
   own?: boolean;
   /** Another device changed a blog first: load the list again. */
   onReload?: () => void;
@@ -30,7 +38,8 @@ type Props = {
 
 /**
  * A one-column list of blogs (profile Blogs, Quests tab Blogs). On your own list, ⋯ opens the
- * blog's menu right here (Edit, Share link, Who can see it, Comments, Delete).
+ * blog's menu right here (Edit, Share link, Who can see it, Comments, Delete), or a draft's
+ * (Continue editing, Delete draft).
  */
 export function BlogList({ blogs: initial, own = false, onReload }: Props) {
   const router = useRouter();
@@ -45,16 +54,21 @@ export function BlogList({ blogs: initial, own = false, onReload }: Props) {
   }
   const open = blogs.find((blog) => blog.key === managing);
   const managed = open ? managedFromCard(open) : null;
+  const managedDraft = open ? draftFromCard(open) : null;
+  const canManage = (blog: BlogCard) => own && (managedFromCard(blog) !== null || draftFromCard(blog) !== null);
+  // The last draft deleted here: show the empty state now, before the server list arrives.
+  const emptied = own && initial.length > 0 && blogs.length === 0;
 
   return (
     <>
+      {emptied && <NoBlogsYet />}
       <ul className="flex flex-col gap-2">
         {blogs.map((blog) => (
           <li key={blog.key}>
             <BlogRow
               blog={blog}
               own={own}
-              onManage={own && managedFromCard(blog) ? () => setManaging(blog.key) : undefined}
+              onManage={canManage(blog) ? () => setManaging(blog.key) : undefined}
             />
           </li>
         ))}
@@ -84,6 +98,24 @@ export function BlogList({ blogs: initial, own = false, onReload }: Props) {
             setManaging(undefined);
             setNotice('Blog deleted.');
             router.refresh();
+          }}
+        />
+      )}
+      {managedDraft && (
+        <ManageDraftSheet
+          key={managedDraft.key}
+          draft={managedDraft}
+          onClose={() => setManaging(undefined)}
+          onDeleted={() => {
+            setBlogs((list) => list.filter((blog) => blog.key !== managedDraft.key));
+            setManaging(undefined);
+            setNotice('Draft deleted.');
+            router.refresh();
+          }}
+          onPosted={() => {
+            setManaging(undefined);
+            setNotice('This blog was posted on another device. Showing the latest.');
+            onReload?.();
           }}
         />
       )}

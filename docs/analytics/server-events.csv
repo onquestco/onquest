@@ -79,3 +79,8 @@ blog_comment_posted,,,,length,INT64,1–300,"Characters, never the text",yes,,No
 blog_managed,user_id,server,server_ts,blog_id,STRING,,,yes,"A change from a blog's ⋯ menu is saved (edit = an update posted again)",Not yet tested: fires from BL-02
 blog_managed,,,,action,STRING,edit / visibility / comments / delete,,yes,,Not yet tested: fires from BL-02
 blog_managed,,,,value,STRING,public / unlisted / private / on / off / none,"The new visibility, comments on or off, or none",yes,,Not yet tested: fires from BL-02
+blog_deleted,user_id,server,server_ts,blog_id,STRING,,The blog key,yes,"A blog that was never posted is deleted from its ⋯ menu (Delete draft). A posted blog's delete is blog_managed {action: delete}; closing an empty composer sends nothing",Not yet tested: fires from BL-07
+blog_deleted,,,,status,STRING,draft,,yes,,Not yet tested: fires from BL-07
+blog_deleted,,,,photos,INT64,0–10,Photos on the draft,yes,,Not yet tested: fires from BL-07
+blog_deleted,,,,chars_bucket,STRING,0 / 1-500 / 501-2000 / 2001-5000 / 5001-10000,"Body length in characters, never the text",yes,,Not yet tested: fires from BL-07
+blog_deleted,,,,has_quest,BOOL,true / false,A Quest was linked,yes,,Not yet tested: fires from BL-07
