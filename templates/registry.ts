@@ -4,10 +4,18 @@ import coastal from './coastal';
 import mountain from './mountain';
 import roadtrip from './roadtrip';
 import type { Template } from './types';
+import winter from './winter';
 
 // Every template, by id. To add one: create templates/<id>/ and add it here (see CLAUDE.md).
 // Ids are stored in Quests, so an id is never removed or reused: an old look is `retired` instead.
-export const templates = { beach, mountain, coastal, alpine, roadtrip } satisfies Record<string, Template>;
+export const templates = {
+  beach,
+  mountain,
+  coastal,
+  alpine,
+  roadtrip,
+  winter,
+} satisfies Record<string, Template>;
 
 export type TemplateId = keyof typeof templates;
 

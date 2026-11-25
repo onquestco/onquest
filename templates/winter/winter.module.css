@@ -1,0 +1,157 @@
+/* Winter-only pieces, from docs/reference/templates/winter.md (and the shared player in roadtrip.html).
+   Shared pieces live in ../shared/scrapbook.module.css. */
+
+/* The design loads three families; the other two font variables use Nunito (see fonts.ts). */
+.fontAliases {
+  --font-type: var(--font-sans);
+  --font-serif: var(--font-sans);
+}
+
+.background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Snow falls only in the Quest player (not in the Instagram export, where a still picture is taken),
+   never with reduced motion, and only by moving a plain group of dots (no filters). */
+@keyframes fall {
+  from {
+    transform: translateY(-30px);
+  }
+  to {
+    transform: translateY(40px);
+  }
+}
+:global([data-quest-page]) .fall {
+  animation: fall 9s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fall {
+    animation: none !important;
+  }
+}
+
+/* Everything above the scenery. Same box as the page, so % positions and cqw sizes are unchanged. */
+.layer {
+  position: absolute;
+  inset: 0;
+}
+.block {
+  position: absolute;
+  z-index: 5;
+}
+
+/* Every Winter page is `light` in the design (white text on blue snow, dusk and night skies), so the
+   light colours are the only ones. */
+.kicker {
+  margin: 0;
+  font: 700 7cqw/1 var(--font-script);
+  color: #e4f6ff;
+  overflow-wrap: anywhere;
+}
+.title {
+  margin: 0;
+  font: 700 13.5cqw/1 var(--font-script);
+  color: #fff;
+  text-shadow: 0 0.5cqw 1.6cqw rgba(0, 0, 30, 0.35);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.pageTitle {
+  margin: 0;
+  font: 700 10.5cqw/1.05 var(--font-script);
+  color: #fff;
+  text-shadow: 0 0.5cqw 1.6cqw rgba(0, 0, 30, 0.35);
+  overflow-wrap: anywhere;
+}
+.meta {
+  margin: 4cqw 0 0;
+  font: 800 3.4cqw/1.3 var(--font-sans);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #fff;
+  opacity: 0.92;
+}
+
+/* The design's polaroid: a slightly thinner border, a bold handwritten caption and a wider tape.
+   The shared Photo's classes are private to its module, so these reach its parts by structure:
+   the photo's frame is its first <span>, the caption its <i>, the tape its ::before. */
+.layer [data-draggable] > span:first-child {
+  padding: 2.4cqw 2.4cqw 10.2cqw;
+}
+.layer [data-draggable] i {
+  bottom: 2.6cqw;
+  font: 700 5.6cqw/1 var(--font-hand);
+  color: var(--ink);
+}
+.layer [data-draggable]::before {
+  top: -3.2cqw;
+  width: 22cqw;
+  height: 6.4cqw;
+  margin-left: -11cqw;
+  rotate: -3deg;
+  opacity: 0.92;
+}
+
+.stamp {
+  position: absolute;
+  z-index: 9;
+  padding: 1.4cqw 1cqw;
+  border: 0.8cqw dashed var(--accent2);
+  border-radius: 2cqw;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--accent2);
+  text-align: center;
+  rotate: 6deg;
+}
+.stamp b {
+  display: block;
+  font: 700 8cqw/1 var(--font-script);
+}
+.stamp span {
+  display: block;
+  font: 800 2.6cqw/1.1 var(--font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.sticker {
+  position: absolute;
+  z-index: 6;
+  filter: drop-shadow(0 0.4cqw 0.4cqw rgba(0, 0, 0, 0.22));
+}
+
+/* Route page. */
+.route {
+  position: absolute;
+  left: 0;
+  top: 18%;
+  z-index: 4;
+  width: 100%;
+  height: 52%;
+  overflow: visible;
+}
+.pin {
+  cursor: pointer;
+}
+.pin:focus-visible circle:nth-of-type(2) {
+  stroke: var(--ink);
+}
+.pinNumber {
+  font: 800 20px var(--font-sans);
+  fill: #fff;
+}
+/* White names, as on the design's light route page, with a soft ink halo so they stay readable
+   where they cross the white drifts and flakes. */
+.pinName {
+  font: 800 24px var(--font-sans);
+  fill: #fff;
+  paint-order: stroke;
+  stroke: rgba(23, 66, 107, 0.55);
+  stroke-width: 6px;
+  stroke-linejoin: round;
+}

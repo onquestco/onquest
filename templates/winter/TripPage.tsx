@@ -1,0 +1,30 @@
+import type { ReactNode } from 'react';
+import type { TripData } from '@/lib/trip/types';
+import { toQuestPages } from '../shared/pages';
+import { QuestPlayer } from '../shared/QuestPlayer';
+import { ScrapbookPage } from '../shared/ScrapbookPage';
+import { CoverPage } from './CoverPage';
+import { PhotoPage } from './PhotoPage';
+import { RoutePage } from './RoutePage';
+import { theme } from './theme';
+
+/** The Winter look as a paged Quest: cover, photo pages, the snowy trail, then back to the cover. */
+export function TripPage({ trip, controls }: { trip: TripData; controls?: ReactNode }) {
+  const pages = toQuestPages(trip).map((page, index) => {
+    if (page.kind === 'cover')
+      return { key: 'cover', label: trip.shortTitle, content: <CoverPage trip={trip} /> };
+    if (page.kind === 'route')
+      return { key: 'route', label: 'Snowy trail', content: <RoutePage trip={trip} /> };
+    return {
+      key: `page-${page.dayIndex}-${page.part}`,
+      label: page.title,
+      content: <PhotoPage trip={trip} page={page} pageNumber={index} />,
+    };
+  });
+
+  return (
+    <ScrapbookPage trip={trip} theme={theme}>
+      <QuestPlayer pages={pages}>{controls}</QuestPlayer>
+    </ScrapbookPage>
+  );
+}
