@@ -22,11 +22,12 @@ describe('template registry', () => {
     expect(getTemplate('unknown').id).toBe('beach');
   });
 
-  it('offers only live templates for a new Quest: Coastal, the new Mountain and Roadtrip', () => {
-    expect(ids(pickableTemplates('coastal'))).toEqual(['coastal', 'alpine', 'roadtrip']);
-    expect(ids(pickableTemplates('alpine'))).toEqual(['coastal', 'alpine', 'roadtrip']);
-    expect(ids(pickableTemplates('roadtrip'))).toEqual(['coastal', 'alpine', 'roadtrip']);
-    expect(ids(pickableTemplates('unknown'))).toEqual(['coastal', 'alpine', 'roadtrip']);
+  it('offers only live templates for a new Quest: Coastal, the new Mountain, Roadtrip and Winter', () => {
+    expect(ids(pickableTemplates('coastal'))).toEqual(['coastal', 'alpine', 'roadtrip', 'winter']);
+    expect(ids(pickableTemplates('alpine'))).toEqual(['coastal', 'alpine', 'roadtrip', 'winter']);
+    expect(ids(pickableTemplates('roadtrip'))).toEqual(['coastal', 'alpine', 'roadtrip', 'winter']);
+    expect(ids(pickableTemplates('winter'))).toEqual(['coastal', 'alpine', 'roadtrip', 'winter']);
+    expect(ids(pickableTemplates('unknown'))).toEqual(['coastal', 'alpine', 'roadtrip', 'winter']);
   });
 
   it('gives the new Mountain its own id, so Quests stored as mountain keep the old look', () => {
@@ -41,8 +42,14 @@ describe('template registry', () => {
     expect(getTemplate('roadtrip').id).toBe('roadtrip');
   });
 
+  it('registers Winter as live', () => {
+    expect(templates.winter.status).toBe('live');
+    expect(templates.winter.name).toBe('Winter');
+    expect(getTemplate('winter').id).toBe('winter');
+  });
+
   it('also offers a draft its current retired template', () => {
-    expect(ids(pickableTemplates('beach'))).toEqual(['coastal', 'alpine', 'roadtrip', 'beach']);
-    expect(ids(pickableTemplates('mountain'))).toEqual(['coastal', 'alpine', 'roadtrip', 'mountain']);
+    expect(ids(pickableTemplates('beach'))).toEqual(['coastal', 'alpine', 'roadtrip', 'winter', 'beach']);
+    expect(ids(pickableTemplates('mountain'))).toEqual(['coastal', 'alpine', 'roadtrip', 'winter', 'mountain']);
   });
 });

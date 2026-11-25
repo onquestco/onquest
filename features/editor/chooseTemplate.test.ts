@@ -39,24 +39,28 @@ function choices(templateId: string, published = false) {
 }
 
 describe('ChooseTemplate', () => {
-  it('a new Quest is offered Coastal, already selected, the new Mountain and Roadtrip (AC1, AC4)', () => {
-    expect(choices('coastal')).toEqual(['Coastal (selected)', 'Mountain', 'Roadtrip']);
+  it('a new Quest is offered Coastal, already selected, the new Mountain, Roadtrip and Winter (AC1, AC4)', () => {
+    expect(choices('coastal')).toEqual(['Coastal (selected)', 'Mountain', 'Roadtrip', 'Winter']);
   });
 
   it('a draft that picked the new Mountain keeps it selected', () => {
-    expect(choices('alpine')).toEqual(['Coastal', 'Mountain (selected)', 'Roadtrip']);
+    expect(choices('alpine')).toEqual(['Coastal', 'Mountain (selected)', 'Roadtrip', 'Winter']);
   });
 
   it('a draft that picked Roadtrip keeps it selected', () => {
-    expect(choices('roadtrip')).toEqual(['Coastal', 'Mountain', 'Roadtrip (selected)']);
+    expect(choices('roadtrip')).toEqual(['Coastal', 'Mountain', 'Roadtrip (selected)', 'Winter']);
+  });
+
+  it('a draft that picked Winter keeps it selected', () => {
+    expect(choices('winter')).toEqual(['Coastal', 'Mountain', 'Roadtrip', 'Winter (selected)']);
   });
 
   it('a draft that chose Beach keeps it, selected, next to Coastal (AC2)', () => {
-    expect(choices('beach')).toEqual(['Coastal', 'Mountain', 'Roadtrip', 'Beach (selected)']);
+    expect(choices('beach')).toEqual(['Coastal', 'Mountain', 'Roadtrip', 'Winter', 'Beach (selected)']);
   });
 
   it('a draft that chose the old Mountain keeps it too, after the new one (AC2)', () => {
-    expect(choices('mountain')).toEqual(['Coastal', 'Mountain', 'Roadtrip', 'Mountain (selected)']);
+    expect(choices('mountain')).toEqual(['Coastal', 'Mountain', 'Roadtrip', 'Winter', 'Mountain (selected)']);
   });
 
   it('a published Quest only shows the look it has (spec D4)', () => {
@@ -70,6 +74,7 @@ describe('templateChoices', () => {
       'coastal',
       'alpine',
       'roadtrip',
+      'winter',
     ]);
   });
 });

@@ -13,6 +13,7 @@ export const Caveat = font('Caveat');
 export const Cormorant_Garamond = font('Cormorant_Garamond');
 export const Courier_Prime = font('Courier_Prime');
 export const DM_Sans = font('DM_Sans');
+export const Dancing_Script = font('Dancing_Script');
 export const Kaushan_Script = font('Kaushan_Script');
 export const Lilita_One = font('Lilita_One');
 export const Nunito = font('Nunito');

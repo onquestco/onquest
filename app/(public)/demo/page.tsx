@@ -14,6 +14,7 @@ import { alpineFixtures } from '@/templates/alpine/fixtures';
 import { coastalFixtures, type CoastalFixtureName } from '@/templates/coastal/fixtures';
 import { roadtripFixtures } from '@/templates/roadtrip/fixtures';
 import { isTemplateId } from '@/templates/registry';
+import { winterFixtures } from '@/templates/winter/fixtures';
 
 export const metadata: Metadata = tripMetadata(goaTrip);
 
@@ -39,8 +40,8 @@ const pick = <Name extends string>(
 //   ?quest=small|full|old             the edge-case trips
 //   ?template=mountain                the same trip in another template
 //   ?size=small|big|mixed|noCaptions|onePlace   the Coastal check trips (templates spec AC7);
-//                                               with ?template=alpine|roadtrip, the new
-//                                               Mountain's or Roadtrip's
+//                                               with ?template=alpine|roadtrip|winter, the
+//                                               new Mountain's, Roadtrip's or Winter's
 //   ?social=none|few|many|off         likes and comments (off = comments turned off)
 //   ?viewer=signedOut|friend|owner    who is looking
 //   ?comment=open                     back from sign-in with the comment box open
@@ -55,7 +56,9 @@ export default async function DemoPage({ searchParams }: Props) {
       ? alpineFixtures
       : params.template === 'roadtrip'
         ? roadtripFixtures
-        : coastalFixtures;
+        : params.template === 'winter'
+          ? winterFixtures
+          : coastalFixtures;
   const sample =
     params.size && params.size in checkTrips
       ? checkTrips[params.size as CoastalFixtureName]
