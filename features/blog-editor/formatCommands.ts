@@ -153,10 +153,33 @@ function toggleRange(body: string, start: number, end: number, format: InlineFor
   };
 }
 
+/**
+ * Whether the cursor sits in an empty pair of `format`'s markers. Stars are counted as runs on both
+ * sides, since bold and italic share them: "**|**" is an empty bold pair but not an italic one, and
+ * "***|***" (Bold, then Italic) is both. Otherwise Italic would take one star off each side of an
+ * empty bold pair (review #48, blocking 1).
+ */
+function emptyPairAt(body: string, at: number, format: InlineFormat): boolean {
+  if (format === 'bold' || format === 'italic') {
+    let left = 0;
+    while (body[at - 1 - left] === '*') left++;
+    let right = 0;
+    while (body[at + right] === '*') right++;
+    if (left !== right || left > 3) return false;
+    return format === 'bold' ? left >= 2 : left % 2 === 1;
+  }
+  const [open, close] = MARKERS[format];
+  return (
+    at >= open.length &&
+    body.slice(at - open.length, at) === open &&
+    body.slice(at, at + close.length) === close
+  );
+}
+
 function toggleAtCursor(body: string, at: number, format: InlineFormat): Edit {
   const [open, close] = MARKERS[format];
   // A pair that was just inserted and is still empty: pressing again takes it out.
-  if (body.slice(at - open.length, at) === open && body.slice(at, at + close.length) === close) {
+  if (emptyPairAt(body, at, format)) {
     return {
       body: splice(body, at - open.length, at + close.length),
       selection: { start: at - open.length, end: at - open.length },

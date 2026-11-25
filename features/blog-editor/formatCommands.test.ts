@@ -106,6 +106,44 @@ describe('inline formats at the cursor', () => {
     expect(inline('**a *b|c* d**', 'bold')).toBe('a *b|c* d');
   });
 
+  it('mixes formats at the cursor without losing one (review #48, blocking 1)', () => {
+    /** Presses each format in turn at the cursor, then types `typed`. */
+    const press = (text: string, formats: Parameters<typeof toggleInline>[2][], typed = '') => {
+      let { body, selection } = marked(text);
+      for (const format of formats) {
+        const result = toggleInline(body, selection, format);
+        if ('error' in result) throw new Error(result.error);
+        ({ body, selection } = result);
+      }
+      const cursor = selection.start + typed.length;
+      return show({
+        body: body.slice(0, selection.start) + typed + body.slice(selection.start),
+        selection: { start: cursor, end: cursor },
+      });
+    };
+    expect(press('|', ['bold', 'italic'])).toBe('***|***');
+    expect(press('|', ['italic', 'bold'])).toBe('***|***');
+    expect(press('|', ['bold', 'strike'])).toBe('**~~|~~**');
+    expect(press('|', ['strike', 'bold'])).toBe('~~**|**~~');
+    expect(press('|', ['bold', 'code'])).toBe('**`|`**');
+    expect(press('|', ['italic', 'spoiler'])).toBe('*>!|!<*');
+    expect(press('Pack |', ['bold', 'italic', 'strike'])).toBe('Pack ***~~|~~***');
+
+    // What's typed next gets every format that was pressed.
+    expect(press('|', ['bold', 'italic'], 'both')).toBe('***both|***');
+    expect(press('|', ['italic', 'bold'], 'both')).toBe('***both|***');
+    expect(active('***bo|th***')).toEqual<Format[]>(['bold', 'italic']);
+    expect(active('**~~x|~~**')).toEqual<Format[]>(['bold', 'strike']);
+  });
+
+  it('pressing one of two mixed formats again takes only that one off', () => {
+    expect(inline('***|***', 'italic')).toBe('**|**');
+    expect(inline('***|***', 'bold')).toBe('*|*');
+    expect(inline('**~~|~~**', 'strike')).toBe('**|**');
+    expect(inline('**|**', 'italic')).toBe('***|***');
+    expect(inline('*|*', 'bold')).toBe('***|***');
+  });
+
   it('just outside a run inserts a new pair', () => {
     expect(inline('**light**|', 'bold')).toBe('**light****|**');
   });
