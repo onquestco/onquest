@@ -1,9 +1,8 @@
 import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { QuestDocument } from '@/lib/trip/schema';
 import { ChooseTemplate, templateChoices } from './ChooseTemplate';
-import { useDraft } from './draftStore';
 
 // vi.mock is hoisted above the imports. Rendered outside Next.js: a plain router, a plain <a> and
 // stand-in fonts for next/navigation, next/link and next/font.
@@ -13,6 +12,9 @@ vi.mock('next/link', () => ({
     createElement('a', { href, className }, children),
 }));
 vi.mock('next/font/google', () => import('@/templates/shared/nextFontStub'));
+// Server rendering reads a zustand store's initial state, so the draft is handed in directly.
+const draft = vi.hoisted(() => ({ current: {} as Record<string, unknown> }));
+vi.mock('./draftStore', () => ({ useDraft: () => draft.current }));
 
 const KEY = '00000000-0000-4000-8000-000000000001';
 const document = (templateId: string): QuestDocument =>
@@ -20,11 +22,12 @@ const document = (templateId: string): QuestDocument =>
 
 /** The picker's choices as "Name" or "Name (selected)", in order. */
 function choices(templateId: string, published = false) {
-  useDraft.setState({
+  draft.current = {
     key: KEY,
     document: document(templateId),
     published: published ? { slug: 'goa', visibility: 'public', path: '/@alex/goa' } : undefined,
-  });
+    setDocument: () => undefined,
+  };
   const html = renderToStaticMarkup(createElement(ChooseTemplate, { tripKey: KEY }));
   return html
     .split('role="radio"')
@@ -34,8 +37,6 @@ function choices(templateId: string, published = false) {
       return radio.startsWith(' aria-checked="true"') ? `${name} (selected)` : name;
     });
 }
-
-beforeEach(() => useDraft.setState({ key: undefined, document: undefined, published: undefined }));
 
 describe('ChooseTemplate', () => {
   it('a new Quest is offered Coastal only, already selected (AC1, AC4)', () => {
