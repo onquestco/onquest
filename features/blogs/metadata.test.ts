@@ -39,6 +39,20 @@ describe('blogMetadata', () => {
     expect(description.endsWith('…')).toBe(true);
   });
 
+  it('describes a formatted blog in plain text, with spoilers hidden', () => {
+    const body = '# Day 1\n- **Beach** and *fort*\n\n> The ending: >!he was the guide!< [map](https://goa.example.in)';
+    expect(blogMetadata(blogFixture({ body })).description).toBe('Day 1 Beach and fort The ending: (spoiler) map');
+  });
+
+  it("describes the whole body, so an unclosed >! is text the page shows, not a cut spoiler", () => {
+    const body = 'Rated 10/10 >!wow and the rest of the day';
+    expect(blogMetadata(blogFixture({ body })).description).toBe(body);
+  });
+
+    it('describes the plain fixture blog exactly as before formatting existed', () => {
+    expect(blogMetadata(blogFixture()).description).toBe('We stayed in Anjuna. Scooters were ₹400 a day.');
+  });
+
   it('without text, says who wrote it and where', () => {
     expect(blogMetadata(blogFixture({ body: '' })).description).toBe('A blog by @riya · Goa');
     expect(blogMetadata(blogFixture({ body: '', placeName: undefined })).description).toBe('A blog by @riya');

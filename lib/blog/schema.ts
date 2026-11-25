@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { BLOG_BODY_MAX, BLOG_MAX_PHOTOS, BLOG_TITLE_MAX } from './limits';
+import type { BlogBlock } from './markdown';
 
 // Stored blog shapes (spec docs/specs/blogs.md §4.1). Fields only ever grow, and new ones are
 // optional or have defaults, so drafts and archived rows written today keep parsing.
@@ -81,8 +82,10 @@ export type BlogData = {
   path: string;
   unlisted: boolean;
   title: string;
-  /** Paragraphs → lines (split on blank lines, then \n). */
+  /** Paragraphs → lines (split on blank lines, then \n). Removed by BL-08 once nothing reads it. */
   paragraphs: string[][];
+  /** The body's formatting, from parseBlogBody() (blogs-editor spec §4.1). */
+  blocks: BlogBlock[];
   photos: { id: string; width: number; height: number; display: string; thumb: string }[];
   placeName?: string;
   commentsOn: boolean;

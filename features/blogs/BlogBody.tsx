@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { lineParts } from './linkParts';
+import { lineParts } from '@/lib/blog/linkParts';
 
 // The blog's text: paragraphs in <p>, line breaks as <br>, web links as links (spec §3.7). Built
 // from text nodes only: no dangerouslySetInnerHTML, so nothing a writer types becomes markup.

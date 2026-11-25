@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { BLOG_MIN_WORDS_TO_INDEX } from '@/lib/blog/limits';
+import { blogPlainText } from '@/lib/blog/markdown';
 import type { BlogData } from '@/lib/blog/schema';
 import { SITE_NAME } from '@/lib/site';
 import type { BlogStatus } from './getBlogStatus';
@@ -10,9 +11,15 @@ function trim(text: string, max: number): string {
   return characters.length <= max ? text : `${characters.slice(0, max - 1).join('').trimEnd()}…`;
 }
 
-/** The first 155 characters of the text, whitespace collapsed; without text, who wrote it and where. */
+/**
+ * The first 155 characters of the text as plain text (no markers, spoilers hidden), whitespace
+ * collapsed; without text, who wrote it and where.
+ */
 export function blogDescription(blog: BlogData): string {
-  const text = blog.paragraphs.flat().join(' ').replace(/\s+/g, ' ').trim();
+  // The paragraphs rebuild the body (blank lines between blocks), so line-start syntax still reads.
+  // Not `cut`: this is the whole body, so an unclosed `>!` is text the page itself shows.
+  const body = blog.paragraphs.map((lines) => lines.join('\n')).join('\n\n');
+  const text = blogPlainText(body);
   if (text) return trim(text, 155);
   return [`A blog by @${blog.writer.handle}`, blog.placeName].filter(Boolean).join(' · ');
 }
