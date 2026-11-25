@@ -22,10 +22,11 @@ describe('template registry', () => {
     expect(getTemplate('unknown').id).toBe('beach');
   });
 
-  it('offers only live templates for a new Quest: Coastal and the new Mountain', () => {
-    expect(ids(pickableTemplates('coastal'))).toEqual(['coastal', 'alpine']);
-    expect(ids(pickableTemplates('alpine'))).toEqual(['coastal', 'alpine']);
-    expect(ids(pickableTemplates('unknown'))).toEqual(['coastal', 'alpine']);
+  it('offers only live templates for a new Quest: Coastal, the new Mountain and Roadtrip', () => {
+    expect(ids(pickableTemplates('coastal'))).toEqual(['coastal', 'alpine', 'roadtrip']);
+    expect(ids(pickableTemplates('alpine'))).toEqual(['coastal', 'alpine', 'roadtrip']);
+    expect(ids(pickableTemplates('roadtrip'))).toEqual(['coastal', 'alpine', 'roadtrip']);
+    expect(ids(pickableTemplates('unknown'))).toEqual(['coastal', 'alpine', 'roadtrip']);
   });
 
   it('gives the new Mountain its own id, so Quests stored as mountain keep the old look', () => {
@@ -34,8 +35,14 @@ describe('template registry', () => {
     expect(getTemplate('alpine').id).toBe('alpine');
   });
 
+  it('registers Roadtrip as live', () => {
+    expect(templates.roadtrip.status).toBe('live');
+    expect(templates.roadtrip.name).toBe('Roadtrip');
+    expect(getTemplate('roadtrip').id).toBe('roadtrip');
+  });
+
   it('also offers a draft its current retired template', () => {
-    expect(ids(pickableTemplates('beach'))).toEqual(['coastal', 'alpine', 'beach']);
-    expect(ids(pickableTemplates('mountain'))).toEqual(['coastal', 'alpine', 'mountain']);
+    expect(ids(pickableTemplates('beach'))).toEqual(['coastal', 'alpine', 'roadtrip', 'beach']);
+    expect(ids(pickableTemplates('mountain'))).toEqual(['coastal', 'alpine', 'roadtrip', 'mountain']);
   });
 });
