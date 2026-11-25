@@ -5,7 +5,7 @@
 | PRD | `docs/prds/2026-11-blogs-editor.md` (QuestLog OQ-26, OQ-25; prioritised by the CTO 25 Nov 2026). Addendum to `docs/specs/blogs.md` |
 | Status | Draft |
 | Build mode | Backend + Frontend split (BL-06 backend; BL-07 single builder, frontend; BL-08, BL-09 frontend) |
-| Tracker IDs | OQ-25, OQ-26 · BL-06 to BL-09 |
+| Tracker IDs | OQ-25, OQ-26 · BL-06 #40, BL-07 #41, BL-08 #42, BL-09 #43 |
 
 **Readiness.** The tickets have testable acceptance criteria and out of scope. They have no metric, states or UX test plan; this spec fills the states (§6), UX tests (§11) and the delete copy, which the brief left to the Tech Lead. Nothing blocks the build. D1 needs the CTO's choice before BL-08 merges.
 
