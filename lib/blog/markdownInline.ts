@@ -46,9 +46,13 @@ export class InlineParser {
     const inCode = (this.inCode = new Uint8Array(text.length));
     for (const [start, end] of this.codeSpans) inCode.fill(1, start, end + 1);
     if (/https?:\/\//i.test(text)) {
-      // Code blanked out (same length), so a URL never starts in code or runs into it.
-      const outsideCode =
-        this.codeSpans.size === 0 ? text : Array.from(text, (char, i) => (inCode[i] ? ' ' : char)).join('');
+      // Code blanked out unit by unit (UTF-16, like every offset here; Array.from would walk code
+      // points and shift offsets after an emoji), so a URL never starts in code or runs into it.
+      let outsideCode = text;
+      if (this.codeSpans.size > 0) {
+        outsideCode = '';
+        for (let i = 0; i < text.length; i++) outsideCode += inCode[i] ? ' ' : text[i];
+      }
       for (const url of findWebUrls(outsideCode)) this.urlSpans.set(url.start, url.end);
     }
   }
@@ -91,6 +95,8 @@ export class InlineParser {
     const urlEnd = this.urlSpans.get(i);
     if (urlEnd === undefined || urlEnd > end) return undefined;
     const href = this.text.slice(i, urlEnd);
+    // Checked again on the real text, so an offset mistake fails closed (as text), never as a link.
+    if (!isWebUrl(href)) return undefined;
     return {
       node: { kind: 'link', href, children: [this.textNode(i, urlEnd)], from: i, to: urlEnd },
       next: urlEnd,

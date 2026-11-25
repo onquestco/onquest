@@ -81,6 +81,17 @@ describe('isWebUrl', () => {
     expect(isWebUrl('http://goa.example.in/stay?id=4')).toBe(true);
   });
 
+  it('refuses a url with spaces or tabs around or inside it (the URL parser would forgive them)', () => {
+    for (const text of [
+      ' https://a.example.com',
+      'https://a.example.com ',
+      'https://a.exa\tmple.com',
+      'https://a.example.com/\n',
+    ]) {
+      expect(isWebUrl(text)).toBe(false);
+    }
+  });
+
   it('refuses every other scheme, relative links and bare hosts', () => {
     for (const text of [
       'javascript:alert(1)',

@@ -3,6 +3,7 @@
 
 export type LinePart = { kind: 'text'; text: string } | { kind: 'link'; text: string; href: string };
 
+const EXACT_WEB_URL = /^https?:\/\/\S+$/i;
 const URL_RUN = /https?:\/\/[^\s<>"]+/gi;
 /** Sentence punctuation right after a link belongs to the sentence, not the link (and markers to their formatting). */
 const TRAILING = new Set([...".,;:!?'’”]*~"]);
@@ -53,6 +54,8 @@ function withoutTrailing(run: string): string {
 
 /** http or https with a host that has a dot: the only links a blog can hold (pasted or `[text](url)`). */
 export function isWebUrl(text: string): boolean {
+  // The URL parser forgives leading spaces and stray tabs; a link we store or render must be exact.
+  if (!EXACT_WEB_URL.test(text)) return false;
   try {
     const url = new URL(text);
     return (url.protocol === 'http:' || url.protocol === 'https:') && url.hostname.includes('.');

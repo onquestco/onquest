@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lineParts, type LinePart } from './linkParts';
+import { isWebUrl, lineParts, type LinePart } from './linkParts';
 import { blogPlainText, parseBlogBody, parseBlogLine, type BlogBlock, type BlogInline } from './markdown';
 import { toParagraphs } from './toBlogData';
 
@@ -25,6 +25,10 @@ function show(nodes: BlogInline[]): string {
     .join('|');
 }
 const line = (source: string) => show(parseBlogLine(source));
+const hrefs = (nodes: BlogInline[]): string[] =>
+  nodes.flatMap((node) =>
+    node.kind === 'link' ? [node.href] : 'children' in node ? hrefs(node.children) : [],
+  );
 
 describe('parseBlogLine: inline syntax', () => {
   it('reads bold, italic, strikethrough, spoiler and code', () => {
@@ -188,6 +192,28 @@ describe('parseBlogLine: inline syntax', () => {
     ]);
   });
 
+  it('keeps offsets right after emoji and ZWJ sequences in code (UTF-16, not code points)', () => {
+    expect(line('`😀😀😀` and https://a.co/y z')).toBe(
+      'code(😀😀😀)| and |link<https://a.co/y>(https://a.co/y)| z',
+    );
+    expect(line('`🌧️` https://a.co/y z')).toBe('code(🌧️)| |link<https://a.co/y>(https://a.co/y)| z');
+    expect(line('`👨‍👩‍👧‍👦 🏳️‍🌈` see https://a.example.com/x ok')).toBe(
+      'code(👨‍👩‍👧‍👦 🏳️‍🌈)| see |link<https://a.example.com/x>(https://a.example.com/x)| ok',
+    );
+    expect(parseBlogLine('`😀` https://a.co/y')).toEqual([
+      { kind: 'code', text: '😀', from: 0, to: 4 },
+      text(' ', 4),
+      { kind: 'link', href: 'https://a.co/y', from: 5, to: 19, children: [text('https://a.co/y', 5)] },
+    ]);
+  });
+
+  it('never makes a link out of javascript: after emoji in code (review round 2 probe)', () => {
+    for (const count of [20, 21, 22]) {
+      const source = '`' + '😀'.repeat(count) + '` javascript:alert(1)//https://a.co/' + 'x'.repeat(30);
+      expect(hrefs(parseBlogLine(source))).toEqual([`https://a.co/${'x'.repeat(30)}`]);
+    }
+  });
+
   it('links bare http(s) links as before, but never inside a link', () => {
     expect(line('see https://a.example.com and **https://b.example.com**')).toBe(
       'see |link<https://a.example.com>(https://a.example.com)| and |bold(link<https://b.example.com>(https://b.example.com))',
@@ -282,8 +308,34 @@ describe('parseBlogBody: blocks', () => {
   });
 });
 
-/** The tree the blog page rendered before formatting: toParagraphs() lines through lineParts(). */
-const oldTree = (body: string): LinePart[][][] => toParagraphs(body).map((lines) => lines.map(lineParts));
+/**
+ * lineParts() as it is on main before BL-06 (features/blogs/linkParts.ts), frozen here so the
+ * old-body tests compare against what live blogs render today, not against the new code.
+ */
+function liveLineParts(line: string): LinePart[] {
+  const parts: LinePart[] = [];
+  let index = 0;
+  for (const match of line.matchAll(/https?:\/\/[^\s<>"]+/gi)) {
+    const start = match.index;
+    const trailing = match[0].match(/[.,;:!?'’”)\]]+$/)?.[0] ?? '';
+    const url = match[0].slice(0, match[0].length - trailing.length);
+    if (!isWebUrl(url)) continue;
+    if (start > index) parts.push({ kind: 'text', text: line.slice(index, start) });
+    parts.push({ kind: 'link', text: url, href: url });
+    index = start + url.length;
+  }
+  if (index < line.length) parts.push({ kind: 'text', text: line.slice(index) });
+  return parts.reduce<LinePart[]>((merged, part) => {
+    const last = merged.at(-1);
+    if (last?.kind === 'text' && part.kind === 'text')
+      merged[merged.length - 1] = { kind: 'text', text: last.text + part.text };
+    else merged.push(part);
+    return merged;
+  }, []);
+}
+
+/** The tree the blog page renders today: toParagraphs() lines through the frozen lineParts(). */
+const oldTree = (body: string): LinePart[][][] => toParagraphs(body).map((lines) => lines.map(liveLineParts));
 
 /** The same shape from the new parser: only plain paragraphs, text and pasted links. */
 function newTree(blocks: BlogBlock[]): LinePart[][][] {
@@ -309,7 +361,8 @@ describe('old plain bodies', () => {
     // blogFixture's and blogCardFixture's text (features/blogs), which lib tests can't import.
     'We stayed in Anjuna and rented a scooter.',
     'Booked on https://example.com/stay?id=4 for ₹1,200.\n(see http://goa.example.in).',
-    'Our stay: https://example.com/a*b*c and https://example.com/~~x~~ (book early!).',
+    'Our stay: https://example.com/a*b*c and https://example.com/~~x~~/y (book early!).',
+    'Rain 🌧️ at https://a.example.com/x, 👨‍👩‍👧‍👦 fun.',
     'Rain all day 🌧️🌧️ then sun.\n  indented line\n\nPrice: 2 * 3 = 6, file_name_here, C# and #goa #beach!',
     'Is it worth it? Yes!! <3 > maybe\n\n1st day: beach. 2nd day: fort.\n-30% off at the shack',
     '<script>alert(1)</script> <img src=x onerror=alert(1)> [not a link] (really)',
@@ -317,6 +370,47 @@ describe('old plain bodies', () => {
 
   it.each(bodies)('read exactly as before: %s', (body) => {
     expect(newTree(parseBlogBody(body))).toEqual(oldTree(body));
+  });
+
+  it('pin the old tree literally for the url fixture', () => {
+    expect(
+      oldTree('Booked on https://example.com/stay?id=4 for ₹1,200.\n(see http://goa.example.in).'),
+    ).toEqual([
+      [
+        [
+          { kind: 'text', text: 'Booked on ' },
+          { kind: 'link', text: 'https://example.com/stay?id=4', href: 'https://example.com/stay?id=4' },
+          { kind: 'text', text: ' for ₹1,200.' },
+        ],
+        [
+          { kind: 'text', text: '(see ' },
+          { kind: 'link', text: 'http://goa.example.in', href: 'http://goa.example.in' },
+          { kind: 'text', text: ').' },
+        ],
+      ],
+    ]);
+  });
+
+  it('differ from today in exactly two intended ways: a matching ) stays, a trailing * or ~ goes', () => {
+    const wiki = 'https://en.wikipedia.org/wiki/Goa_(state)';
+    // 1. A ) that closes a ( in the url is kept (today it is cut off, and the link breaks).
+    expect(liveLineParts(wiki)).toEqual([
+      { kind: 'link', text: wiki.slice(0, -1), href: wiki.slice(0, -1) },
+      { kind: 'text', text: ')' },
+    ]);
+    expect(newTree(parseBlogBody(wiki))).toEqual([[[{ kind: 'link', text: wiki, href: wiki }]]]);
+    expect(lineParts(wiki)).toEqual([{ kind: 'link', text: wiki, href: wiki }]);
+    // 2. Trailing * and ~ belong to formatting, not the url (today they are part of the link).
+    for (const tail of ['*', '~']) {
+      const url = 'https://a.example.com/x';
+      expect(liveLineParts(`${url}${tail}`)).toEqual([
+        { kind: 'link', text: `${url}${tail}`, href: `${url}${tail}` },
+      ]);
+      expect(lineParts(`${url}${tail}`)).toEqual([
+        { kind: 'link', text: url, href: url },
+        { kind: 'text', text: tail },
+      ]);
+    }
   });
 
   it('give the same plain text as the old description did', () => {
@@ -372,6 +466,43 @@ describe('blogPlainText', () => {
     expect(blogPlainText('see [map](https://goa.example.in) and [x] then', { cut: true })).toBe(
       'see map and [x] then',
     );
+  });
+});
+
+describe('every href', () => {
+  const emoji = ['😀', '🌧️', '👨‍👩‍👧‍👦', '🏳️‍🌈', '₹', 'é'];
+  const pieces = [
+    '`',
+    '`x`',
+    ' ',
+    '*',
+    '**',
+    '~~',
+    '>!',
+    '!<',
+    '[a](',
+    ')',
+    '(',
+    ']',
+    'https://a.co/',
+    'http://b.example.in/p',
+    'javascript:alert(1)//',
+    'data:,x',
+    ...emoji,
+  ];
+
+  it('is an exact http(s) web url, for thousands of generated lines', () => {
+    // A fixed pseudo-random sequence, so a failure is reproducible.
+    let seed = 7;
+    const next = () => (seed = (seed * 1_103_515_245 + 12_345) % 2_147_483_648);
+    for (let n = 0; n < 3_000; n++) {
+      const length = 1 + (next() % 12);
+      const source = Array.from({ length }, () => pieces[next() % pieces.length]).join('');
+      for (const href of hrefs(parseBlogLine(source))) {
+        expect(isWebUrl(href)).toBe(true);
+        expect(href).toMatch(/^https?:\/\/\S+$/);
+      }
+    }
   });
 });
 
