@@ -33,12 +33,13 @@ export function linkAt(body: string, selection: Selection): LinkAtCursor | null 
 }
 
 /**
- * The address as the parser will read it, or null if it isn't a web link. Brackets are
- * percent-encoded, since a ")" would end the link early; spaces aren't allowed in one.
+ * The address as the parser will read it, or null if it isn't a web link. Trimmed first: a pasted
+ * address often brings spaces or a line break, and isWebUrl() rejects any whitespace. Brackets are
+ * percent-encoded, so an unbalanced ")" can't end the link early.
  */
 export function cleanHref(input: string): string | null {
   const href = input.trim().replace(/\(/g, '%28').replace(/\)/g, '%29');
-  return href && !/\s/.test(href) && isWebUrl(href) ? href : null;
+  return isWebUrl(href) ? href : null;
 }
 
 /** Puts `[text](href)` in place of the link at the cursor, or of the selection. Empty text uses the address. */

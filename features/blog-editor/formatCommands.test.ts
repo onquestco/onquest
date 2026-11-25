@@ -8,6 +8,7 @@ import {
   type Format,
   type Selection,
 } from './formatCommands';
+import { isWebUrl } from '@/lib/blog/linkParts';
 import { applyLink, cleanHref, linkAt, removeLink } from './linkCommands';
 
 // The toolbar's text transforms (blogs-editor spec §6.1), written as before → after: "|" is the
@@ -250,6 +251,16 @@ describe('links', () => {
     ]) {
       expect(cleanHref(bad)).toBeNull();
     }
+  });
+
+  it('trims a pasted address before checking it, since isWebUrl rejects any whitespace', () => {
+    const pasted = ' \t https://goa.example.in/stay \n';
+    expect(isWebUrl(pasted)).toBe(false);
+    expect(cleanHref(pasted)).toBe('https://goa.example.in/stay');
+    expect(cleanHref('\u00a0https://goa.example.in\u00a0')).toBe('https://goa.example.in');
+    // Whitespace inside the address still isn't a link.
+    expect(cleanHref(' https://goa.example.in/a b ')).toBeNull();
+    expect(cleanHref('https://goa.example.in/\ta')).toBeNull();
   });
 
   it('wraps the selection as [text](url) and puts the cursor after it', () => {
