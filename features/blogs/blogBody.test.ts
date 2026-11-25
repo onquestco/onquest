@@ -1,7 +1,7 @@
 import { createElement, Fragment } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { lineParts } from '@/lib/blog/linkParts';
+import { isWebUrl, type LinePart } from '@/lib/blog/linkParts';
 import { parseBlogBody } from '@/lib/blog/markdown';
 import { toParagraphs } from '@/lib/blog/toBlogData';
 import { blogCardFixture } from './blogCardFixture';
@@ -12,6 +12,26 @@ const render = (body: string) =>
   renderToStaticMarkup(createElement(BlogBody, { blocks: parseBlogBody(body) }));
 
 const LINK = 'target="_blank" rel="nofollow ugc noopener" class="break-all text-brand-strong underline"';
+
+/**
+ * lineParts() as it was on main before BL-06, frozen (as in lib/blog/markdown.test.ts) so plain
+ * bodies are compared with what live blogs render today, not with the new code.
+ */
+function liveLineParts(line: string): LinePart[] {
+  const parts: LinePart[] = [];
+  let index = 0;
+  for (const match of line.matchAll(/https?:\/\/[^\s<>"]+/gi)) {
+    const start = match.index;
+    const trailing = match[0].match(/[.,;:!?'’”)\]]+$/)?.[0] ?? '';
+    const url = match[0].slice(0, match[0].length - trailing.length);
+    if (!isWebUrl(url)) continue;
+    if (start > index) parts.push({ kind: 'text', text: line.slice(index, start) });
+    parts.push({ kind: 'link', text: url, href: url });
+    index = start + url.length;
+  }
+  if (index < line.length) parts.push({ kind: 'text', text: line.slice(index) });
+  return parts;
+}
 
 /** The blog body as it rendered before formatting (BL-03): the backward-compatibility oracle. */
 function renderBeforeFormatting(body: string): string {
@@ -26,7 +46,7 @@ function renderBeforeFormatting(body: string): string {
           Fragment,
           { key: lineIndex },
           lineIndex > 0 && createElement('br'),
-          lineParts(line).map((part, partIndex) =>
+          liveLineParts(line).map((part, partIndex) =>
             part.kind === 'link'
               ? createElement(
                   'a',
