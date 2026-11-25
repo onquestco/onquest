@@ -4,6 +4,7 @@ import { DEFAULT_TEMPLATE_ID, getTemplate, pickableTemplates, templates } from '
 vi.mock('next/font/google', () => import('./shared/nextFontStub'));
 
 const ids = (list: { id: string }[]) => list.map((template) => template.id);
+const LIVE = ['coastal', 'alpine', 'roadtrip', 'winter', 'monsoon'];
 
 describe('template registry', () => {
   it('starts new Quests in a live template: Coastal', () => {
@@ -22,12 +23,13 @@ describe('template registry', () => {
     expect(getTemplate('unknown').id).toBe('beach');
   });
 
-  it('offers only live templates for a new Quest: Coastal, the new Mountain, Roadtrip and Winter', () => {
-    expect(ids(pickableTemplates('coastal'))).toEqual(['coastal', 'alpine', 'roadtrip', 'winter']);
-    expect(ids(pickableTemplates('alpine'))).toEqual(['coastal', 'alpine', 'roadtrip', 'winter']);
-    expect(ids(pickableTemplates('roadtrip'))).toEqual(['coastal', 'alpine', 'roadtrip', 'winter']);
-    expect(ids(pickableTemplates('winter'))).toEqual(['coastal', 'alpine', 'roadtrip', 'winter']);
-    expect(ids(pickableTemplates('unknown'))).toEqual(['coastal', 'alpine', 'roadtrip', 'winter']);
+  it('offers only live templates for a new Quest: Coastal, new Mountain, Roadtrip, Winter, Monsoon', () => {
+    expect(ids(pickableTemplates('coastal'))).toEqual(LIVE);
+    expect(ids(pickableTemplates('alpine'))).toEqual(LIVE);
+    expect(ids(pickableTemplates('roadtrip'))).toEqual(LIVE);
+    expect(ids(pickableTemplates('winter'))).toEqual(LIVE);
+    expect(ids(pickableTemplates('monsoon'))).toEqual(LIVE);
+    expect(ids(pickableTemplates('unknown'))).toEqual(LIVE);
   });
 
   it('gives the new Mountain its own id, so Quests stored as mountain keep the old look', () => {
@@ -48,8 +50,14 @@ describe('template registry', () => {
     expect(getTemplate('winter').id).toBe('winter');
   });
 
+  it('registers Monsoon as live', () => {
+    expect(templates.monsoon.status).toBe('live');
+    expect(templates.monsoon.name).toBe('Monsoon');
+    expect(getTemplate('monsoon').id).toBe('monsoon');
+  });
+
   it('also offers a draft its current retired template', () => {
-    expect(ids(pickableTemplates('beach'))).toEqual(['coastal', 'alpine', 'roadtrip', 'winter', 'beach']);
-    expect(ids(pickableTemplates('mountain'))).toEqual(['coastal', 'alpine', 'roadtrip', 'winter', 'mountain']);
+    expect(ids(pickableTemplates('beach'))).toEqual([...LIVE, 'beach']);
+    expect(ids(pickableTemplates('mountain'))).toEqual([...LIVE, 'mountain']);
   });
 });

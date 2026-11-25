@@ -1,6 +1,7 @@
 import alpine from './alpine';
 import beach from './beach';
 import coastal from './coastal';
+import monsoon from './monsoon';
 import mountain from './mountain';
 import roadtrip from './roadtrip';
 import type { Template } from './types';
@@ -15,6 +16,7 @@ export const templates = {
   alpine,
   roadtrip,
   winter,
+  monsoon,
 } satisfies Record<string, Template>;
 
 export type TemplateId = keyof typeof templates;
