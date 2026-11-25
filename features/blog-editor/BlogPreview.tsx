@@ -1,7 +1,8 @@
 import { Avatar } from '@/design-system/components/Avatar';
 import { questCardMeta } from '@/design-system/components/QuestCardView';
 import { BlogArticle } from '@/features/blogs/BlogArticle';
-import { readMinutes, toParagraphs } from '@/lib/blog/toBlogData';
+import { parseBlogBody } from '@/lib/blog/markdown';
+import { readMinutes } from '@/lib/blog/toBlogData';
 import type { BlogData, BlogDocument } from '@/lib/blog/schema';
 import { photoUrls } from '@/lib/storage';
 import type { QuestCard } from '@/lib/trip/cards';
@@ -34,11 +35,12 @@ export function previewArticle(
   document: BlogDocument,
   photoFolder: string,
   previews: Record<string, string>,
-): Pick<BlogData, 'title' | 'paragraphs' | 'photos' | 'placeName'> {
+): Pick<BlogData, 'title' | 'blocks' | 'photos' | 'placeName'> {
   const title = (document.title ?? '').trim();
   return {
     title,
-    paragraphs: toParagraphs(document.body),
+    // The same parser as the blog page (toBlogData), so Preview is exactly what readers get.
+    blocks: parseBlogBody(document.body),
     photos: document.photos.map((photo) => {
       const stored = photoUrls(photoFolder, photo.id);
       const local = previews[photo.id];

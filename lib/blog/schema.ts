@@ -82,8 +82,6 @@ export type BlogData = {
   path: string;
   unlisted: boolean;
   title: string;
-  /** Paragraphs → lines (split on blank lines, then \n). Removed by BL-08 once nothing reads it. */
-  paragraphs: string[][];
   /** The body's formatting, from parseBlogBody() (blogs-editor spec §4.1). */
   blocks: BlogBlock[];
   photos: { id: string; width: number; height: number; display: string; thumb: string }[];

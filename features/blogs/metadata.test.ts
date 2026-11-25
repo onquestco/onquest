@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { blogPlainText } from '@/lib/blog/markdown';
 import { blogFixture, bodyOfWords } from './blogFixture';
 import { blogMetadata, unavailableBlogMetadata } from './metadata';
 
@@ -49,7 +50,12 @@ describe('blogMetadata', () => {
     expect(blogMetadata(blogFixture({ body })).description).toBe(body);
   });
 
-    it('describes the plain fixture blog exactly as before formatting existed', () => {
+  it('describes a body as blogPlainText reads the whole of it', () => {
+    const body = '### Tips\n1. `npm` and ~~cash~~ **only**\n\n> [Map](https://goa.example.in) >!a!< b';
+    expect(blogMetadata(blogFixture({ body })).description).toBe(blogPlainText(body));
+  });
+
+  it('describes the plain fixture blog exactly as before formatting existed', () => {
     expect(blogMetadata(blogFixture()).description).toBe('We stayed in Anjuna. Scooters were ₹400 a day.');
   });
 

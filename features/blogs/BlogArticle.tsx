@@ -8,16 +8,16 @@ import { BlogGallery } from './BlogGallery';
 // the owner view and the composer's Preview all render it, so Preview is exactly what readers get.
 // Missing parts aren't drawn: a text-only blog has no gallery, a blog without a place no chip.
 
-type Props = Pick<BlogData, 'title' | 'paragraphs' | 'photos' | 'placeName'> & {
+type Props = Pick<BlogData, 'title' | 'blocks' | 'photos' | 'placeName'> & {
   /** The writer row, above the title. */
   writer?: ReactNode;
-  /** Straight after the last paragraph (the blog page's read-end marker). */
+  /** Straight after the text (the blog page's read-end marker). */
   afterBody?: ReactNode;
   /** Opens a gallery photo full screen. */
   onOpenPhoto?: (index: number) => void;
 };
 
-export function BlogArticle({ title, paragraphs, photos, placeName, writer, afterBody, onOpenPhoto }: Props) {
+export function BlogArticle({ title, blocks, photos, placeName, writer, afterBody, onOpenPhoto }: Props) {
   return (
     <article className="flex flex-col gap-4">
       {writer}
@@ -29,7 +29,7 @@ export function BlogArticle({ title, paragraphs, photos, placeName, writer, afte
         </p>
       )}
       <BlogGallery photos={photos} title={title} onOpen={onOpenPhoto} />
-      <BlogBody paragraphs={paragraphs} />
+      <BlogBody blocks={blocks} />
       {afterBody}
     </article>
   );

@@ -36,7 +36,6 @@ describe('toBlogData', () => {
       path: '/@riya/blog/goa-on-15k',
       unlisted: true,
       title: 'Goa on 15k',
-      paragraphs: [['First line', 'second line'], ['Next paragraph']],
       placeName: 'Goa',
       commentsOn: false,
       readMinutes: 2,
@@ -66,7 +65,6 @@ describe('toBlogData', () => {
       profileUrl: expect.stringMatching(/\/@riya$/),
     });
     expect('placeName' in data).toBe(false);
-    expect(data.paragraphs).toEqual([]);
     expect(data.blocks).toEqual([]);
     expect(data.photos).toEqual([]);
     expect(data.readMinutes).toBe(1);
@@ -75,8 +73,9 @@ describe('toBlogData', () => {
 
 describe('toBlogData blocks', () => {
   it('reads a plain body as the same paragraphs and lines as before', () => {
-    const { blocks, paragraphs } = toBlogData(rows);
-    expect(blocks.map((block) => (block.kind === 'paragraph' ? block.lines.map((line) => line.map((node) => node.kind === 'text' && node.text).join('')) : block.kind))).toEqual(paragraphs);
+    const { blocks } = toBlogData(rows);
+    expect(blocks.map((block) => (block.kind === 'paragraph' ? block.lines.map((line) => line.map((node) => node.kind === 'text' && node.text).join('')) : block.kind))).toEqual([['First line', 'second line'], ['Next paragraph']]);
+    expect(toParagraphs(rows.blog.body)).toEqual([['First line', 'second line'], ['Next paragraph']]);
   });
 
   it('reads the formatting in the body, and keeps the body itself as it was', () => {
@@ -94,8 +93,6 @@ describe('toBlogData blocks', () => {
         ],
       },
     ]);
-    // paragraphs stays the raw lines until BL-08 removes it.
-    expect(data.paragraphs).toEqual([['## Day 1', '- **Beach**', '- >!Fort!<']]);
   });
 });
 

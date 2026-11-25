@@ -9,7 +9,10 @@ export function readMinutes(wordCount: number): number {
   return Math.max(1, Math.round(wordCount / WORDS_PER_MINUTE));
 }
 
-/** Paragraphs split on blank lines, then lines on \n. Empty lines are dropped. */
+/**
+ * Paragraphs split on blank lines, then lines on \n. Empty lines are dropped. The plain-text rules
+ * from before formatting: the backward-compatibility tests check parseBlogBody() against it.
+ */
 export function toParagraphs(body: string): string[][] {
   return body
     .replace(/\r\n?/g, '\n')
@@ -28,7 +31,6 @@ export function toBlogData(rows: BlogRows): BlogData {
     path,
     unlisted: blog.visibility === 'unlisted',
     title: blog.title,
-    paragraphs: toParagraphs(blog.body),
     blocks: parseBlogBody(blog.body),
     photos: blog.photos.map((photo) => ({
       id: photo.id,
