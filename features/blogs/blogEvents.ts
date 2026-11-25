@@ -38,6 +38,17 @@ export function publishedProperties(blogKey: string, document: BlogDocument, vis
   };
 }
 
+/** blog_deleted: "Delete draft" on a blog that was never posted (blogs-editor spec §10). */
+export function deletedProperties(blogKey: string, document: BlogDocument) {
+  return {
+    blog_id: blogKey,
+    status: 'draft' as const,
+    photos: document.photos.length,
+    chars_bucket: charsBucket(document.body),
+    has_quest: document.linkedQuestKey !== undefined,
+  };
+}
+
 type Managed =
   | { action: 'edit' | 'delete' }
   | { action: 'visibility'; visibility: Visibility }

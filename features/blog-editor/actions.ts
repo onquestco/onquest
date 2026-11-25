@@ -3,7 +3,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { after } from 'next/server';
 import { z } from 'zod';
-import { charsBucket, draftSavedProperties, managedProperties } from '@/features/blogs/blogEvents';
+import { deletedProperties, draftSavedProperties, managedProperties } from '@/features/blogs/blogEvents';
 import { blogSaveError } from '@/features/blogs/blogErrors';
 import { loadOwnBlog, ownsBlog } from '@/features/blogs/blogRows';
 import { refreshBlogPages } from '@/features/blogs/refreshBlog';
@@ -91,16 +91,7 @@ export const deleteBlogDraft = action(z.object({ key: z.uuid() }), async ({ key 
     return { deleted: true as const };
   }
   // Never posted: it's on no cached page (public lists show posted blogs only), so no tags.
-  const { document } = own.draft;
-  after(() =>
-    trackServer('blog_deleted', user.id, {
-      blog_id: key,
-      status: 'draft',
-      photos: document.photos.length,
-      chars_bucket: charsBucket(document.body),
-      has_quest: document.linkedQuestKey !== undefined,
-    }),
-  );
+  after(() => trackServer('blog_deleted', user.id, deletedProperties(key, own.draft.document)));
   return { deleted: true as const };
 });
 

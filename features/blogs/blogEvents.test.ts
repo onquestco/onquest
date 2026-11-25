@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { SERVER_EVENTS } from '@/lib/analytics/taxonomy';
 import { propertyProblems } from '@/lib/analytics/validate';
 import { BlogDocumentSchema } from '@/lib/blog/schema';
-import { charsBucket, draftSavedProperties, managedProperties, publishedProperties } from './blogEvents';
+import {
+  charsBucket,
+  deletedProperties,
+  draftSavedProperties,
+  managedProperties,
+  publishedProperties,
+} from './blogEvents';
 
 // Each blog server event's properties must pass the taxonomy, or trackServer drops the event.
 
@@ -56,6 +62,26 @@ describe('blog_published', () => {
     const properties = publishedProperties(KEY, BlogDocumentSchema.parse({ title: 'Goa', body: 'Hi' }), 'public', NOW);
     expect(properties).toMatchObject({ has_quest: false, has_place: false, minutes_since_start: undefined });
     expect(propertyProblems(SERVER_EVENTS.blog_published, properties)).toEqual([]);
+  });
+});
+
+describe('blog_deleted', () => {
+  it('carries counts only, valid for the taxonomy', () => {
+    const empty = deletedProperties(KEY, BlogDocumentSchema.parse({}));
+    expect(empty).toEqual({ blog_id: KEY, status: 'draft', photos: 0, chars_bucket: '0', has_quest: false });
+    expect(propertyProblems(SERVER_EVENTS.blog_deleted, empty)).toEqual([]);
+
+    const full = deletedProperties(
+      KEY,
+      BlogDocumentSchema.parse({
+        title: 'Goa',
+        body: 'x'.repeat(10_000),
+        photos: Array.from({ length: 10 }, (_, i) => ({ ...photo, id: `00000000-0000-4000-8000-00000000010${i}` })),
+        linkedQuestKey: '00000000-0000-4000-8000-0000000000a1',
+      }),
+    );
+    expect(full).toEqual({ blog_id: KEY, status: 'draft', photos: 10, chars_bucket: '5001-10000', has_quest: true });
+    expect(propertyProblems(SERVER_EVENTS.blog_deleted, full)).toEqual([]);
   });
 });
 

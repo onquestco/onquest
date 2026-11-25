@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { deleteBlogDraft } from './actions';
+import { deleteBlogDraft, discardBlogDraft } from './actions';
 
-// deleteBlogDraft with a fake database (blogs-editor spec §4.2). The real delete is covered by
+// deleteBlogDraft and discardBlogDraft (they share the delete steps) with a fake database
+// (blogs-editor spec §4.2). The real delete is covered by
 // tests/db/blogDelete.test.ts; this checks the order, the guard and which event and tags go out.
 
 const KEY = '00000000-0000-4000-8000-000000000001';
@@ -119,6 +120,52 @@ describe('deleteBlogDraft', () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { code: '57014', message: 'timeout' } });
     const quiet = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     expect(await deleteBlogDraft({ key: KEY })).toEqual({ ok: false, error: 'Something went wrong' });
+    quiet.mockRestore();
+  });
+});
+
+// The empty-composer close goes through the same steps as Delete draft: it must behave as it did
+// before they were shared (no event, no tags, a posted blog refused).
+describe('discardBlogDraft', () => {
+  it('deletes the files before the rows, and sends no event and no tags', async () => {
+    mocks.loadOwnBlog.mockResolvedValue(ownBlog('draft'));
+    expect(await discardBlogDraft({ key: KEY })).toEqual({ ok: true, data: { discarded: true } });
+    expect(mocks.calls).toEqual(['files', 'delete_blog']);
+    expect(mocks.deleteQuestFiles).toHaveBeenCalledWith(expect.anything(), `${USER}/${KEY}`);
+    expect(mocks.trackServer).not.toHaveBeenCalled();
+    expect(mocks.refreshBlogPages).not.toHaveBeenCalled();
+  });
+
+  it('refuses a posted blog and touches nothing', async () => {
+    mocks.loadOwnBlog.mockResolvedValue(ownBlog('published'));
+    expect(await discardBlogDraft({ key: KEY })).toEqual({
+      ok: true,
+      data: { discarded: false, error: 'published' },
+    });
+    expect(mocks.calls).toEqual([]);
+  });
+
+  it("answers not_found for a blog that isn't yours or is already gone", async () => {
+    mocks.loadOwnBlog.mockResolvedValue(null);
+    expect(await discardBlogDraft({ key: KEY })).toEqual({
+      ok: true,
+      data: { discarded: false, error: 'not_found' },
+    });
+    expect(mocks.calls).toEqual([]);
+
+    mocks.loadOwnBlog.mockResolvedValue(ownBlog('draft'));
+    mocks.rpc.mockResolvedValue({ data: null, error: { code: 'OQ404', message: 'blog not found' } });
+    expect(await discardBlogDraft({ key: KEY })).toEqual({
+      ok: true,
+      data: { discarded: false, error: 'not_found' },
+    });
+  });
+
+  it('fails without detail when the database errors', async () => {
+    mocks.loadOwnBlog.mockResolvedValue(ownBlog('draft'));
+    mocks.rpc.mockResolvedValue({ data: null, error: { code: '57014', message: 'timeout' } });
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    expect(await discardBlogDraft({ key: KEY })).toEqual({ ok: false, error: 'Something went wrong' });
     quiet.mockRestore();
   });
 });

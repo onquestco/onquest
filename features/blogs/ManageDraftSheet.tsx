@@ -6,7 +6,8 @@ import { Button, buttonClassName } from '@/design-system/components/Button';
 import { ConfirmDialog } from '@/design-system/components/ConfirmDialog';
 import { Sheet } from '@/design-system/components/Sheet';
 import { deleteBlogDraft } from '@/features/blog-editor/actions';
-import { browserStorage, forgetNewBlogKey, removeLocalDraft } from '@/features/blog-editor/localDraft';
+import { browserStorage } from '@/features/blog-editor/localDraft';
+import { draftDeleteOutcome, forgetDeletedDraft } from './draftDelete';
 
 /** A never-posted blog as its ⋯ menu needs it. */
 export type ManagedDraft = { key: string; title: string; ownerKey: string };
@@ -35,15 +36,12 @@ export function ManageDraftSheet({ draft, onClose, onDeleted, onPosted }: Props)
   async function remove() {
     setBusy(true);
     setMessage(undefined);
-    const result = await deleteBlogDraft({ key: draft.key }).catch(() => null);
+    const outcome = draftDeleteOutcome(await deleteBlogDraft({ key: draft.key }).catch(() => null));
     setBusy(false);
     setConfirming(false);
-    if (!result?.ok) return setMessage(FAILED);
-    if (!result.data.deleted && result.data.error === 'published') return onPosted();
-    // Deleted now, or already gone: either way this device's copy must not come back.
-    const storage = browserStorage();
-    removeLocalDraft(storage, draft.key);
-    forgetNewBlogKey(storage, draft.key, draft.ownerKey);
+    if (outcome === 'failed') return setMessage(FAILED);
+    if (outcome === 'posted') return onPosted();
+    forgetDeletedDraft(browserStorage(), draft.key, draft.ownerKey);
     onDeleted();
   }
 
