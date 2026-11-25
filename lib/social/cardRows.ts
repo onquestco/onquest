@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { BlogCard } from '@/lib/blog/cards';
+import { blogPlainText } from '@/lib/blog/markdown';
 import { readMinutes } from '@/lib/blog/toBlogData';
 import { photoUrls } from '@/lib/storage';
 import type { QuestCard } from '@/lib/trip/cards';
@@ -103,7 +104,8 @@ function toBlogCard(row: z.infer<typeof BlogCardRowSchema>): BlogCard {
     status: row.status,
     visibility: row.visibility,
     path: row.path ?? undefined,
-    excerpt: row.excerpt,
+    // The database cuts the excerpt at 150 characters, so a spoiler may have lost its closer.
+    excerpt: blogPlainText(row.excerpt, { cut: true }),
     coverThumb: row.cover_photo_key ? photoUrls(row.photo_folder, row.cover_photo_key).thumb : undefined,
     photoCount: row.photo_count,
     readMinutes: readMinutes(row.word_count),

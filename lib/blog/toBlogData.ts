@@ -1,6 +1,7 @@
 import { absoluteUrl } from '@/lib/site';
 import { photoUrls } from '@/lib/storage';
 import { WORDS_PER_MINUTE } from './limits';
+import { parseBlogBody } from './markdown';
 import type { BlogData, BlogRows } from './schema';
 
 /** "max(1, round(words / 200))": a blog never reads in 0 minutes. */
@@ -28,6 +29,7 @@ export function toBlogData(rows: BlogRows): BlogData {
     unlisted: blog.visibility === 'unlisted',
     title: blog.title,
     paragraphs: toParagraphs(blog.body),
+    blocks: parseBlogBody(blog.body),
     photos: blog.photos.map((photo) => ({
       id: photo.id,
       width: photo.width,

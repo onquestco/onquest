@@ -23,7 +23,8 @@ export function lineParts(line: string): LinePart[] {
   return mergeText(parts);
 }
 
-function isWebUrl(text: string): boolean {
+/** http or https with a host that has a dot: the only links a blog can hold (pasted or `[text](url)`). */
+export function isWebUrl(text: string): boolean {
   try {
     const url = new URL(text);
     return (url.protocol === 'http:' || url.protocol === 'https:') && url.hostname.includes('.');
