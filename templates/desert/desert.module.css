@@ -1,0 +1,152 @@
+/* Desert-only pieces, from docs/reference/templates/desert.md (and the shared player in roadtrip.html).
+   Shared pieces live in ../shared/scrapbook.module.css. */
+
+/* The design loads three families; the other two font variables use Nunito (see fonts.ts). */
+.fontAliases {
+  --font-type: var(--font-sans);
+  --font-serif: var(--font-sans);
+}
+
+/* The design's scenery doesn't move (no drifting or falling groups), so the only motion is the shared
+   polaroid drop-in, which ../shared/scrapbook.module.css turns off under reduced motion. */
+.background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Everything above the scenery. Same box as the page, so % positions and cqw sizes are unchanged. */
+.layer {
+  position: absolute;
+  inset: 0;
+}
+.block {
+  position: absolute;
+  z-index: 5;
+}
+
+.kicker {
+  margin: 0;
+  font: 600 3.8cqw/1 var(--font-script);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #b4532a;
+  overflow-wrap: anywhere;
+}
+.title {
+  margin: 0;
+  font: 700 12cqw/1.04 var(--font-script);
+  color: #8a4e2c;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.pageTitle {
+  margin: 0;
+  font: 700 7.4cqw/1.1 var(--font-script);
+  color: #8a4e2c;
+  overflow-wrap: anywhere;
+}
+.meta {
+  margin: 4cqw 0 0;
+  font: 800 3.4cqw/1.3 var(--font-sans);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6b3f26;
+  opacity: 0.75;
+}
+
+/* Text under the night sky: the design's --lt-kick and --lt-title. */
+.light .kicker {
+  color: #f6c99b;
+}
+.light .meta {
+  color: #fff3d6;
+  opacity: 0.92;
+}
+.light .title,
+.light .pageTitle {
+  color: #fff3d6;
+  text-shadow: 0 0.5cqw 1.6cqw rgba(0, 0, 30, 0.35);
+}
+
+/* The design's polaroid: a slightly thinner border, a bold handwritten caption and a wider tape.
+   The shared Photo's classes are private to its module, so these reach its parts by structure:
+   the photo's frame is its first <span>, the caption its <i>, the tape its ::before. */
+.layer [data-draggable] > span:first-child {
+  padding: 2.4cqw 2.4cqw 10.2cqw;
+}
+.layer [data-draggable] i {
+  bottom: 2.6cqw;
+  font: 700 5.6cqw/1 var(--font-hand);
+  color: var(--ink);
+}
+.layer [data-draggable]::before {
+  top: -3.2cqw;
+  width: 22cqw;
+  height: 6.4cqw;
+  margin-left: -11cqw;
+  rotate: -3deg;
+  opacity: 0.92;
+}
+
+.stamp {
+  position: absolute;
+  z-index: 9;
+  padding: 1.4cqw 1cqw;
+  border: 0.8cqw dashed var(--accent2);
+  border-radius: 2cqw;
+  background: rgba(250, 240, 214, 0.85);
+  color: var(--accent2);
+  text-align: center;
+  rotate: 6deg;
+}
+.stamp b {
+  display: block;
+  font: 700 8cqw/1 var(--font-script);
+}
+.stamp span {
+  display: block;
+  font: 800 2.6cqw/1.1 var(--font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.sticker {
+  position: absolute;
+  z-index: 6;
+  filter: drop-shadow(0 0.4cqw 0.4cqw rgba(0, 0, 0, 0.22));
+}
+
+/* Route page. */
+.route {
+  position: absolute;
+  left: 0;
+  top: 18%;
+  z-index: 4;
+  width: 100%;
+  height: 52%;
+  overflow: visible;
+}
+.pin {
+  cursor: pointer;
+}
+.pin:focus-visible circle:nth-of-type(2) {
+  stroke: var(--ink);
+}
+.pinNumber {
+  font: 800 20px var(--font-sans);
+  fill: #fff;
+}
+/* Ink names, as on the design's sand-coloured route page, with a pale halo so they stay readable
+   where they cross a dune or a sparkle. */
+.pinName {
+  font: 800 24px var(--font-sans);
+  fill: #6b3f26;
+  paint-order: stroke;
+  stroke: rgba(250, 240, 214, 0.85);
+  stroke-width: 6px;
+  stroke-linejoin: round;
+}
