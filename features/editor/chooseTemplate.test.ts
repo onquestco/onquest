@@ -39,16 +39,20 @@ function choices(templateId: string, published = false) {
 }
 
 describe('ChooseTemplate', () => {
-  it('a new Quest is offered Coastal only, already selected (AC1, AC4)', () => {
-    expect(choices('coastal')).toEqual(['Coastal (selected)']);
+  it('a new Quest is offered Coastal, already selected, and the new Mountain (AC1, AC4)', () => {
+    expect(choices('coastal')).toEqual(['Coastal (selected)', 'Mountain']);
+  });
+
+  it('a draft that picked the new Mountain keeps it selected', () => {
+    expect(choices('alpine')).toEqual(['Coastal', 'Mountain (selected)']);
   });
 
   it('a draft that chose Beach keeps it, selected, next to Coastal (AC2)', () => {
-    expect(choices('beach')).toEqual(['Coastal', 'Beach (selected)']);
+    expect(choices('beach')).toEqual(['Coastal', 'Mountain', 'Beach (selected)']);
   });
 
-  it('a draft that chose the old Mountain keeps it too (AC2)', () => {
-    expect(choices('mountain')).toEqual(['Coastal', 'Mountain (selected)']);
+  it('a draft that chose the old Mountain keeps it too, after the new one (AC2)', () => {
+    expect(choices('mountain')).toEqual(['Coastal', 'Mountain', 'Mountain (selected)']);
   });
 
   it('a published Quest only shows the look it has (spec D4)', () => {
@@ -58,6 +62,6 @@ describe('ChooseTemplate', () => {
 
 describe('templateChoices', () => {
   it('never offers a retired template the Quest isn’t using', () => {
-    expect(templateChoices('coastal', false).map((template) => template.id)).toEqual(['coastal']);
+    expect(templateChoices('coastal', false).map((template) => template.id)).toEqual(['coastal', 'alpine']);
   });
 });

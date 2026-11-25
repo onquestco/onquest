@@ -22,13 +22,20 @@ describe('template registry', () => {
     expect(getTemplate('unknown').id).toBe('beach');
   });
 
-  it('offers only live templates for a new Quest', () => {
-    expect(ids(pickableTemplates('coastal'))).toEqual(['coastal']);
-    expect(ids(pickableTemplates('unknown'))).toEqual(['coastal']);
+  it('offers only live templates for a new Quest: Coastal and the new Mountain', () => {
+    expect(ids(pickableTemplates('coastal'))).toEqual(['coastal', 'alpine']);
+    expect(ids(pickableTemplates('alpine'))).toEqual(['coastal', 'alpine']);
+    expect(ids(pickableTemplates('unknown'))).toEqual(['coastal', 'alpine']);
+  });
+
+  it('gives the new Mountain its own id, so Quests stored as mountain keep the old look', () => {
+    expect(templates.alpine.status).toBe('live');
+    expect(templates.alpine.name).toBe('Mountain');
+    expect(getTemplate('alpine').id).toBe('alpine');
   });
 
   it('also offers a draft its current retired template', () => {
-    expect(ids(pickableTemplates('beach'))).toEqual(['coastal', 'beach']);
-    expect(ids(pickableTemplates('mountain'))).toEqual(['coastal', 'mountain']);
+    expect(ids(pickableTemplates('beach'))).toEqual(['coastal', 'alpine', 'beach']);
+    expect(ids(pickableTemplates('mountain'))).toEqual(['coastal', 'alpine', 'mountain']);
   });
 });

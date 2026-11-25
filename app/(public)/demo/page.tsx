@@ -10,6 +10,7 @@ import {
   type SampleSocialName,
   type SampleViewerName,
 } from '@/lib/demo/sampleSocial';
+import { alpineFixtures } from '@/templates/alpine/fixtures';
 import { coastalFixtures, type CoastalFixtureName } from '@/templates/coastal/fixtures';
 import { isTemplateId } from '@/templates/registry';
 
@@ -36,7 +37,8 @@ const pick = <Name extends string>(
 // /demo plays the Goa sample with sample likes and comments. Every Quest page state is one URL away:
 //   ?quest=small|full|old             the edge-case trips
 //   ?template=mountain                the same trip in another template
-//   ?size=small|big|mixed|noCaptions|onePlace   the Coastal check trips (templates spec AC7)
+//   ?size=small|big|mixed|noCaptions|onePlace   the Coastal check trips (templates spec AC7);
+//                                               with ?template=alpine, the new Mountain's
 //   ?social=none|few|many|off         likes and comments (off = comments turned off)
 //   ?viewer=signedOut|friend|owner    who is looking
 //   ?comment=open                     back from sign-in with the comment box open
@@ -46,9 +48,10 @@ export default async function DemoPage({ searchParams }: Props) {
   if (params.state === 'private' || params.state === 'removed')
     return <QuestUnavailable reason={params.state} />;
 
+  const checkTrips = params.template === 'alpine' ? alpineFixtures : coastalFixtures;
   const sample =
-    params.size && params.size in coastalFixtures
-      ? coastalFixtures[params.size as CoastalFixtureName]
+    params.size && params.size in checkTrips
+      ? checkTrips[params.size as CoastalFixtureName]
       : params.quest && params.quest in sampleQuests
         ? sampleQuests[params.quest as SampleQuestName]
         : goaTrip;

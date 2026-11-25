@@ -10,6 +10,7 @@ const font = (name: string) => (options: { variable: string }) => ({
 
 export const Bitter = font('Bitter');
 export const Caveat = font('Caveat');
+export const Cormorant_Garamond = font('Cormorant_Garamond');
 export const Courier_Prime = font('Courier_Prime');
 export const DM_Sans = font('DM_Sans');
 export const Kaushan_Script = font('Kaushan_Script');
