@@ -21,6 +21,7 @@ import { canPost, hasContent, POST_EMPTY_MESSAGE } from './postRules';
 import { PostSheet } from './PostSheet';
 import { BodyField, TitleField } from './TitleField';
 import { useBlogAutosave } from './useBlogAutosave';
+import { useBodyHistory } from './useBodyHistory';
 import { CONFLICT_MESSAGE, usePostBlog } from './usePostBlog';
 
 // The blog composer (PRD B2, spec §6.1): one screen with a title, photos, the text, a place and a
@@ -63,6 +64,11 @@ function ComposerScreen({ store, saver, quests, writer }: ScreenProps) {
   const [toast, setToast] = useState<string>();
   const clearToast = useCallback(() => setToast(undefined), []);
   const check = canPost(document, pending);
+  // Here, above the edit/preview switch: Preview unmounts the body field, and undo must survive it.
+  const bodyHistory = useBodyHistory({
+    body: document.body,
+    selection: { start: document.body.length, end: document.body.length },
+  });
 
   if (lost) return <LostBlog />;
 
@@ -144,7 +150,7 @@ function ComposerScreen({ store, saver, quests, writer }: ScreenProps) {
           <>
             <TitleField store={store} />
             <PhotoRow store={store} />
-            <BodyField store={store} />
+            <BodyField store={store} history={bodyHistory} onToast={setToast} />
             <PlaceRow store={store} saver={saver} />
             <LinkQuestRow store={store} saver={saver} quests={quests} />
           </>

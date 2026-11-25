@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { toParagraphs } from '@/lib/blog/toBlogData';
+import { parseBlogBody } from '@/lib/blog/markdown';
 import { BlogArticle } from './BlogArticle';
 
 const photo = (n: number) => ({
@@ -16,7 +16,7 @@ const render = (props: Partial<Parameters<typeof BlogArticle>[0]> = {}) =>
   renderToStaticMarkup(
     createElement(BlogArticle, {
       title: 'Goa on 15k: what worked',
-      paragraphs: toParagraphs('We stayed in Anjuna.\n\nScooters were ₹400 a day.'),
+      blocks: parseBlogBody('We stayed in Anjuna.\n\nScooters were ₹400 a day.'),
       photos: [],
       ...props,
     }),
@@ -50,7 +50,7 @@ describe('BlogArticle', () => {
   });
 
   it('photos only with a one-line text: the gallery comes before the text', () => {
-    const html = render({ photos: [photo(1)], paragraphs: toParagraphs('Sunset.') });
+    const html = render({ photos: [photo(1)], blocks: parseBlogBody('Sunset.') });
     expect(html.indexOf('data-blog-gallery')).toBeLessThan(html.indexOf('Sunset.'));
   });
 });

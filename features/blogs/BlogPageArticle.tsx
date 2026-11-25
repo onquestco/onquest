@@ -11,7 +11,7 @@ import { WriterRow } from './WriterRow';
 
 type Props = Pick<
   BlogData,
-  'title' | 'paragraphs' | 'photos' | 'placeName' | 'writer' | 'publishedAt' | 'readMinutes'
+  'title' | 'blocks' | 'photos' | 'placeName' | 'writer' | 'publishedAt' | 'readMinutes'
 >;
 
 /**

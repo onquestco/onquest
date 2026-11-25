@@ -219,6 +219,92 @@ test.describe.serial('write, read and manage a blog (mobile)', () => {
     await reader.close();
     await page.close();
   });
+
+  test('6. Format: bold a word and a list → Post → signed out sees them; delete an unposted draft', async ({
+    browser,
+  }) => {
+    // blogs-editor spec §11. The draft delete at the end needs BL-07 (#41).
+    const page = await writer.newPage();
+    const formattedTitle = `Formatted ${Date.now().toString(36)}`;
+    await page.goto('/blogs/new?source=create');
+    await page.getByLabel('Title').fill(formattedTitle);
+    const text = page.getByLabel('Text');
+    await text.fill('Pack light');
+
+    // Select "light" and bold it from the toolbar.
+    await text.evaluate((field: HTMLTextAreaElement) => {
+      field.focus();
+      field.setSelectionRange(5, 10);
+    });
+    const bold = page.getByRole('button', { name: /^Bold \(/ });
+    await bold.click();
+    await expect(text).toHaveValue('Pack **light**');
+    await expect(bold).toHaveAttribute('aria-pressed', 'true');
+
+    // A list: the button starts it, Enter continues it.
+    await text.evaluate((field: HTMLTextAreaElement) => field.setSelectionRange(field.value.length, field.value.length));
+    await text.press('Enter');
+    await text.press('Enter');
+    await page.getByRole('button', { name: 'Bulleted list' }).click();
+    await text.pressSequentially('Sunscreen');
+    await text.press('Enter');
+    await text.pressSequentially('Hat');
+    await expect(text).toHaveValue('Pack **light**\n\n- Sunscreen\n- Hat');
+
+    // Undo takes the last typing back, redo brings it again.
+    await page.getByRole('button', { name: /^Undo \(/ }).click();
+    await expect(text).toHaveValue('Pack **light**\n\n- Sunscreen\n- ');
+    await page.getByRole('button', { name: /^Redo \(/ }).click();
+    await expect(text).toHaveValue('Pack **light**\n\n- Sunscreen\n- Hat');
+
+    await page.getByRole('button', { name: 'Preview' }).click();
+    await expect(page.locator('article strong', { hasText: 'light' })).toBeVisible();
+    await expect(page.getByRole('toolbar', { name: 'Formatting' })).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Post', exact: true }).first().click();
+    const sheet = page.getByRole('dialog', { name: 'Who can see this blog?' });
+    await sheet.locator('label', { hasText: 'Public' }).click();
+    await sheet.getByRole('button', { name: 'Post' }).click();
+    await expect(page.getByRole('heading', { name: 'Your blog is live!' })).toBeVisible();
+    const shown = await page.getByText(/\/@[a-z0-9_]+\/blog\/[a-z0-9-]+/).first().textContent();
+    const formattedPath = (shown ?? '').slice((shown ?? '').indexOf('/@')).trim();
+
+    const reader = await browser.newContext();
+    const readerPage = await reader.newPage();
+    await readerPage.goto(formattedPath);
+    await expect(readerPage.locator('article strong', { hasText: 'light' })).toBeVisible();
+    await expect(readerPage.locator('article li')).toHaveText(['Sunscreen', 'Hat']);
+    await expect(readerPage.locator('article')).not.toContainText('**');
+    await reader.close();
+
+    // A second draft, never posted: ⋯ on its row in the Quests tab → Delete draft.
+    const draftTitle = `Unposted ${Date.now().toString(36)}`;
+    await page.goto('/blogs/new?source=create');
+    await page.getByLabel('Title').fill(draftTitle);
+    await page.getByLabel('Text').fill(PARAGRAPHS[0] ?? '');
+    await expect(page.getByText('Saved', { exact: true })).toBeVisible({ timeout: 20_000 });
+    await page.getByRole('button', { name: 'Close' }).click();
+    await page.goto('/quests');
+    await page.locator('label', { hasText: /^Blogs$/ }).click();
+    await page.getByRole('button', { name: `Manage ${draftTitle}` }).click();
+    await page.getByRole('dialog', { name: draftTitle }).getByRole('button', { name: 'Delete draft' }).click();
+    const confirm = page.getByRole('dialog', { name: 'Delete this draft?' });
+    await expect(confirm).toContainText("It hasn't been posted, so no one else has seen it.");
+    await confirm.getByRole('button', { name: 'Delete draft' }).click();
+    await expect(page.getByText('Draft deleted.')).toBeVisible();
+    await expect(page.getByRole('link', { name: new RegExp(draftTitle) })).toHaveCount(0);
+    await page.reload();
+    await page.locator('label', { hasText: /^Blogs$/ }).click();
+    await expect(page.getByRole('link', { name: new RegExp(draftTitle) })).toHaveCount(0);
+
+    // Leave nothing behind: delete the formatted blog too.
+    await page.goto(formattedPath);
+    await page.getByRole('button', { name: 'Manage this blog' }).click();
+    await page.getByRole('dialog', { name: formattedTitle }).getByRole('button', { name: 'Delete', exact: true }).click();
+    await page.getByRole('button', { name: 'Delete blog' }).click();
+    await expect(page).toHaveURL(/\/quests$/);
+    await page.close();
+  });
 });
 
 test.describe('blog_read_end at every viewport (spec §3.8)', () => {

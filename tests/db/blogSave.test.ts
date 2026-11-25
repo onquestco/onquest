@@ -233,6 +233,28 @@ describe('publish_blog', () => {
     expect((await blogs.getBlog('alex', 'goa-on-15k'))?.blog).toMatchObject({ key, title: 'Goa on 15k' });
   });
 
+  it('saves and posts a body with formatting markers byte for byte (blogs-editor spec §4.1)', async () => {
+    const body =
+      '# Day 1\n## Morning\n- **Beach** and *fort*\n* ~~old~~ `new`\n1. [Goa](https://goa.example.in)\n\n> Slow down.\n>\n>!he was the guide!< 🌧️';
+    const key = await draftBlog(ALEX, blogDocument({ body }));
+    expect((await blogs.rows(ALEX, key)).draft).toMatchObject({ body });
+    const { slug } = await blogs.publish(ALEX, key, { slug: 'formatted-day-1' });
+    const after = await blogs.rows(ALEX, key);
+    expect(after.blog).toMatchObject({ body });
+    expect(after.draft).toMatchObject({ body });
+    expect((await blogs.getBlog('alex', slug))?.blog.body).toBe(body);
+  });
+
+  it('counts markers toward the 10,000-character limit, as stored', async () => {
+    const key = await draftBlog();
+    const atLimit = `**${'a'.repeat(9_996)}**`;
+    await blogs.saveDraft(ALEX, key, (await blogs.tokens(ALEX, key)).draft, { body: atLimit });
+    expect((await blogs.rows(ALEX, key)).draft).toMatchObject({ body: atLimit });
+    await expect(
+      blogs.saveDraft(ALEX, key, (await blogs.tokens(ALEX, key)).draft, { body: `*${atLimit}*` }),
+    ).rejects.toThrow(/too long/);
+  });
+
   it('keeps the slug, visibility and published_at when an edit is posted', async () => {
     const key = await draftBlog();
     await blogs.publish(ALEX, key, { visibility: 'unlisted', slug: 'keeps-its-link-k3f9x2' });

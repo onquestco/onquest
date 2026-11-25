@@ -36,7 +36,6 @@ describe('toBlogData', () => {
       path: '/@riya/blog/goa-on-15k',
       unlisted: true,
       title: 'Goa on 15k',
-      paragraphs: [['First line', 'second line'], ['Next paragraph']],
       placeName: 'Goa',
       commentsOn: false,
       readMinutes: 2,
@@ -66,9 +65,34 @@ describe('toBlogData', () => {
       profileUrl: expect.stringMatching(/\/@riya$/),
     });
     expect('placeName' in data).toBe(false);
-    expect(data.paragraphs).toEqual([]);
+    expect(data.blocks).toEqual([]);
     expect(data.photos).toEqual([]);
     expect(data.readMinutes).toBe(1);
+  });
+});
+
+describe('toBlogData blocks', () => {
+  it('reads a plain body as the same paragraphs and lines as before', () => {
+    const { blocks } = toBlogData(rows);
+    expect(blocks.map((block) => (block.kind === 'paragraph' ? block.lines.map((line) => line.map((node) => node.kind === 'text' && node.text).join('')) : block.kind))).toEqual([['First line', 'second line'], ['Next paragraph']]);
+    expect(toParagraphs(rows.blog.body)).toEqual([['First line', 'second line'], ['Next paragraph']]);
+  });
+
+  it('reads the formatting in the body, and keeps the body itself as it was', () => {
+    const body = '## Day 1\n- **Beach**\n- >!Fort!<';
+    const data = toBlogData({ ...rows, blog: { ...rows.blog, body } });
+    expect(data.blocks).toEqual([
+      { kind: 'heading', level: 2, line: [{ kind: 'text', text: 'Day 1', from: 3, to: 8 }] },
+      {
+        kind: 'list',
+        ordered: false,
+        start: 1,
+        items: [
+          [{ kind: 'bold', from: 2, to: 11, children: [{ kind: 'text', text: 'Beach', from: 4, to: 9 }] }],
+          [{ kind: 'spoiler', from: 2, to: 10, children: [{ kind: 'text', text: 'Fort', from: 4, to: 8 }] }],
+        ],
+      },
+    ]);
   });
 });
 

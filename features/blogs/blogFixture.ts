@@ -1,5 +1,5 @@
 import type { BlogData } from '@/lib/blog/schema';
-import { toParagraphs } from '@/lib/blog/toBlogData';
+import { parseBlogBody } from '@/lib/blog/markdown';
 
 // A posted blog for the blog page's unit tests.
 
@@ -11,7 +11,7 @@ export function blogFixture(overrides: Partial<BlogData> & { body?: string } = {
     path: '/@riya/blog/goa-on-15k',
     unlisted: false,
     title: 'Goa on 15k: what worked',
-    paragraphs: toParagraphs(body),
+    blocks: parseBlogBody(body),
     photos: [
       {
         id: '00000000-0000-4000-8000-000000000031',

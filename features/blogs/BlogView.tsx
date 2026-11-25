@@ -46,7 +46,7 @@ export function BlogView({ blog, social, ownerKey, linkedQuest, mode, updated = 
       <main className="mx-auto flex min-h-svh max-w-lg flex-col gap-6 bg-surface px-4 pt-4 pb-10">
         <BlogPageArticle
           title={blog.title}
-          paragraphs={blog.paragraphs}
+          blocks={blog.blocks}
           photos={blog.photos}
           placeName={blog.placeName}
           writer={blog.writer}

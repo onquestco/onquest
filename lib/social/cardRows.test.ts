@@ -80,6 +80,15 @@ describe('toBlogCards (blog_card_json, migration 17)', () => {
     expect(card?.owner).toEqual({ key: owner.key, handle: 'riya', name: 'Riya', avatarUrl: undefined });
   });
 
+  it('shows the excerpt as plain text: no markers, spoilers hidden, a cut-off spoiler too', () => {
+    const excerpt = (text: string) => toBlogCards([{ ...blogRow, excerpt: text }])[0]?.excerpt;
+    expect(excerpt('Three days, one scooter.')).toBe('Three days, one scooter.');
+    expect(excerpt('# Day 1 **Beach** and ~~fort~~ `market`')).toBe('Day 1 Beach and fort market');
+    expect(excerpt('The ending: >!he was the guide!< wow')).toBe('The ending: (spoiler) wow');
+    // The database cut the excerpt at 150 characters, inside the spoiler.
+    expect(excerpt('The ending: >!he was the gu')).toBe('The ending: (spoiler)');
+  });
+
   it('names an untitled draft, and a text-only blog has no cover', () => {
     const [draft] = toBlogCards([
       {
