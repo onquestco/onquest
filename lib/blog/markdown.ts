@@ -19,6 +19,8 @@ export type BlogBlock =
   | { kind: 'list'; ordered: boolean; start: number; items: BlogLine[] };
 
 const SPOILER_TEXT = '(spoiler)';
+const MARKER_CHARS = new Set(['*', '`', '~']);
+const WORD_CHAR = /[\p{L}\p{N}]/u;
 const isSpace = (char: string | undefined) => char === undefined || /\s/.test(char);
 
 export function parseBlogBody(body: string): BlogBlock[] {
@@ -55,7 +57,11 @@ export function parseBlogLine(line: string): BlogLine {
   return parseInlineFrom(line, 0);
 }
 
-/** Markers removed, spoilers replaced by "(spoiler)". `cut`: the text was cut short, so an unclosed `>!` hides the rest. */
+/**
+ * Markers removed, spoilers replaced by "(spoiler)", whitespace collapsed. `cut`: the text was cut
+ * short (card excerpts), so an unclosed `>!` hides the rest, and openers whose closer was cut off
+ * (`**`, `*`, `~~`, `` ` ``, a `[text](url` at the end) are dropped instead of shown.
+ */
 export function blogPlainText(text: string, options: { cut?: boolean } = {}): string {
   const out: string[] = [];
   let hidden = false;
@@ -67,15 +73,16 @@ export function blogPlainText(text: string, options: { cut?: boolean } = {}): st
       else if (node.kind !== 'text') visit(node.children);
       else {
         const opener = options.cut ? unclosedSpoiler(node.text) : -1;
-        if (opener === -1) out.push(node.text);
-        else {
-          out.push(node.text.slice(0, opener), ` ${SPOILER_TEXT}`);
+        const shown = opener === -1 ? node.text : node.text.slice(0, opener);
+        out.push(options.cut ? withoutOpenMarkers(shown) : shown);
+        if (opener !== -1) {
+          out.push(` ${SPOILER_TEXT}`);
           hidden = true;
         }
       }
     }
   };
-  for (const block of parseBlogBody(text)) {
+  for (const block of parseBlogBody(options.cut ? withoutCutLink(text) : text)) {
     const lines = block.kind === 'heading' ? [block.line] : block.kind === 'list' ? block.items : block.lines;
     for (const line of lines) {
       visit(line);
@@ -116,6 +123,47 @@ function linePrefix(line: string): Prefix {
   return { kind: 'none', length: 0 };
 }
 
+/** Anything that could start inline syntax. Most lines have none and skip the parser. */
+const MAY_HAVE_SYNTAX = /[`*~[]|>!|https?:\/\//i;
+
 function parseInlineFrom(line: string, from: number): BlogLine {
+  if (from >= line.length) return [];
+  if (!MAY_HAVE_SYNTAX.test(line)) return [{ kind: 'text', text: line.slice(from), from, to: line.length }];
   return new InlineParser(line).parse(from, line.length, 0, false);
+}
+
+/**
+ * Cut text: a run of `*`, `` ` `` or `~~` that opens a word (start or after a non-letter, before a
+ * non-space or the end) lost its closer to the cut, so it goes. "4*5" and "~5 km" stay. A loop,
+ * not a regex: alternations inside a repeat can backtrack exponentially.
+ */
+function withoutOpenMarkers(text: string): string {
+  let out = '';
+  let i = 0;
+  while (i < text.length) {
+    let runEnd = i;
+    while (runEnd < text.length && MARKER_CHARS.has(text[runEnd] ?? '')) runEnd++;
+    if (runEnd === i) {
+      out += text[i] ?? '';
+      i++;
+      continue;
+    }
+    const run = text.slice(i, runEnd);
+    const isMarker = run.includes('*') || run.includes('`') || run.includes('~~');
+    const opensWord =
+      !WORD_CHAR.test(text[i - 1] ?? '') && (runEnd === text.length || !isSpace(text[runEnd]));
+    if (!isMarker || !opensWord) out += run;
+    i = runEnd;
+  }
+  return out;
+}
+
+/** Cut text ending inside a link: "[map](https://go" → "map", and "[map of G" → "map of G". */
+function withoutCutLink(text: string): string {
+  const open = text.lastIndexOf('[');
+  if (open === -1) return text;
+  const rest = text.slice(open + 1);
+  const close = rest.indexOf('](');
+  if (close !== -1) return rest.includes(')', close) ? text : text.slice(0, open) + rest.slice(0, close);
+  return rest.includes(']') ? text : text.slice(0, open) + rest;
 }

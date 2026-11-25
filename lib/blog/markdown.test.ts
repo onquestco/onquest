@@ -135,10 +135,57 @@ describe('parseBlogLine: inline syntax', () => {
     expect(line('[x] (https://a.example.com)')).toBe(`[x] (|${pasted}|)`);
   });
 
+  it('keeps balanced parentheses in a [text](url) link', () => {
+    expect(line('[Goa](https://en.wikipedia.org/wiki/Goa_(state))')).toBe(
+      'link<https://en.wikipedia.org/wiki/Goa_(state)>(Goa)',
+    );
+    expect(line('(see [map](https://maps.example.com/@15.5,73.8(z)))')).toBe(
+      '(see |link<https://maps.example.com/@15.5,73.8(z)>(map)|)',
+    );
+    // An unbalanced url never closes, so the whole thing is text (its url still linked as pasted).
+    expect(line('[x](https://a.example.com/(y')).toBe(
+      '[x](|link<https://a.example.com/(y>(https://a.example.com/(y)',
+    );
+  });
+
   it('never makes an image: ![…](…) is text (its url is linked like any pasted link)', () => {
     expect(line('![cat](https://a.example.com/cat.png)')).toBe(
       '![cat](|link<https://a.example.com/cat.png>(https://a.example.com/cat.png)|)',
     );
+  });
+
+  it('keeps a pasted link whole: markers and code never cut a url', () => {
+    expect(line('see https://example.com/a*b*c ok')).toBe(
+      'see |link<https://example.com/a*b*c>(https://example.com/a*b*c)| ok',
+    );
+    expect(line('https://example.com/~~x~~/`y`z')).toBe(
+      'link<https://example.com/~~x~~/>(https://example.com/~~x~~/)|code(y)|z',
+    );
+    expect(line('~~https://example.com/~~x~~/y~~')).toBe(
+      'strike(link<https://example.com/~~x~~/y>(https://example.com/~~x~~/y))',
+    );
+    // A star right after a url closes formatting rather than ending the url.
+    expect(line('*see https://example.com/a*b* now*')).toBe(
+      'italic(see |link<https://example.com/a*b>(https://example.com/a*b))| now*',
+    );
+    expect(line('a pasted https://en.wikipedia.org/wiki/Goa_(state), then text')).toBe(
+      'a pasted |link<https://en.wikipedia.org/wiki/Goa_(state)>(https://en.wikipedia.org/wiki/Goa_(state))|, then text',
+    );
+    // Code comes first: a url in code is code, and a url stops where code starts.
+    expect(line('`https://a.example.com` and https://b.example.com`x`')).toBe(
+      'code(https://a.example.com)| and |link<https://b.example.com>(https://b.example.com)|code(x)',
+    );
+    expect(parseBlogLine('go https://a.example.com/x now')).toEqual([
+      text('go ', 0),
+      {
+        kind: 'link',
+        href: 'https://a.example.com/x',
+        from: 3,
+        to: 26,
+        children: [text('https://a.example.com/x', 3)],
+      },
+      text(' now', 26),
+    ]);
   });
 
   it('links bare http(s) links as before, but never inside a link', () => {
@@ -262,6 +309,7 @@ describe('old plain bodies', () => {
     // blogFixture's and blogCardFixture's text (features/blogs), which lib tests can't import.
     'We stayed in Anjuna and rented a scooter.',
     'Booked on https://example.com/stay?id=4 for ₹1,200.\n(see http://goa.example.in).',
+    'Our stay: https://example.com/a*b*c and https://example.com/~~x~~ (book early!).',
     'Rain all day 🌧️🌧️ then sun.\n  indented line\n\nPrice: 2 * 3 = 6, file_name_here, C# and #goa #beach!',
     'Is it worth it? Yes!! <3 > maybe\n\n1st day: beach. 2nd day: fort.\n-30% off at the shack',
     '<script>alert(1)</script> <img src=x onerror=alert(1)> [not a link] (really)',
@@ -302,6 +350,29 @@ describe('blogPlainText', () => {
     // Spaced, it was never an opener; in code, it is code.
     expect(blogPlainText('a >! b `>!c`', { cut: true })).toBe('a >! b >!c');
   });
+
+  it('cut: drops openers whose closer was cut off, and keeps lone symbols', () => {
+    expect(blogPlainText('Day was **amazing and the', { cut: true })).toBe('Day was amazing and the');
+    expect(blogPlainText('so *very good and', { cut: true })).toBe('so very good and');
+    expect(blogPlainText('was ~~₹2,000 and', { cut: true })).toBe('was ₹2,000 and');
+    expect(blogPlainText('run `npm i and', { cut: true })).toBe('run npm i and');
+    expect(blogPlainText('ended with **', { cut: true })).toBe('ended with');
+    expect(blogPlainText('**Day 1** then ***both and', { cut: true })).toBe('Day 1 then both and');
+    expect(blogPlainText('rated 4*5, ~5 km, 2 * 3 = 6 and', { cut: true })).toBe(
+      'rated 4*5, ~5 km, 2 * 3 = 6 and',
+    );
+    // Not cut: the text is whole, so a lone ** is something the writer typed.
+    expect(blogPlainText('Day was **amazing and the')).toBe('Day was **amazing and the');
+  });
+
+  it('cut: a link cut short shows only its text', () => {
+    expect(blogPlainText('see [map](https://goa.exa', { cut: true })).toBe('see map');
+    expect(blogPlainText('see [map](https://goa.example.in/(x', { cut: true })).toBe('see map');
+    expect(blogPlainText('see [map of Go', { cut: true })).toBe('see map of Go');
+    expect(blogPlainText('see [map](https://goa.example.in) and [x] then', { cut: true })).toBe(
+      'see map and [x] then',
+    );
+  });
 });
 
 describe('hostile bodies', () => {
@@ -318,6 +389,15 @@ describe('hostile bodies', () => {
     '# '.repeat(5000),
     '- *\n'.repeat(2500),
     'https://a.example.com/'.repeat(450),
+    // Long punctuation after a url: a `[...]+$` trailing regex backtracks quadratically here.
+    `https://a.bc/${'.'.repeat(9_980)}x`,
+    `https://a.bc/${')'.repeat(9_980)}x`,
+    `https://a.bc/${'('.repeat(4_990)}${')'.repeat(4_990)}x`,
+    `https://a.bc/${'.'.repeat(9_986)}`,
+    `${'[a]('.repeat(1_000)}${')'.repeat(1_000)}`,
+    `[x](https://a.bc/${'('.repeat(4_980)}`,
+    `${'[a](https://x.co'.repeat(300)}${')'.repeat(300)}`,
+    '*\n'.repeat(5_000),
   ];
 
   it('parse 10,000 characters in under 50 ms', () => {

@@ -17,8 +17,9 @@ function trim(text: string, max: number): string {
  */
 export function blogDescription(blog: BlogData): string {
   // The paragraphs rebuild the body (blank lines between blocks), so line-start syntax still reads.
+  // Not `cut`: this is the whole body, so an unclosed `>!` is text the page itself shows.
   const body = blog.paragraphs.map((lines) => lines.join('\n')).join('\n\n');
-  const text = blogPlainText(body, { cut: true });
+  const text = blogPlainText(body);
   if (text) return trim(text, 155);
   return [`A blog by @${blog.writer.handle}`, blog.placeName].filter(Boolean).join(' · ');
 }

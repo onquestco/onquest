@@ -31,6 +31,50 @@ describe('lineParts', () => {
   });
 });
 
+describe('lineParts: trailing punctuation', () => {
+  const link = (url: string) => ({ kind: 'link', text: url, href: url });
+
+  it('keeps a ) that closes a ( in the link, and leaves out one that does not', () => {
+    expect(lineParts('https://en.wikipedia.org/wiki/Goa_(state)')).toEqual([
+      link('https://en.wikipedia.org/wiki/Goa_(state)'),
+    ]);
+    expect(lineParts('(https://en.wikipedia.org/wiki/Goa_(state)).')).toEqual([
+      { kind: 'text', text: '(' },
+      link('https://en.wikipedia.org/wiki/Goa_(state)'),
+      { kind: 'text', text: ').' },
+    ]);
+  });
+
+  it('leaves formatting markers after a link out of it', () => {
+    expect(lineParts('https://a.example.com**')).toEqual([
+      link('https://a.example.com'),
+      { kind: 'text', text: '**' },
+    ]);
+    expect(lineParts('https://a.example.com/x~~')).toEqual([
+      link('https://a.example.com/x'),
+      { kind: 'text', text: '~~' },
+    ]);
+  });
+
+  it('handles long punctuation runs in linear time', () => {
+    for (const tail of [
+      '.'.repeat(9_980),
+      ')'.repeat(9_980),
+      `${'.'.repeat(9_980)}x`,
+      `${')'.repeat(9_980)}x`,
+    ]) {
+      const start = performance.now();
+      const parts = lineParts(`https://a.bc/${tail}`);
+      expect(performance.now() - start).toBeLessThan(50);
+      expect(parts[0]).toMatchObject({ kind: 'link' });
+    }
+    expect(lineParts(`https://a.bc/${'.'.repeat(100)}`)).toEqual([
+      link('https://a.bc/'),
+      { kind: 'text', text: '.'.repeat(100) },
+    ]);
+  });
+});
+
 describe('isWebUrl', () => {
   it('accepts http and https links to a host with a dot', () => {
     expect(isWebUrl('https://example.com')).toBe(true);

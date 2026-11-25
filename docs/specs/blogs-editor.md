@@ -77,8 +77,8 @@ Grammar (exact; anything else is literal text):
 | `> ` or a line that is just `>` | line start, not `>!` | Consecutive lines form one quote, each a line |
 | `**x**` · `*x*` · `~~x~~` · `>!x!<` | inline | Opening marker followed by a non-space, closing marker preceded by a non-space, not empty, within one line. They can nest, except inside code. Unmatched markers are text. No `_` italics (snake_case and old text) |
 | `` `x` `` | inline | Content is literal; parsed first |
-| `[text](url)` | inline | Only when `url` passes `isWebUrl` (http/https, host with a dot); otherwise the whole thing is text. `![…](…)` is text (no images) |
-| bare `http(s)://…` | inline | Linked as today (`lineParts`) |
+| `[text](url)` | inline | Only when `url` passes `isWebUrl` (http/https, host with a dot); otherwise the whole thing is text. `url` may hold balanced parentheses (`…/Goa_(state)`). `![…](…)` is text (no images) |
+| bare `http(s)://…` | inline | Linked as today (`lineParts`), as one unit after code: markers never cut a URL. Trailing `*`, `~` and an unmatched `)` are left out of it |
 
 No HTML, no backslash escapes, no tables, no images, no nested lists. Parsing is linear: no regex that can backtrack badly. A 10,000-character hostile body must parse in under 50 ms (test).
 
@@ -137,7 +137,8 @@ No new routes. `/blogs/new` and `/blogs/[key]/edit` get the toolbar. `/@handle/b
 
 - `BlogBody.tsx` takes `blocks`: `p` with `br` between lines (as today), `h2`/`h3`/`h4`, `blockquote`, `ul`/`ol start`, `strong`, `em`, `s`, `code`, links (`target="_blank" rel="nofollow ugc noopener"`, href from the parser only). Type styles come from existing tokens. If none fits, that's a design-system change first.
 - `BlogSpoiler.tsx` (`'use client'`, the only client part): a `button` with `aria-expanded`, covered until tapped (colours from tokens), and its text server-rendered.
-- `BlogArticle`, `BlogPreview` (`previewArticle` → `blocks: parseBlogBody(document.body)`) and `BlogView` switch to `blocks`. Card excerpts (`lib/social/cardRows.ts` / `lib/blog/cards.ts` mapping) and `blogDescription()` go through `blogPlainText(…, { cut: true })` (BL-06), so cards and link previews never show `**` or a spoiler.
+- `BlogArticle`, `BlogPreview` (`previewArticle` → `blocks: parseBlogBody(document.body)`) and `BlogView` switch to `blocks`. Card excerpts (`lib/social/cardRows.ts` / `lib/blog/cards.ts` mapping) go through `blogPlainText(…, { cut: true })` and `blogDescription()` through `blogPlainText(…)` (BL-06), so cards and link previews never show `**` or a spoiler.
+- `blogDescription()` doesn't use `cut`: it reads the whole body, where an unclosed `>!` is literal text the page itself shows (BL-06 review round 1, Q3).
 
 ### 6.3 Delete a draft (BL-07)
 

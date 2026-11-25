@@ -4,23 +4,51 @@
 export type LinePart = { kind: 'text'; text: string } | { kind: 'link'; text: string; href: string };
 
 const URL_RUN = /https?:\/\/[^\s<>"]+/gi;
-/** Sentence punctuation right after a link belongs to the sentence, not the link. */
-const TRAILING = /[.,;:!?'’”)\]]+$/;
+/** Sentence punctuation right after a link belongs to the sentence, not the link (and markers to their formatting). */
+const TRAILING = new Set([...".,;:!?'’”]*~"]);
 
 export function lineParts(line: string): LinePart[] {
   const parts: LinePart[] = [];
   let index = 0;
-  for (const match of line.matchAll(URL_RUN)) {
-    const start = match.index;
-    const trailing = match[0].match(TRAILING)?.[0] ?? '';
-    const url = match[0].slice(0, match[0].length - trailing.length);
-    if (!isWebUrl(url)) continue;
+  for (const { start, end } of findWebUrls(line)) {
     if (start > index) parts.push({ kind: 'text', text: line.slice(index, start) });
+    const url = line.slice(start, end);
     parts.push({ kind: 'link', text: url, href: url });
-    index = start + url.length;
+    index = end;
   }
   if (index < line.length) parts.push({ kind: 'text', text: line.slice(index) });
   return mergeText(parts);
+}
+
+/** Where the pasted web links in a line are: [start, end) of each, trailing punctuation left out. */
+export function findWebUrls(line: string): { start: number; end: number }[] {
+  const urls: { start: number; end: number }[] = [];
+  for (const match of line.matchAll(URL_RUN)) {
+    const url = withoutTrailing(match[0]);
+    if (isWebUrl(url)) urls.push({ start: match.index, end: match.index + url.length });
+  }
+  return urls;
+}
+
+/**
+ * The run minus trailing punctuation, found by walking back one character at a time (a `+$` regex
+ * here backtracks quadratically on long punctuation runs). A `)` stays when it closes a `(` in the
+ * link, so ".../Goa_(state)" keeps its last character.
+ */
+function withoutTrailing(run: string): string {
+  let unclosed = 0;
+  for (const char of run) {
+    if (char === '(') unclosed++;
+    else if (char === ')') unclosed--;
+  }
+  let end = run.length;
+  while (end > 0) {
+    const char = run[end - 1] ?? '';
+    if (char === ')' && unclosed < 0) unclosed++;
+    else if (!TRAILING.has(char)) break;
+    end--;
+  }
+  return run.slice(0, end);
 }
 
 /** http or https with a host that has a dot: the only links a blog can hold (pasted or `[text](url)`). */

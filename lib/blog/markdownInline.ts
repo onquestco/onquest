@@ -1,10 +1,11 @@
-import { isWebUrl, lineParts } from './linkParts';
+import { findWebUrls, isWebUrl } from './linkParts';
 import type { BlogInline, BlogLine } from './markdown';
 
-// Inline syntax in one line of a blog body (blogs-editor spec §4.1): code first, then links, then
-// bold/italic/strike/spoiler, with bare http(s) links in what's left. Parsing is linear: every
-// lookup is precomputed or a forward scan that's remembered when it fails, and nesting is capped,
-// so a hostile 10,000-character body can't make it slow.
+// Inline syntax in one line of a blog body (blogs-editor spec §4.1): code first, then `[text](url)`
+// links, then pasted http(s) links (each one unit, so markers never cut a URL), then
+// bold/italic/strike/spoiler. Parsing is linear: every lookup is precomputed or a forward scan
+// that's remembered when it fails, and nesting is capped, so a hostile 10,000-character body
+// can't make it slow.
 
 type Wrapper = 'bold' | 'italic' | 'strike' | 'spoiler';
 type Found = { node: BlogInline; next: number };
@@ -21,9 +22,11 @@ const isSpace = (char: string | undefined) => char === undefined || /\s/.test(ch
 export class InlineParser {
   /** Code span start → index of its closing backtick. Code is literal, so every other scan skips it. */
   private readonly codeSpans = new Map<number, number>();
-  /** Next `]` / `)` at or after each index, outside code (line length when none). */
-  private readonly nextBracket: Int32Array;
-  private readonly nextParen: Int32Array;
+  /** Pasted web link start → its end (exclusive). Found outside code; markers never split one. */
+  private readonly urlSpans = new Map<number, number>();
+  private readonly inCode: Uint8Array;
+  /** Built on the first `[`: most lines have no link, so they skip the cost. */
+  private links: LinkIndex | undefined;
   /** `]` positions whose `(url)` already failed: every `[` before them fails the same way. */
   private readonly badLinkEnds = new Set<number>();
 
@@ -40,15 +43,14 @@ export class InlineParser {
         open = -1;
       }
     }
-    const inCode = new Uint8Array(text.length);
+    const inCode = (this.inCode = new Uint8Array(text.length));
     for (const [start, end] of this.codeSpans) inCode.fill(1, start, end + 1);
-    const nextOf = (char: string) => {
-      const next = new Int32Array(text.length + 1).fill(text.length);
-      for (let i = text.length - 1; i >= 0; i--) next[i] = text[i] === char && !inCode[i] ? i : next[i + 1]!;
-      return next;
-    };
-    this.nextBracket = nextOf(']');
-    this.nextParen = nextOf(')');
+    if (/https?:\/\//i.test(text)) {
+      // Code blanked out (same length), so a URL never starts in code or runs into it.
+      const outsideCode =
+        this.codeSpans.size === 0 ? text : Array.from(text, (char, i) => (inCode[i] ? ' ' : char)).join('');
+      for (const url of findWebUrls(outsideCode)) this.urlSpans.set(url.start, url.end);
+    }
   }
 
   parse(start: number, end: number, depth: number, inLink: boolean): BlogLine {
@@ -58,32 +60,41 @@ export class InlineParser {
     let textStart = start;
     let i = start;
     while (i < end) {
+      const urlEnd = this.urlSpans.get(i);
+      // Inside a link's text a pasted URL is plain text, but still one unit.
+      if (inLink && urlEnd !== undefined && urlEnd <= end) {
+        i = urlEnd;
+        continue;
+      }
       const found =
         this.codeAt(i) ??
-        (inLink ? undefined : this.linkAt(i, end, depth)) ??
+        (inLink ? undefined : (this.linkAt(i, end, depth) ?? this.urlAt(i, end))) ??
         (depth < MAX_DEPTH ? this.wrapperAt(i, end, depth, inLink, noCloser) : undefined);
       if (!found) {
         i += 1;
         continue;
       }
-      nodes.push(...this.textNodes(textStart, i, inLink), found.node);
+      if (i > textStart) nodes.push(this.textNode(textStart, i));
+      nodes.push(found.node);
       i = textStart = found.next;
     }
-    nodes.push(...this.textNodes(textStart, end, inLink));
+    if (end > textStart) nodes.push(this.textNode(textStart, end));
     return nodes;
   }
 
-  /** Plain text, with bare http(s) links linked as before (lineParts), except inside a link. */
-  private textNodes(from: number, to: number, inLink: boolean): BlogInline[] {
-    if (to <= from) return [];
-    const text = this.text.slice(from, to);
-    if (inLink) return [{ kind: 'text', text, from, to }];
-    let at = from;
-    return lineParts(text).map((part) => {
-      const range = { from: at, to: (at += part.text.length) };
-      const node: BlogInline = { kind: 'text', text: part.text, ...range };
-      return part.kind === 'link' ? { kind: 'link', href: part.href, children: [node], ...range } : node;
-    });
+  private textNode(from: number, to: number): BlogInline {
+    return { kind: 'text', text: this.text.slice(from, to), from, to };
+  }
+
+  /** A pasted http(s) link, linked as before (lineParts' rules), when it fits in this range. */
+  private urlAt(i: number, end: number): Found | undefined {
+    const urlEnd = this.urlSpans.get(i);
+    if (urlEnd === undefined || urlEnd > end) return undefined;
+    const href = this.text.slice(i, urlEnd);
+    return {
+      node: { kind: 'link', href, children: [this.textNode(i, urlEnd)], from: i, to: urlEnd },
+      next: urlEnd,
+    };
   }
 
   private codeAt(i: number): Found | undefined {
@@ -99,11 +110,20 @@ export class InlineParser {
   private linkAt(i: number, end: number, depth: number): Found | undefined {
     const text = this.text;
     if (text[i] !== '[' || text[i - 1] === '!') return undefined;
-    const close = this.nextBracket[i + 1]!;
+    const links = (this.links ??= new LinkIndex(text, this.inCode));
+    const close = links.nextBracket.at(i + 1) ?? text.length;
     if (close >= end || close === i + 1 || this.badLinkEnds.has(close)) return undefined;
-    const urlEnd = text[close + 1] === '(' ? this.nextParen[close + 2]! : end;
-    const href = text.slice(close + 2, urlEnd);
-    if (urlEnd >= end || /\s/.test(href) || !isWebUrl(href)) {
+    const urlEnd = text[close + 1] === '(' ? (links.matchingParen.at(close + 1) ?? -1) : -1;
+    // A url with whitespace or a "](" in it is refused before isWebUrl: both checks are lookups,
+    // and with "](" refused, the urls isWebUrl reads never overlap, so the total stays linear.
+    const lookupFrom = close + 2;
+    const plausible =
+      urlEnd !== -1 &&
+      urlEnd < end &&
+      (links.nextSpace.at(lookupFrom) ?? text.length) > urlEnd &&
+      (links.nextLinkMiddle.at(lookupFrom) ?? text.length) > urlEnd;
+    const href = plausible ? text.slice(lookupFrom, urlEnd) : '';
+    if (!plausible || !isWebUrl(href)) {
       this.badLinkEnds.add(close);
       return undefined;
     }
@@ -138,14 +158,14 @@ export class InlineParser {
     const text = this.text;
     const stars = kind === 'bold' || kind === 'italic';
     const marker = kind === 'strike' ? '~~' : '!<';
-    // Content that starts with code: its closer can't be inside that code.
-    let j = Math.max(from, (this.codeSpans.get(from - 1) ?? -1) + 1);
+    // Content that starts with code or a URL: its closer can't be inside that unit.
+    let j = Math.max(from, this.afterUnit(from - 1) ?? from);
     // The opener's own run of stars ("****x**") can't close it.
     if (stars) while (j < end && text[j - 1] === '*' && text[j] === '*') j++;
     while (j < end) {
-      const code = this.codeSpans.get(j);
-      if (code !== undefined) {
-        j = code + 1;
+      const unitEnd = this.afterUnit(j);
+      if (unitEnd !== undefined) {
+        j = unitEnd;
       } else if (stars && text[j] === '*') {
         let runEnd = j;
         while (runEnd < end && text[runEnd] === '*') runEnd++;
@@ -161,5 +181,43 @@ export class InlineParser {
       }
     }
     return -1;
+  }
+
+  /** If a code span or a pasted URL starts at i, the index just after it. Scans jump over both. */
+  private afterUnit(i: number): number | undefined {
+    const code = this.codeSpans.get(i);
+    return code !== undefined ? code + 1 : this.urlSpans.get(i);
+  }
+}
+
+/** Lookups for `[text](url)`, each built in one pass over the line. */
+class LinkIndex {
+  /** Next `]` outside code, next whitespace, next `](` at or after each index (line length when none). */
+  readonly nextBracket: Int32Array;
+  readonly nextSpace: Int32Array;
+  readonly nextLinkMiddle: Int32Array;
+  /** `(` → its matching `)`, outside code, or -1: a link's url may hold balanced parentheses. */
+  readonly matchingParen: Int32Array;
+
+  constructor(text: string, inCode: Uint8Array) {
+    const length = text.length;
+    this.nextBracket = new Int32Array(length + 1).fill(length);
+    this.nextSpace = new Int32Array(length + 1).fill(length);
+    this.nextLinkMiddle = new Int32Array(length + 1).fill(length);
+    for (let i = length - 1; i >= 0; i--) {
+      const char = text[i];
+      // Each array has length + 1 entries, so [i + 1] always exists here.
+      this.nextBracket[i] = char === ']' && !inCode[i] ? i : (this.nextBracket[i + 1] ?? length);
+      this.nextSpace[i] = isSpace(char) ? i : (this.nextSpace[i + 1] ?? length);
+      this.nextLinkMiddle[i] =
+        char === ']' && text[i + 1] === '(' ? i : (this.nextLinkMiddle[i + 1] ?? length);
+    }
+    this.matchingParen = new Int32Array(length).fill(-1);
+    const opens: number[] = [];
+    for (let i = 0; i < length; i++) {
+      if (inCode[i]) continue;
+      if (text[i] === '(') opens.push(i);
+      else if (text[i] === ')' && opens.length > 0) this.matchingParen[opens.pop() ?? 0] = i;
+    }
   }
 }
