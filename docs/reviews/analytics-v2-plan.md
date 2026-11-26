@@ -1,131 +1,129 @@
-## Plan review: CHANGES NEEDED (round 1 of 3)
+## Plan review: PASS (round 2 of 3)
 
-Reviewed: `docs/specs/analytics-v2.md`, `docs/prds/2026-11-analytics-v2.md`, `docs/decisions/0004-user-info-and-email-in-analytics.md`, `docs/analytics/v2/{events,common,codes,metrics}.csv`, the doc edits in this PR, against `main` (`lib/analytics/*`, `app/ingest/[...path]/route.ts`, `proxy.ts`, `features/account/accountDeletion.ts`, `app/api/cron/finish-deletions/route.ts`, migrations 12/16/17, `features/legal/PrivacyPolicy.tsx`, `features/blogs/blogEvents.ts`, `tests/e2e/*`, `.github/workflows/ci.yml`) and `CLAUDE.md`.
+Re-reviewed revision 2 (`b75f89e`): `docs/specs/analytics-v2.md` and `docs/decisions/0004-user-info-and-email-in-analytics.md`, against the same sources as round 1 (`main` code, `docs/analytics/v2/*.csv`, `CLAUDE.md`). Round 1 is in this file's history (commit `68775a1`) and in the PR comment.
 
-Couldn't check: the live BigQuery dataset (no GCP credentials in this session, same as the Tech Lead), the PostHog project settings, and the exact PostHog `persons/bulk_delete` contract. Findings that depend on these are marked as such.
+Still unverifiable here: the live BigQuery dataset, PostHog project settings, and PostHog's `bulk_delete` contract. The spec now makes these explicit gates (G1, G5), which is the right home for them.
+
+No blocking findings remain. The four Should-fix items below are each a line or two in the spec. Fix them in the spec text before the CTO approves, because builders will copy the SQL and the contract as written. If they are left, they must be checked at the AN-01 and AN-04 PR reviews.
+
+### Round-1 blocking findings: all fixed
+
+| # | Round-1 finding | Fixed in b75f89e? | Where |
+|---|---|---|---|
+| T1 | Browser-controlled `distinct_id` / `$identify`; unparseable bodies forwarded | Yes | §3.2. `/ingest` sets `distinct_id`/`user_id` from `getUser()`, otherwise from a pattern-checked `anon_id`, otherwise drops the event. It drops browser `$identify`/`$create_alias`/`$merge_dangerously` and sends `$identify` itself. Compressed, oversized and non-JSON bodies get a 204 and aren't forwarded. `oq_uid` is gone. Tests are listed in §11 `ingestEnrich.test.ts` |
+| T2 | Required-property rule dropped renamed/counted events and old drafts | Yes | §4.1 has permanent and temporary overrides, each temporary one naming the task that fills it. §4.2 never drops an event. `minutes_since_start` is optional. The old-draft test is in `blogEvents.test.ts`. `expectNoProblems` proves each builder fills its required properties |
+| T3 | `is_internal_flg` depended on flag-gated `user_info` | Yes | §4.2 / D5: keys in `ANALYTICS_INTERNAL_USER_KEYS` plus the `internal_users` table, independent of the flag. The test asserts it with the flag unset |
+| T4 | Cookies shipped before the policy | Yes | `oq_uid` is removed, and `oq_actx` sits behind `NEXT_PUBLIC_ANALYTICS_CONTEXT_COOKIE` until G3 |
+| T5 | Erasure unprovable before the flag | Yes | D15 adds a separate Preview PostHog project, BigQuery dataset and keys. G5 is a Preview proof before AN-04 merges; G6 is a Production proof before `on` |
+| T6 | AN-13 (now AN-14) couldn't run | Yes | It's a manual Preview gate like `blogs.spec.ts`. The override is inert when `NEXT_PUBLIC_VERCEL_ENV=production`. The `@` check is replaced by an email/handle check. A CI e2e job is listed under §15 Later |
+| F1 | Policy before cookies (founder) | Handled either way | The spec holds the cookie and `user_info` back until G3. The founder's answer now only sets timing |
+
+Round-1 Should-fix items #7–#13 and Notes #14–#16 are all addressed: 30-day re-run plus `deleted_users`, `userInfoForSession` (`server-only`, bounded cache), PostHog type resets and the insights list (G4), the `ts` mapping, the frozen v1 allowlist, the `properties` type and `ip` (G1), `events_people`, the strict merge order with a shared-file table, the AN-01/AN-02 split, Preview on `team`, `screens.test.ts` reversing the rewrites, and one CLAUDE.md wording.
 
 ### For the founder (product)
 
-1. **[Blocking] Privacy policy must be live before AN-02, not only before `ANALYTICS_USER_INFO=on`.** `PrivacyPolicy.tsx` "Cookies and storage" says *"We use only the cookies needed to keep you signed in, plus the random analytics ID in your browser's storage."* AN-02 ships two new analytics cookies (`oq_uid` = account id, 400 days; `oq_actx`), and spec §8's deploy order puts the policy after AN-02 and AN-03. From AN-02's deploy the live policy is wrong. **Question:** do you want the policy update (and in-app notice) live before AN-02 deploys, or should AN-02 hold the cookies back until it is? (Tech fix is in Technical #4.)
-2. **[Should fix] The policy text in spec §14 is missing two things.** (a) Google Cloud / BigQuery is not in the policy's "Services we use" list, yet it will hold emails and city; add it next to PostHog. (b) Deleted data isn't gone instantly: PostHog deletes events in the background and BigQuery keeps deleted rows in time travel / fail-safe for up to about two weeks. The deletion wording should say "within N days", not "immediately". **Question:** OK to say "within 30 days"?
-3. **[Note] Plain-text email in analytics is a privacy call.** Decision 0004 records it as a CTO decision. The policy, the in-app notice and the DPDP review are yours. **Question:** do you agree with plain email (not hashed) being sent to PostHog (US host) and BigQuery, given decision 0004 says the reason is support and checking cohorts by hand?
+1. **[Note] The three round-1 questions are still open, but none blocks the spec now.**
+   - (1) Policy timing: the spec's default (hold the cookie and `user_info` until the policy is live) is safe.
+   - (2) "Within 30 days" and listing Google Cloud (BigQuery) as a service: both are now in decision 0004's Consequences and spec §14.
+   - (3) Plain email in PostHog (US host) and BigQuery.
+
+   Gate G3 is yours: nothing personal is collected until you publish the policy and the in-app notice.
 
 ### For the Tech Lead (technical)
 
-1. **[Blocking] spec §3.2 / §4.4 / D2, the `/ingest` trust boundary leaves identity in the browser's hands.**
-   - Only the `user_id` property is checked against the session. `distinct_id` and `$identify` (`$anon_distinct_id`) still come from `oq_uid`, a cookie that isn't httpOnly and holds a user key that already appears in public API paths. Anyone can set `oq_uid` to someone else's key. Their events then land on that person in PostHog, and `$identify` merges their anon id into that person. If the attacker is signed in, their own `user_info` (their email) gets filed under the victim's distinct id. When the attacker later deletes their account, the PostHog bulk delete by `distinct_ids: [attackerKey]` misses those events, so their email stays in PostHog after erasure.
-   - §4.4 says bodies over 64 KB or that don't parse are "forwarded unchanged **minus** IP, and `user_info`/`user_id` set to null". You can't set fields in a body you couldn't parse. As written, a gzip or oversized body skips enrichment and the allowlist and goes through with whatever `user_info`/email the browser put in it.
-   - **Fix:** `/ingest` sets `distinct_id` itself (verified user key, else the body's `anon_id` if it matches `^anon_[0-9a-f-]{36}$`). It drops any `$identify`, `$create_alias` or `$merge_dangerously` whose target isn't the verified key. Unparseable, compressed or oversized bodies are dropped (204), never forwarded. Add each case to `ingestEnrich.test.ts`.
-2. **[Blocking] spec §4.1 D6 required-property rule + the existing drop-on-problem (`validate.ts` `propertyProblems` → event dropped) silently drops the renamed events in AN-01, and breaks an existing draft shape.** I applied the D6 heuristic to `events.csv`. Every property of the 14 renamed events comes out *required*, including ones AN-01 can't fill: `create_option_click.from_screen` (screens arrive in AN-02), `blog_viewed.source` (`?src=` is in AN-02's `src.ts`), `blog_viewed.author_user_id`/`read_time_min`, `content_liked.owner_user_id`/`like_count_after`, `comments_toggled.comment_count`, `content_deleted.like_count`/`comment_count`/`age_days`, `visibility_changed.from_visibility` is optional by override but `days_since_publish` isn't, `blog_published.is_first_blog_flg`, `blog_updated.days_since_post`, `comment_posted.owner_user_id`/`is_owner_flg`.
-   - Worse, `blog_published.minutes_since_start` was *optional* in v1 and becomes required. `features/blogs/blogEvents.ts:26-29` leaves it undefined when the draft has no `startedAt`, which is true of drafts saved before that field existed (there's a test for exactly this: `blogEvents.test.ts:61`). Publishing such a draft would drop `blog_published`, a *counted* server event.
-   - That breaks §3.3 ("no release where a blog event isn't sent") and the history behind "Blog adoption".
-   - **Fix:** in AN-01's Done-when, list a source for every required property of the 14 events, or add them to `OPTIONAL_OVERRIDES` until the task that supplies them. Add `minutes_since_start` to the overrides. Make server events never drop on a missing required property: send the event and log the problem name in dev and CI. Add a test with an old-shape blog draft (no `startedAt`) proving `blog_published` is sent.
-3. **[Blocking] spec §4.2 / D5, `is_internal_flg` depends on the flag-gated `user_info`.** The common-props table sets `is_internal_flg` from `user_info.username`. `user_info` is `null` until `ANALYTICS_USER_INFO=on` (after the policy, weeks away), and on `user_signed_up` the username is null anyway (no handle before onboarding). Until then team traffic is never flagged, `internal_users` stays empty, and Metric 1 (the primary metric, "team accounts excluded") counts the team. Handles can also be renamed and then claimed by someone else, who would then be flagged internal. **Fix:** compute `is_internal_flg` on the server from the verified user key, either a constant `INTERNAL_USER_KEYS` (keys aren't personal) or the handle looked up separately, independent of the flag. Seed `internal_users` from that list so BigQuery history (v1 rows carry no username) is flagged too. `internal.test.ts` must prove the flag is set with `ANALYTICS_USER_INFO` unset.
-4. **[Blocking] spec §8 deploy order ships the new cookies before the policy covers them** (founder #1). **Fix:** either move "privacy policy + in-app notice" before AN-02 in the deploy order, or have AN-02 keep `oq_actx`/`oq_uid` behind a server flag (or keep `anon_id`/`session_id` in `localStorage` and pass them in the `/ingest` body / an action header) until the policy is live. State which one.
-5. **[Blocking] AC12 (erasure) can't be proved before `user_info` goes on.** §11 E4 says "delete a test account on Preview: the person is gone from PostHog; the BigQuery DELETE ran". But D9 / §14 set `POSTHOG_PERSONAL_API_KEY` and `BIGQUERY_ERASER_KEY` in **Vercel Production only**, so on Preview erasure is "skipped". Decision 0004 §5(b) makes AN-03 in production a precondition for the flag, and nothing tests it end to end. **Fix:** either a Preview PostHog project and BigQuery dataset with their own eraser credentials, or an explicit production step before the flag: a team test account, delete it, confirm the PostHog person is gone and `SELECT COUNT(*) … WHERE user_id = @key` is 0 after the next cron run. Record that as a gate in §8, and have the runbook hold the result.
-6. **[Blocking] AN-13 / §11 Playwright can't run as specified.** There is no e2e job in `.github/workflows/ci.yml`. Playwright isn't installed (`tests/e2e/playwright.config.ts` header says it runs by hand against a Vercel preview). CI has no Supabase, so "create → publish" can't run there. The "existing smoke flow" doesn't exist (only `blogs.spec.ts`). So `NEXT_PUBLIC_ANALYTICS_E2E` "set in the CI e2e job and never in Vercel", with a unit test making it inert when `VERCEL=1`, means the test can never see an event. Also "no captured browser payload contains `@`" fails on every `$pageview` and every route template (`/@[handle]/[slug]`). **Fix:** say where AN-13 runs. If on a Vercel preview, the override must be allowed on Preview, so assert it's inert when `VERCEL_ENV=production` instead. Replace the `@` check with "no payload contains the test account's email or handle". Either add a CI e2e job (with what backend?) or say it's a manual gate like `blogs.spec.ts`.
-
-7. **[Should fix] spec §5.2 erasure gaps.**
-   - (a) The re-run window is 7 days. PostHog batch exports can be paused and backfilled later than that, which brings deleted rows back. Markers live ≥ 30 days (`run_retention_cleanup` is weekly, deletes markers older than 30 days), so re-run for 30 days. Better still, keep a key-only `deleted_users` table in BigQuery that `events_clean` anti-joins.
-   - (b) Anon-only rows (pre-sign-in, and every v1 browser row, because `identify()` was never called on `main`) stay. They're linkable to the person through `anon_id` on the kept `account_deleted` row and through `events_clean`'s anon→internal propagation. Either also delete rows whose `anon_id` was seen with `user_id = @key`, or drop `anon_id`/`session_id` from `account_deleted`.
-   - (c) PostHog `delete_events: true` also deletes `account_deleted` in PostHog (only BigQuery keeps it). Say so. Sending it "first" also races with the person delete and can recreate the person.
-   - (d) PostHog event deletion is asynchronous (unverified here; the builder should confirm the timing with the endpoint), so E4's "person gone" isn't "events gone".
-   - (e) `jobs.query` needs the GCP project id and dataset location. Say where they come from (the key JSON has `project_id`; the location isn't there).
-8. **[Should fix] spec §4.2, the `userInfo.ts` contract.**
-   - `userInfoForRequest(userKey)` takes a key, but §3.2 says `user_info` comes from the verified session. Specify that it returns `null` unless the session user equals `userKey`, so the cron, `app/email/unsubscribe` (AN-10, no session) and `notification_sent` can never look up someone's email by key.
-   - Mark `userInfo.ts` `import 'server-only'` (that's the real guard for "no email in the client bundle"; §11's `privacy.test.ts` wording is vague).
-   - Bound the 60 s `getUser()` cache (size cap) and say how the handle is looked up and cached.
-9. **[Should fix] §8 compatibility of the renames for existing PostHog / BigQuery history.**
-   - (a) Same property names change type: `platform` (string → INT64), `visibility`, `referrer`, `source`, `page`, `action`. PostHog keeps one type per property definition, so filters and breakdowns on those break, beyond the renamed events. List them and add "reset property types in PostHog" to the CTO steps.
-   - (b) List the existing PostHog insights and dashboards to repoint, and make that list part of AN-01's Done-when, not "CTO, later".
-   - (c) `ts` changes meaning: v1 browser rows were sent with `timestamp` = device time, v2 rows get server time. `events_clean` should map v1 browser rows' `timestamp` into `client_ts` and say `ts` is device time before the cut-over.
-   - (d) `/ingest` "strips anything else not in the allowlist". If the allowlist is the v2 taxonomy, an old tab or a rollback build sending v1 names loses the v1 properties `events_clean` needs to map. That contradicts the "v1 body forwarded" test. Specify: v1 names pass with their v1 properties (identity still enforced), or they're dropped and the gap is accepted.
-10. **[Should fix] §5.3 BigQuery views, plausibility against the PostHog BigQuery batch export.**
-    - The columns the spec relies on exist in PostHog's default events model (`uuid, event, properties, distinct_id, timestamp, ip, …`), and the DELETE's `event`, `distinct_id` and `JSON_VALUE(properties, '$.user_id')` are valid for both STRING and JSON `properties`.
-    - But: (a) say which type `properties` is in this export (STRING unless "JSON type" was chosen). Rewriting v1 properties and deriving `first_seen_ts` / `days_since_last_sign_in` into `properties` needs `SAFE.PARSE_JSON` + `JSON_SET`/`JSON_REMOVE`, and the view output must be JSON for the Metrics `JSON_VALUE` calls. (b) `user_id`/`anon_id`/`session_id`/`platform`/`screen` aren't columns; they come out of `properties`, and v1 rows have no `user_id`, so anon→internal propagation and erasure for history must use `distinct_id`. (c) Never expose the export's `ip` column in `events_clean`. `/ingest` forwards `x-forwarded-for` today, so the CTO should check that column is empty in history (it depends on "Discard client IP data" having always been on). (d) `events_clean` exposes `user_info.email_id` to every Metrics reader. Consider an `events_clean` without `email_id` plus a founders-only `events_people` view. (e) AN-01's Done-when has "views dry-run clean", which the builder can't do (no BigQuery access). Make it an explicit CTO gate on AN-01's merge.
-    - The Metrics DAU query (`COALESCE(user_id, anon_id)`) counts one person twice on the day they sign in. Note it in `metrics.csv` or map anon→user in the view.
-11. **[Should fix] §12 task split and ordering.**
-    - §8 says "AN-04 … AN-12 in any order after AN-02", which contradicts the table (AN-06 needs AN-05, AN-09 needs AN-08, AN-10 needs AN-03).
-    - Files shared without an order: `features/account/actions.ts` (AN-02, AN-07, AN-10); `app/auth/{callback,confirm}/route.ts` (AN-02, AN-07); `features/editor/publishActions.ts` (AN-05, AN-08); `features/quests/ManageQuestSheet.tsx` (AN-06, AN-09); `features/account/SettingsView.tsx` (AN-11, AN-12); `features/home/FeedCard.tsx`, `BlogFeedCard.tsx`, `features/blogs/BlogList.tsx` (AN-04 `?src=` and AN-09); `features/blog-editor/{LinkQuestRow,NewBlogView}.tsx` (AN-01, AN-12); `lib/analytics/codes.ts` (AN-01, AN-05, and in practice every task); `.env.example` (AN-02, AN-03). Give an order or a merge rule.
-    - `account_deleted` is owned by AN-10 but §5.2.3 (AN-03) defines when it's sent. Give it to one task.
-    - AN-01's touch list misses `features/blogs/{blogEvents,readerEvents}.ts`, `features/blogs/ManageBlogSheet.tsx` (also in AN-09), `features/shell/CreateChooser.test.ts`, `features/blog-editor/deleteBlogDraft.test.ts` and `tests/e2e/blogs.spec.ts` (asserts `blog_viewed`), which all reference v1 names.
-    - AN-01 is the largest task (generator, 14 renames with new required props, views, rename map, 6 tests). Consider splitting the generator and tests from the call-site renames.
-12. **[Should fix] Preview with the flag on (E1).** HLD says Preview has its own Supabase project, but the spec doesn't say which PostHog project Preview sends to. UX testers on Preview are real people, so turning `ANALYTICS_USER_INFO=on` there sends their emails before the policy is live. Either use a separate PostHog project for Preview, or limit flag-on in Preview to team accounts and state it.
-13. **[Should fix] `screens.test.ts` (§6.1)** walks `app/` for `page.tsx`. The real files are `app/(public)/u/[handle]/…`, `app/(public)/b/[handle]/[slug]` and `app/(app)/(signed-in)/u/[handle]/{followers,following}`, served through the `next.config.ts` rewrites. The test must map route groups and reverse the rewrites, or it tests paths users never see. `/` (`app/(public)/page.tsx`) isn't in the table; say it's `other`.
-14. **[Note]** The CLAUDE.md replacement line differs between decision 0004 Consequences ("analytics `user_info.email_id` … (decision 0004)") and spec §7.1 ("`user_info` (username, email, city) … erased on account deletion"). Pick one. Use §7.1's: it's wider and mentions erasure.
-15. **[Note]** `common.csv` says `country` "moves into `user_info.geoip`". The spec keeps a top-level `country` too (fine, it's needed for signed-out events). Record it as a deliberate deviation next to D7.
-16. **[Note]** `oq_uid` set in `proxy.ts` on every matched response: keep the existing no-store header behaviour whenever a `Set-Cookie` is added, so a CDN never caches a response carrying it.
+1. **[Should fix] spec §5.2 step 3, the erasure DELETE also removes other people's signed-in rows on a shared device.**
+   - The `anon_id IN (…)` branch has no condition on `user_id`. If A and B both signed in on one laptop, deleting A also deletes B's events from that device: B's `blog_published`, `content_liked`, and the rest (server events carry the device's `anon_id` once `oq_actx` is on).
+   - That breaks counted totals and can't be undone once time travel ends.
+   - The spec's own note ("a shared device's signed-out rows go too") describes the intended behaviour, but the SQL is wider than that.
+   - **Fix:** add `AND (JSON_VALUE(properties,'$.user_id') IS NULL OR JSON_VALUE(properties,'$.user_id') = @key)` to that branch. Clarify that `distinct_id` is not someone else's key. Add a shared-device case to `erasure.test.ts` (check the SQL it builds) and to the G5 steps.
+2. **[Should fix] spec §5.3, the `events_clean` anti-join hides `account_deleted`.**
+   - "Leaves out every row whose `user_id` … belongs to `deleted_users`" also removes `account_deleted`, whose `user_id` is the deleted key (§5.2 step 1).
+   - Deletions then vanish from `events_clean`, which contradicts decision 0004 §6 ("kept, so deletions can still be counted") and §10's counted table.
+   - **Fix:** exempt `name = 'account_deleted'` from the anti-join, as the DELETE already does.
+   - The same bullet says "or `anon_id` belongs to `deleted_users`", but that table holds user keys only. Either drop that wording or say which anon ids are meant (see #3).
+3. **[Should fix] spec §5.2, the daily re-run can't find late signed-out device rows.**
+   - Day 1 deletes every row that links an `anon_id` to the key. So on days 2–30, the `SELECT DISTINCT anon_id … WHERE distinct_id = @key OR user_id = @key` subquery returns nothing.
+   - Signed-out rows from those devices that reach BigQuery later (hourly export lag, backfill) are never deleted or anti-joined.
+   - **Fix:** on the first run, store the person's anon ids in a key-only table (e.g. `deleted_devices (anon_id, deleted_at)`; random ids, not personal). Use it in both the re-run DELETE and the `events_clean` anti-join, with the same `user_id IS NULL OR = @key` guard as #1.
+4. **[Should fix] spec §4.2 / §5.3, with `oq_actx` off, server events carry `anon_id = null`, which breaks two Metrics and one derived property.**
+   - The cookie stays off until G3, which may be weeks away. Meanwhile:
+     - "Viewer → creator" (`metrics.csv` row 4) joins `quest_viewed` (browser) to `quest_creation_complete` (server) by `anon_id`, so it returns 0.
+     - `first_seen_ts` is "MIN(ts) per anon_id written into `user_signed_up`", and `user_signed_up` is a server event, so it comes out null.
+   - §4.2 says "BigQuery joins them to browser events by `user_id`", but neither the view nor the queries do that.
+   - **Fix:** in `events_clean`, fill a null `anon_id` on server events from the same `user_id`'s browser rows (latest at or before `ts`; the `person_id` logic in §5.3 already needs that mapping). Or change those two Metrics to `person_id` and add it to the sheet change in §14. Add both Metrics to G1's dry-run, with a check that they return non-zero on Preview data.
+5. **[Note] spec §4.2, the `trackServer` contract.** "`userKey` must equal the session user except `notification_sent` and `account_deleted`." The AN-11 unsubscribe route (`setting_changed`, no session) is a third exception. Add it to the list so the AN-11 builder doesn't stop on it.
+6. **[Note] spec §8 rollback.** The row mixes two concerns. Spell out both:
+   - (a) rolling back past AN-03 brings back IP forwarding to PostHog (only PostHog's "Discard client IP data" setting protects then);
+   - (b) rolling back past AN-04 after `user_info` is on stops automatic erasure, so the runbook's manual step applies to every deletion until roll-forward.
+7. **[Note]** `NEXT_PUBLIC_ANALYTICS_CONTEXT_COOKIE` and `NEXT_PUBLIC_ANALYTICS_E2E` are inlined at build time, so switching them needs a redeploy. Say so in G3 and in AN-14's steps.
+8. **[Note]** The shared-file table in §12.1 misses `features/blogs/LiveBlogSocialProvider.tsx` (AN-02, AN-13), `features/blogs/{socialActions,actions,blogEvents}.ts` and `features/blog-editor/actions.ts` (AN-02, AN-09). The strict merge order makes this harmless, so it's for completeness only.
 
 ### Coverage
 
 | Brief / sheet criterion | In spec? | Implemented by | Tested by |
 |---|---|---|---|
-| AC1 identify everywhere | Yes | `oq_uid` + `client.ts`; `/ingest` user_id | `client.test.ts`, `ingestEnrich.test.ts`, E1. Gap: distinct_id / `$identify` not verified (Tech #1) |
-| AC2 setScreen everywhere | Yes | `screens.ts`, `Pageviews.tsx` | `screens.test.ts` (needs rewrite mapping, Tech #13), E2 |
-| AC3 common props | Yes | `common.ts`, `oq_actx` | `common.test.ts`, `server.test.ts` |
-| AC4 is_internal_flg | Yes, wrong dependency | `internal.ts` via `user_info.username` | `internal.test.ts`. Fails while flag off (Tech #3) |
+| AC1 identify everywhere | Yes (server-side, D2 for CTO sign-off) | `/ingest` identity + `$identify` | `ingestEnrich.test.ts`, E1 |
+| AC2 setScreen everywhere | Yes | `screens.ts`, `Pageviews.tsx` | `screens.test.ts` (groups + rewrites), E2 |
+| AC3 common props | Yes | `common.ts` | `common.test.ts`, `server.test.ts` |
+| AC4 is_internal_flg | Yes | `internal.ts` (keys), `internal_users` | `internal.test.ts`, Metric 1 dry-run |
 | AC5 is_bot_flg | Yes | `/ingest`, `trackServer` | `privacy.test.ts`, `ingestEnrich.test.ts` |
-| AC6 user_info, no raw IP | Yes | `userInfo.ts`, `/ingest` | `userInfo.test.ts`, `ingestEnrich.test.ts`. Gap: unparseable bodies (Tech #1), server-only (Tech #8) |
-| AC7 generated taxonomy, script kept | Yes | `taxonomyFromCsv.ts`, `generate.ts` | `taxonomy.test.ts`, `taxonomyRules.test.ts` |
-| AC8 14 renames, blog events keep working, change log | Partly | AN-01 call sites, `events_clean`, `renameMap.ts` | `renameMap.test.ts`, dry-run. Events dropped by required rule (Tech #2) |
-| AC9 57 new events in order | Yes | AN-04 … AN-12 | builders, E3, AN-13 (can't run as written, Tech #6) |
-| AC10 no user text | Yes | generator patterns | `taxonomyRules.test.ts`, `validate.test.ts` |
-| AC11 server events for counts | Yes | §10 | `taxonomyRules.test.ts` |
-| AC12 erasure (PostHog + BigQuery) | Yes, unproven | `erasure.ts`, cron, runbook | `erasure.test.ts` (mocks only); E4 impossible on Preview (Tech #5) |
-| AC13 CLAUDE.md rule, decision, policy flag | Yes | 0004, §7.1, §14 | review; policy ordering (Founder #1) |
-| AC14 Metrics queries valid | Yes | `events_clean`, `internal_users` | `metricsSql.test.ts`, CTO dry-run (gate, Tech #10e) |
-| AC15 tests per CLAUDE.md | Yes | — | CI; no `tests/db/` change needed (no DB change, confirmed: no migration in the diff) |
+| AC6 user_info, no raw IP | Yes | `userInfo.ts` (`server-only`), `/ingest` | `userInfo.test.ts`, `ingestEnrich.test.ts`, `privacy.test.ts` |
+| AC7 generated taxonomy | Yes | AN-01 | `taxonomy.test.ts`, `taxonomyRules.test.ts` |
+| AC8 renames, blog events keep working | Yes | AN-02, `renameMap.ts`, `events_clean` | `renameMap.test.ts`, old-draft test, G1 |
+| AC9 57 new events | Yes | AN-05 … AN-13 | builders (`expectNoProblems`), E3, AN-14 |
+| AC10 no user text | Yes | generator patterns, validation removes email-shaped values | `taxonomyRules.test.ts`, `validate.test.ts` |
+| AC11 server counts | Yes | §10 | `taxonomyRules.test.ts` (but see Tech #2 for `account_deleted`) |
+| AC12 erasure | Yes | `erasure.ts`, cron 30 days, `deleted_users` | `erasure.test.ts`, G5, G6 (Tech #1, #3) |
+| AC13 CLAUDE.md, decision, policy | Yes | 0004, §7.1, §14, G3 | review |
+| AC14 Metrics valid | Yes | `events_clean`, `metricsSql.test.ts` | G1 (Tech #4 for two queries) |
+| AC15 tests per CLAUDE.md | Yes | — | CI; no DB change |
 
 ### Security and privacy
 
 | Rule | Planned correctly? | Notes |
 |---|---|---|
-| Don't log user text, emails, photo URLs | Exception documented (0004) | Generator refusing free STRINGs is good. Email stays server-side only if Tech #1 and #8 are fixed |
-| Raw IP never stored | Mostly | Stop forwarding `x-forwarded-for` + `$geoip_disable`. Check the BigQuery `ip` column in history (Tech #10c) |
-| Secret keys server-only | Yes | `erasure.ts` `server-only`. Also needed on `userInfo.ts` (Tech #8) |
-| `getUser()` on the server | Yes | cached 60 s, bound the cache |
-| Public reads via `get_*` only; no anon select | Not touched | no DB change |
-| Unlisted URLs not leaked | Yes | route templates, `?src=` stripped, Referer dropped |
-| No per-person data in cached HTML | Yes | proxy matcher unchanged, Note #16 |
-| Identity can't be spoofed | **No** | distinct_id / `$identify` (Tech #1) |
-| Account deletion removes everything | Partly | 7-day window, anon rows, Preview proof (Tech #5, #7) |
-| Notice before collection | **No** | cookies before policy (Founder #1, Tech #4) |
-| Access to personal analytics data | Partly | `events_clean` shows emails to every query reader (Tech #10d) |
+| Don't log user text/emails (exception 0004) | Yes | server-only, own session only, gated `off`/`team`/`on` |
+| Identity can't be spoofed | Yes | server decides `distinct_id`/`user_id`/merge |
+| Raw IP never stored | Yes | no `x-forwarded-for`, `$geoip_disable`, `ip` never selected, history checked at G1 |
+| Secret keys server-only | Yes | `erasure.ts`, `userInfo.ts` `server-only`; keys per environment |
+| `getUser()` on the server | Yes | bounded cache |
+| Public reads / RLS | Not touched | no DB change (confirmed: no migration in the diff) |
+| Unlisted URLs not leaked | Yes | route templates, `?src=` stripped |
+| No per-person data in cached HTML | Yes | no server-set cookie |
+| Notice before collection | Yes | G3 gates `oq_actx` and `user_info` |
+| Personal data access in BigQuery | Yes | `events_clean` has no email; `events_people` is founders-only |
+| Account deletion removes everything | Mostly | Tech #3 (late device rows). Tech #1 over-deletes others' data (integrity, not privacy) |
 
 ### No in-place updates
 
 | Record | Key | Save function | Conflict check | User delete | OK? |
 |---|---|---|---|---|---|
-| None in Postgres (analytics go to PostHog/BigQuery; erasure only reads `deleted_accounts` via the admin client, which has `select`) | — | — | — | `deleteAccount()` unchanged; erasure added after it | Pass (not touched). BigQuery DML DELETE is on the analytics store, outside decision 0001 |
+| None in Postgres; erasure only reads `deleted_accounts` with the admin client | — | — | — | `deleteAccount()` unchanged, erasure appended | Pass (not touched) |
 
 ### Backward compatibility
 
 | Area | Safe? | Notes |
 |---|---|---|
-| Stored `trips.content` / blog drafts | **Fail** | No shape change, but old drafts without `startedAt` lose `blog_published` under the new required rule (Tech #2) |
-| Migrations / public functions / RLS | Not touched | no DB change |
-| Public URLs, OG | Pass | `?src=` optional and stripped; pages ignore it |
-| Rendering of existing trips | Pass | optional `QuestPlayer`/`MemorySheet` callbacks; jitter/defaults untouched |
+| Stored content / old drafts | Pass | old-draft `blog_published` test |
+| Migrations / public functions / RLS | Not touched | |
+| Public URLs, OG | Pass | `?src=` optional, stripped |
+| Rendering existing trips | Pass | optional template callbacks |
 | Storage | Not touched | |
-| Server actions (`publishQuest.analytics` optional) | Pass | old bundles validate |
-| Analytics event names (PostHog) | Accepted break, incomplete | type changes on kept property names; insights list (Tech #9a, #9b) |
-| Analytics history (BigQuery) | Plausible, unverified | `events_clean` mapping. `ts` semantics, v1 `distinct_id`, `properties` type (Tech #9c, #10) |
-| Old tabs / rollback through `/ingest` | **Unclear** | allowlist may strip v1 props (Tech #9d) |
-| Env vars | Pass | all new, optional; unset = today's behaviour |
-| Cookies | **Fail vs policy** | Founder #1 |
+| Server actions | Pass | `publishQuest.analytics` optional |
+| PostHog names and property types | Accepted break, handled | G4 list and type resets |
+| BigQuery history | Plausible, gated | G1 dry-run; v1 `distinct_id` and `ts` mapping specified |
+| Old tabs / rollback through `/ingest` | Pass | frozen v1 allowlist for 30 days (contract step in §15). Rollback notes, Tech #6 |
+| Env vars | Pass | all new, optional |
 
-### Tracker (no Sheets tool used in this session; please apply)
+### Tracker (no Sheets tool in this session; please apply)
 
-Row "Analytics v2 (OQ-12)": `Blocked`, Owner `Founder`. Notes: "Plan review round 1: 6 blocking (5 technical, 1 product). Founder Qs: (1) policy live before AN-02 or cookies held back? (2) OK to add Google Cloud/BigQuery as a processor and say deletion completes within 30 days? (3) Agree to plain email in PostHog/BigQuery?" The Tech Lead revises the spec in parallel for Technical #1–#6.
+PASS: row "Analytics v2 (OQ-12)" → `6. Spec approval (CTO)`, Owner `CTO`. Notes: "Plan review round 2: PASS, 0 blocking, 4 should-fix (erasure SQL shared-device guard, account_deleted anti-join exemption, late device rows, anon_id on server events while cookie off). Founder Qs 1–3 open, gated by G3. CTO sign-off needed on D1, D2, D7, D9, D14, D15."
 
 ### Verdict
 
-CHANGES NEEDED. Before the CTO approves:
-- `/ingest` owns `distinct_id` and identify, and drops unparseable bodies (#1).
-- The required-property rule can't drop renamed or counted events, and old drafts still produce `blog_published` (#2).
-- `is_internal_flg` works with the flag off (#3).
-- Policy and cookie ordering is fixed (#4, founder #1).
-- Erasure gets a real end-to-end proof before the flag goes on (#5).
-- AN-13 runs somewhere real, with assertions that can pass (#6).
+PASS. All six round-1 blocking findings are fixed. Before the CTO approves:
+- Fold Tech #1–#4 into the spec text. They are small, and three of them are the exact SQL builders will copy.
+- Sign off D1, D2, D7, D9, D14 and D15.
+- Plan gates G1–G6.
 
-The Should-fix items (#7–#13) can go in the same revision. Most are one line each in the spec.
+The founder's answers are needed before G3, not before approval.
