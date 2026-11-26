@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { SCRATCH_DATASET, VIEW_FILES, renderApplyG1, renderFixtureCheck } from './bigqueryG1';
 import { parseCsv, type EventRule } from './taxonomyFromCsv';
-import { EVENTS } from './taxonomyV2';
+import { COMMON_PROPERTIES, EVENTS } from './taxonomyV2';
 
 // The Metrics tab's BigQuery queries (docs/analytics/v2/metrics.csv) must stay valid against the
 // v2 taxonomy and the events_clean view (spec AC14). The CTO's dry run at G1 checks the SQL itself.
@@ -32,14 +33,10 @@ const COLUMNS = [
   'properties',
   'person_id',
 ];
-const VIEW_FILES = [
-  'deleted_users.sql',
-  'deleted_devices.sql',
-  'events_people_all.sql',
-  'events_clean_all.sql',
-  'events_clean.sql',
-  'events_people.sql',
-];
+/** The only PostHog `$` keys a view may pass on: route templates on $pageview (review round 1). */
+const ALLOWED_DOLLAR_KEYS = ['$current_url', '$pathname'];
+/** Export columns with IPs or PostHog person and location data (CTO, G1). */
+const FORBIDDEN_COLUMNS = ['ip', 'set', 'set_once', 'person_properties', 'elements'];
 
 const metrics = (() => {
   const [header = [], ...rows] = parseCsv(read('docs', 'analytics', 'v2', 'metrics.csv'));
@@ -111,21 +108,36 @@ describe('BigQuery views (docs/analytics/bigquery)', () => {
     }
   });
 
-  it('never select the export’s ip column', () => {
+  it('never select ip, set, set_once, person_properties or elements from the export', () => {
     for (const file of VIEW_FILES) {
-      expect({ file, ip: /(^|[^$])\bip\b/.test(withoutComments(bigquery(file))) }).toEqual({ file, ip: false });
+      const sql = withoutComments(bigquery(file)).replace(/'[^']*'/g, "''");
+      const used = FORBIDDEN_COLUMNS.filter((column) => new RegExp(`\\b${column}\\b`).test(sql));
+      expect({ file, used }).toEqual({ file, used: [] });
     }
   });
 
-  it('keep the paste-ready G1 file identical to the six files, in order', () => {
-    const combined = bigquery('apply-g1.sql');
-    let from = 0;
-    for (const file of VIEW_FILES) {
-      const part = `-- ==== ${file} ====\n${bigquery(file)}`;
-      const at = combined.indexOf(part, from);
-      expect({ file, found: at >= 0 }).toEqual({ file, found: true });
-      from = at + part.length;
-    }
-    expect(combined.slice(from)).toBe('');
+  it('rebuild properties from an allowlist: the taxonomy keys, the common ones and two $ keys', () => {
+    const block = people.slice(people.indexOf('allowlist:start'), people.indexOf('allowlist:end'));
+    const pairs = [...block.matchAll(/'([^']+)', JSON_QUERY\(props, '\$\.(?:"([^"]+)"|([a-z0-9_]+))'\)/g)];
+    for (const [, key, quoted, plain] of pairs) expect(quoted ?? plain).toBe(key);
+    const expected = new Set<string>(ALLOWED_DOLLAR_KEYS);
+    for (const name of COMMON_PROPERTIES) if (name !== 'user_info') expected.add(name);
+    for (const rule of Object.values(events)) for (const name of Object.keys(rule.properties)) expected.add(name);
+    const keys = pairs.map(([, key]) => key ?? '');
+    expect(keys).toEqual([...expected].sort());
+    expect(keys.filter((key) => key.startsWith('$'))).toEqual(ALLOWED_DOLLAR_KEYS);
+    expect(keys).not.toContain('user_info');
+  });
+
+  it('keep the paste-ready G1 files up to date (run npm run analytics)', () => {
+    expect(bigquery('g1_fixture_check.sql')).toBe(renderFixtureCheck(bigquery));
+    expect(bigquery('apply-g1.sql')).toBe(renderApplyG1(bigquery));
+  });
+
+  it('run the fixture check on the scratch dataset only, with the real view SQL', () => {
+    const fixture = bigquery('g1_fixture_check.sql');
+    expect(fixture).not.toMatch(/`onquest_analytics\./);
+    expect(fixture).toContain(people.replaceAll('`onquest_analytics.', `\`${SCRATCH_DATASET}.`));
+    expect(fixture).toContain(`DROP SCHEMA \`${SCRATCH_DATASET}\` CASCADE;`);
   });
 });

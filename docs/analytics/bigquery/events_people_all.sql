@@ -2,23 +2,34 @@
 -- username, city). Founders only (decision 0004). Everyone else reads events_clean, which is this
 -- view without user_info and filtered to env = 'production'. docs/specs/analytics-v2.md §5.3.
 --
--- Reads the PostHog batch export `onquest_analytics.events` and assumes its `properties` column
--- is STRING (PostHog's default). G1: if the export uses the JSON type, change the one marked line
--- in `raw` to `properties AS props`.
+-- Reads the PostHog batch export `onquest_analytics.events`, whose `properties` column is JSON
+-- (confirmed by the CTO at G1, 26 Nov 2026).
 --
 -- What it does, in order:
---   raw        $-events dropped except $pageview. The export's `ip` column is never selected.
+--   raw        $-events dropped except $pageview. Only uuid, event, distinct_id, timestamp,
+--              properties and site_url are read: never ip, set, set_once, person_properties or
+--              elements (raw IP and PostHog person/location data).
 --   deduped    one row per event_id; is_bot_flg = true dropped.
 --   renamed    v1 names → v2 names (the table in spec §5.3, same as lib/analytics/renameMap.ts).
 --   rewritten  v1 property names and string values → v2. Each branch leaves a v2 row unchanged,
 --              so rows sent after the cut-over with the same name pass through.
---   common     the common columns. v1 rows (no env) count as production; their user_id is a
---              distinct_id that isn't anon_…, their anon_id the anon_… distinct_id.
+--   common     the common columns, and `properties` rebuilt from an allowlist: the v2 taxonomy
+--              properties, the common properties and $current_url / $pathname (route templates
+--              on $pageview). Every other key goes, so no $geoip_*, $set, $ip or lat/long ever
+--              reaches a view; user_info is its own column. Rows without env (v1, and v2 before
+--              AN-03) take it from the first of $current_url, $host, site_url whose host is ours:
+--              onquest.in / www.onquest.in → production, *.vercel.app or localhost → preview;
+--              none → production. Their user_id is a distinct_id that isn't anon_…, their anon_id
+--              the anon_… distinct_id, their country $geoip_country_code.
 --   kept       deleted people's rows left out (deleted_users, deleted_devices with the
 --              shared-device guard), except account_deleted.
 --   filled     server events' null anon_id filled from the same user's browser rows while the
 --              oq_actx cookie is off: the latest at or before the event, else the earliest after.
 --   (final)    person_id for DAU; first_seen_ts and days_since_last_sign_in derived (spec D7).
+--
+-- Environments: the anon_id fill, person_id and the derived properties are computed across both
+-- environments before events_clean filters to production. That's safe only because Preview's
+-- user keys and anon ids never match Production's (separate Supabase projects and origins, D15).
 --
 -- Time: ts is PostHog's `timestamp`. For v1 browser rows, and v2 browser rows sent before AN-03
 -- (whose client still sent `timestamp`), that is the DEVICE clock, also copied to client_ts.
@@ -35,7 +46,8 @@ raw AS (
     event,
     distinct_id,
     `timestamp` AS exported_ts,
-    SAFE.PARSE_JSON(properties) AS props -- G1: `properties AS props` if the column is JSON
+    properties AS props,
+    site_url
   FROM `onquest_analytics.events`
   WHERE NOT STARTS_WITH(event, '$') OR event = '$pageview'
 ),
@@ -47,6 +59,7 @@ deduped AS (
     distinct_id,
     exported_ts,
     props,
+    site_url,
     JSON_VALUE(props, '$.env') AS raw_env
   FROM raw
   WHERE COALESCE(JSON_VALUE(props, '$.is_bot_flg'), 'false') != 'true'
@@ -87,6 +100,7 @@ rewritten AS (
     distinct_id,
     exported_ts,
     raw_env,
+    site_url,
     CASE
       WHEN raw_name = 'create_option_tapped' THEN
         JSON_REMOVE(
@@ -308,7 +322,22 @@ common AS (
         WHEN name = '$pageview' THEN 'view'
       END
     ) AS type,
-    COALESCE(raw_env, 'production') AS env,
+    COALESCE(
+      raw_env,
+      (
+        SELECT IF(host IN ('onquest.in', 'www.onquest.in'), 'production', 'preview')
+        FROM UNNEST([
+          LOWER(NET.HOST(JSON_VALUE(props, '$."$current_url"'))),
+          LOWER(NET.HOST(JSON_VALUE(props, '$."$host"'))),
+          LOWER(NET.HOST(site_url))
+        ]) AS host WITH OFFSET AS position
+        -- Only our own hosts decide; anything else (e.g. PostHog's own URL) is ignored.
+        WHERE host IN ('onquest.in', 'www.onquest.in', 'localhost', '127.0.0.1') OR ENDS_WITH(host, '.vercel.app')
+        ORDER BY position
+        LIMIT 1
+      ),
+      'production'
+    ) AS env,
     exported_ts AS ts,
     raw_env,
     exported_ts,
@@ -329,11 +358,185 @@ common AS (
     JSON_VALUE(props, '$.os') AS os,
     JSON_VALUE(props, '$.browser') AS browser,
     JSON_VALUE(props, '$.screen') AS screen,
-    JSON_VALUE(props, '$.country') AS country,
+    COALESCE(
+      JSON_VALUE(props, '$.country'),
+      -- v1 browser rows: PostHog GeoIP, country only (nothing finer is ever read).
+      IF(raw_env IS NULL, JSON_VALUE(props, '$."$geoip_country_code"'), NULL)
+    ) AS country,
     JSON_VALUE(props, '$.app_version') AS app_version,
     SAFE.TIMESTAMP(JSON_VALUE(props, '$.client_ts')) AS sent_client_ts,
     JSON_QUERY(props, '$.user_info') AS user_info,
-    JSON_REMOVE(props, '$.user_info', '$."$ip"') AS properties
+    -- Allowlist (metricsSql.test.ts checks it equals the taxonomy's keys). allowlist:start
+    JSON_STRIP_NULLS(
+      JSON_OBJECT(
+        '$current_url', JSON_QUERY(props, '$."$current_url"'),
+        '$pathname', JSON_QUERY(props, '$."$pathname"'),
+        'action', JSON_QUERY(props, '$.action'),
+        'action_taken', JSON_QUERY(props, '$.action_taken'),
+        'actor_user_id', JSON_QUERY(props, '$.actor_user_id'),
+        'age_days', JSON_QUERY(props, '$.age_days'),
+        'age_hours', JSON_QUERY(props, '$.age_hours'),
+        'anon_id', JSON_QUERY(props, '$.anon_id'),
+        'app_version', JSON_QUERY(props, '$.app_version'),
+        'arrange_mode', JSON_QUERY(props, '$.arrange_mode'),
+        'attempt', JSON_QUERY(props, '$.attempt'),
+        'author_user_id', JSON_QUERY(props, '$.author_user_id'),
+        'available_flg', JSON_QUERY(props, '$.available_flg'),
+        'blocked_flg', JSON_QUERY(props, '$.blocked_flg'),
+        'blog_count', JSON_QUERY(props, '$.blog_count'),
+        'blog_id', JSON_QUERY(props, '$.blog_id'),
+        'browser', JSON_QUERY(props, '$.browser'),
+        'caption_was_auto_flg', JSON_QUERY(props, '$.caption_was_auto_flg'),
+        'captions_auto_count', JSON_QUERY(props, '$.captions_auto_count'),
+        'captions_auto_kept', JSON_QUERY(props, '$.captions_auto_kept'),
+        'captions_user_written', JSON_QUERY(props, '$.captions_user_written'),
+        'change_types', JSON_QUERY(props, '$.change_types'),
+        'channel', JSON_QUERY(props, '$.channel'),
+        'chars_bucket', JSON_QUERY(props, '$.chars_bucket'),
+        'chip_count', JSON_QUERY(props, '$.chip_count'),
+        'chip_name', JSON_QUERY(props, '$.chip_name'),
+        'click_loc', JSON_QUERY(props, '$.click_loc'),
+        'client_ts', JSON_QUERY(props, '$.client_ts'),
+        'comment_age_hours', JSON_QUERY(props, '$.comment_age_hours'),
+        'comment_count', JSON_QUERY(props, '$.comment_count'),
+        'comment_length', JSON_QUERY(props, '$.comment_length'),
+        'comments_on_flg', JSON_QUERY(props, '$.comments_on_flg'),
+        'completed_flg', JSON_QUERY(props, '$.completed_flg'),
+        'content_id', JSON_QUERY(props, '$.content_id'),
+        'content_type', JSON_QUERY(props, '$.content_type'),
+        'country', JSON_QUERY(props, '$.country'),
+        'days_since_last_edit', JSON_QUERY(props, '$.days_since_last_edit'),
+        'days_since_last_sign_in', JSON_QUERY(props, '$.days_since_last_sign_in'),
+        'days_since_post', JSON_QUERY(props, '$.days_since_post'),
+        'days_since_publish', JSON_QUERY(props, '$.days_since_publish'),
+        'days_since_signup', JSON_QUERY(props, '$.days_since_signup'),
+        'default_visibility', JSON_QUERY(props, '$.default_visibility'),
+        'deleted_by', JSON_QUERY(props, '$.deleted_by'),
+        'direction', JSON_QUERY(props, '$.direction'),
+        'draft_count', JSON_QUERY(props, '$.draft_count'),
+        'duration_ms', JSON_QUERY(props, '$.duration_ms'),
+        'edit_count', JSON_QUERY(props, '$.edit_count'),
+        'entry_type', JSON_QUERY(props, '$.entry_type'),
+        'env', JSON_QUERY(props, '$.env'),
+        'error_type', JSON_QUERY(props, '$.error_type'),
+        'event_id', JSON_QUERY(props, '$.event_id'),
+        'exit_type', JSON_QUERY(props, '$.exit_type'),
+        'failed_count', JSON_QUERY(props, '$.failed_count'),
+        'failed_flg', JSON_QUERY(props, '$.failed_flg'),
+        'feed_empty_flg', JSON_QUERY(props, '$.feed_empty_flg'),
+        'feed_item_count', JSON_QUERY(props, '$.feed_item_count'),
+        'fields_changed', JSON_QUERY(props, '$.fields_changed'),
+        'filter', JSON_QUERY(props, '$.filter'),
+        'first_open_flg', JSON_QUERY(props, '$.first_open_flg'),
+        'first_seen_ts', JSON_QUERY(props, '$.first_seen_ts'),
+        'first_time_flg', JSON_QUERY(props, '$.first_time_flg'),
+        'follower_count', JSON_QUERY(props, '$.follower_count'),
+        'following_count', JSON_QUERY(props, '$.following_count'),
+        'following_count_after', JSON_QUERY(props, '$.following_count_after'),
+        'follows_flg', JSON_QUERY(props, '$.follows_flg'),
+        'follows_owner_flg', JSON_QUERY(props, '$.follows_owner_flg'),
+        'format', JSON_QUERY(props, '$.format'),
+        'from_screen', JSON_QUERY(props, '$.from_screen'),
+        'from_visibility', JSON_QUERY(props, '$.from_visibility'),
+        'fullscreen_flg', JSON_QUERY(props, '$.fullscreen_flg'),
+        'guide_id', JSON_QUERY(props, '$.guide_id'),
+        'has_place_flg', JSON_QUERY(props, '$.has_place_flg'),
+        'has_quest_flg', JSON_QUERY(props, '$.has_quest_flg'),
+        'heic_count', JSON_QUERY(props, '$.heic_count'),
+        'is_bot_flg', JSON_QUERY(props, '$.is_bot_flg'),
+        'is_draft_flg', JSON_QUERY(props, '$.is_draft_flg'),
+        'is_first_blog_flg', JSON_QUERY(props, '$.is_first_blog_flg'),
+        'is_first_quest_flg', JSON_QUERY(props, '$.is_first_quest_flg'),
+        'is_mutual_flg', JSON_QUERY(props, '$.is_mutual_flg'),
+        'is_owner_flg', JSON_QUERY(props, '$.is_owner_flg'),
+        'is_published_flg', JSON_QUERY(props, '$.is_published_flg'),
+        'is_self_flg', JSON_QUERY(props, '$.is_self_flg'),
+        'item_count', JSON_QUERY(props, '$.item_count'),
+        'kind', JSON_QUERY(props, '$.kind'),
+        'landing_page', JSON_QUERY(props, '$.landing_page'),
+        'like_count', JSON_QUERY(props, '$.like_count'),
+        'like_count_after', JSON_QUERY(props, '$.like_count_after'),
+        'limit', JSON_QUERY(props, '$.limit'),
+        'list', JSON_QUERY(props, '$.list'),
+        'load_time_ms', JSON_QUERY(props, '$.load_time_ms'),
+        'looped_flg', JSON_QUERY(props, '$.looped_flg'),
+        'loops', JSON_QUERY(props, '$.loops'),
+        'method', JSON_QUERY(props, '$.method'),
+        'minutes_since_start', JSON_QUERY(props, '$.minutes_since_start'),
+        'no_metadata_count', JSON_QUERY(props, '$.no_metadata_count'),
+        'no_results_flg', JSON_QUERY(props, '$.no_results_flg'),
+        'on_flg', JSON_QUERY(props, '$.on_flg'),
+        'option', JSON_QUERY(props, '$.option'),
+        'os', JSON_QUERY(props, '$.os'),
+        'own_quest_count', JSON_QUERY(props, '$.own_quest_count'),
+        'owner_user_id', JSON_QUERY(props, '$.owner_user_id'),
+        'page', JSON_QUERY(props, '$.page'),
+        'page_count', JSON_QUERY(props, '$.page_count'),
+        'page_no', JSON_QUERY(props, '$.page_no'),
+        'pages_seen', JSON_QUERY(props, '$.pages_seen'),
+        'people_count', JSON_QUERY(props, '$.people_count'),
+        'photo_count', JSON_QUERY(props, '$.photo_count'),
+        'photo_count_after', JSON_QUERY(props, '$.photo_count_after'),
+        'photo_removed_flg', JSON_QUERY(props, '$.photo_removed_flg'),
+        'pick_time_sec', JSON_QUERY(props, '$.pick_time_sec'),
+        'place_count', JSON_QUERY(props, '$.place_count'),
+        'platform', JSON_QUERY(props, '$.platform'),
+        'position', JSON_QUERY(props, '$.position'),
+        'prev_template', JSON_QUERY(props, '$.prev_template'),
+        'profile_user_id', JSON_QUERY(props, '$.profile_user_id'),
+        'public_quest_count', JSON_QUERY(props, '$.public_quest_count'),
+        'query_length', JSON_QUERY(props, '$.query_length'),
+        'quest_count', JSON_QUERY(props, '$.quest_count'),
+        'quest_id', JSON_QUERY(props, '$.quest_id'),
+        'read_time_min', JSON_QUERY(props, '$.read_time_min'),
+        'reason', JSON_QUERY(props, '$.reason'),
+        'referrer', JSON_QUERY(props, '$.referrer'),
+        'referrer_blog_id', JSON_QUERY(props, '$.referrer_blog_id'),
+        'referrer_content_type', JSON_QUERY(props, '$.referrer_content_type'),
+        'referrer_owner_user_id', JSON_QUERY(props, '$.referrer_owner_user_id'),
+        'referrer_quest_id', JSON_QUERY(props, '$.referrer_quest_id'),
+        'rejected_attempts', JSON_QUERY(props, '$.rejected_attempts'),
+        'result_people_count', JSON_QUERY(props, '$.result_people_count'),
+        'result_quest_count', JSON_QUERY(props, '$.result_quest_count'),
+        'result_story_count', JSON_QUERY(props, '$.result_story_count'),
+        'result_type', JSON_QUERY(props, '$.result_type'),
+        'screen', JSON_QUERY(props, '$.screen'),
+        'seconds', JSON_QUERY(props, '$.seconds'),
+        'seconds_since_start', JSON_QUERY(props, '$.seconds_since_start'),
+        'session_id', JSON_QUERY(props, '$.session_id'),
+        'setting', JSON_QUERY(props, '$.setting'),
+        'signed_in_flg', JSON_QUERY(props, '$.signed_in_flg'),
+        'slide_count', JSON_QUERY(props, '$.slide_count'),
+        'source', JSON_QUERY(props, '$.source'),
+        'step', JSON_QUERY(props, '$.step'),
+        'story_count', JSON_QUERY(props, '$.story_count'),
+        'suggested_item_count', JSON_QUERY(props, '$.suggested_item_count'),
+        'tab', JSON_QUERY(props, '$.tab'),
+        'target_user_id', JSON_QUERY(props, '$.target_user_id'),
+        'template', JSON_QUERY(props, '$.template'),
+        'template_changed_flg', JSON_QUERY(props, '$.template_changed_flg'),
+        'title_length', JSON_QUERY(props, '$.title_length'),
+        'to_visibility', JSON_QUERY(props, '$.to_visibility'),
+        'total_pages', JSON_QUERY(props, '$.total_pages'),
+        'trending_count', JSON_QUERY(props, '$.trending_count'),
+        'trigger', JSON_QUERY(props, '$.trigger'),
+        'type', JSON_QUERY(props, '$.type'),
+        'unfollow_flg', JSON_QUERY(props, '$.unfollow_flg'),
+        'unlike_flg', JSON_QUERY(props, '$.unlike_flg'),
+        'unread_count', JSON_QUERY(props, '$.unread_count'),
+        'user_id', JSON_QUERY(props, '$.user_id'),
+        'username_length', JSON_QUERY(props, '$.username_length'),
+        'utm_source', JSON_QUERY(props, '$.utm_source'),
+        'value', JSON_QUERY(props, '$.value'),
+        'via', JSON_QUERY(props, '$.via'),
+        'view_id', JSON_QUERY(props, '$.view_id'),
+        'visibility', JSON_QUERY(props, '$.visibility'),
+        'was_published_flg', JSON_QUERY(props, '$.was_published_flg'),
+        'with_date_count', JSON_QUERY(props, '$.with_date_count'),
+        'with_location_count', JSON_QUERY(props, '$.with_location_count')
+      )
+    ) AS properties
+    -- allowlist:end
   FROM rewritten
 ),
 
@@ -398,7 +601,8 @@ SELECT
       JSON_SET(properties, '$.days_since_last_sign_in', TIMESTAMP_DIFF(ts, LAG(ts) OVER sign_ins, DAY))
     ELSE properties
   END AS properties,
-  -- DAU: the user, else the user last seen on this device, else the device.
+  -- DAU: the user, else the user last seen on this device (over all time, so a past day's count
+  -- can change when a device later signs in to another account), else the device.
   COALESCE(
     user_id,
     IF(anon_id IS NULL, NULL, LAST_VALUE(user_id IGNORE NULLS) OVER device),

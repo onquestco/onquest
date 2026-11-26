@@ -1,6 +1,8 @@
-// `npm run analytics`: rewrites the generated taxonomy modules from the Taxonomy sheet's CSV export.
-// taxonomy.ts (v1) is what the app sends today; taxonomyV2.ts replaces it in AN-02.
+// `npm run analytics`: rewrites the generated taxonomy modules from the Taxonomy sheet's CSV export,
+// and the paste-ready G1 BigQuery files. taxonomy.ts (v1) is what the app sends today;
+// taxonomyV2.ts replaces it in AN-02.
 import { readFileSync, writeFileSync } from 'node:fs';
+import { renderApplyG1, renderFixtureCheck } from './bigqueryG1.ts';
 import {
   commonPropertiesFromCsv,
   renderTaxonomyModule,
@@ -22,3 +24,9 @@ writeFileSync(
   renderTaxonomyV2Module(taxonomyV2FromCsv(csv('v2/events')), commonPropertiesFromCsv(csv('v2/common'))),
 );
 console.log('lib/analytics/taxonomyV2.ts updated');
+
+const bigquery = (file: string) => new URL(`../../docs/analytics/bigquery/${file}`, import.meta.url);
+const readSql = (file: string) => readFileSync(bigquery(file), 'utf8');
+writeFileSync(bigquery('g1_fixture_check.sql'), renderFixtureCheck(readSql));
+writeFileSync(bigquery('apply-g1.sql'), renderApplyG1(readSql));
+console.log('docs/analytics/bigquery/{g1_fixture_check,apply-g1}.sql updated');

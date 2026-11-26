@@ -384,7 +384,7 @@ export const EVENTS = {
       },
       "deleted_by": {
         "type": "INT64",
-        "required": false,
+        "required": true,
         "values": [
           0,
           1
@@ -857,7 +857,7 @@ export const EVENTS = {
       },
       "is_draft_flg": {
         "type": "BOOL",
-        "required": false
+        "required": true
       }
     }
   },
@@ -1001,7 +1001,7 @@ export const EVENTS = {
       },
       "with_location_count": {
         "type": "INT64",
-        "required": false,
+        "required": true,
         "min": 0,
         "max": 15
       },
@@ -1332,7 +1332,7 @@ export const EVENTS = {
       },
       "action": {
         "type": "INT64",
-        "required": false,
+        "required": true,
         "min": 0,
         "max": 11
       },
@@ -1915,7 +1915,7 @@ export const EVENTS = {
       },
       "source": {
         "type": "INT64",
-        "required": false,
+        "required": true,
         "min": 0,
         "max": 5
       },
@@ -2021,7 +2021,7 @@ export const EVENTS = {
     "properties": {
       "reason": {
         "type": "INT64",
-        "required": false,
+        "required": true,
         "values": [
           0,
           1,
@@ -2155,7 +2155,7 @@ export const EVENTS = {
 } as const satisfies Record<string, EventRule>;
 
 /** Set on every event by the senders (common.csv), never passed by callers. */
-export const COMMON_PROPERTIES = ["anon_id","app_version","browser","client_ts","country","event_id","is_bot_flg","os","platform","screen","session_id","user_id","user_info"] as const;
+export const COMMON_PROPERTIES = ["anon_id","app_version","browser","client_ts","country","env","event_id","is_bot_flg","os","platform","screen","session_id","type","user_id","user_info"] as const;
 
 export type EventName = keyof typeof EVENTS;
 type NamesOfType<Type extends EventType> = {

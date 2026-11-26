@@ -183,8 +183,13 @@ const EVENT_USERS: Record<string, EventUser> = {
   'user_id (empty when signed out)': 'optional',
   'user_id (person notified)': 'other_user',
 };
-/** A description or allowed value that says a property can be absent (spec §4.1). */
-const SAYS_OPTIONAL = /\b(null|if any|only|reserved)\b/i;
+/**
+ * Wording that says a property can be absent (spec §4.1): "null", "if any", "reserved", or a
+ * limit like "Quests tab only:" / "only when …". A bare "only" ("count only") doesn't count.
+ */
+const SAYS_OPTIONAL = /\b(null|if any|reserved)\b|\bonly\s*:|\bonly (when|for|if|on)\b/i;
+/** A code meaning such as "3 = Place (reserved)", up to the next "/" or ";". */
+const CODE_MEANING = /(^|\/)\s*\d+\s*=[^/;]*/g;
 
 /** One CSV row of an event (its first row or one of the property rows under it). */
 export type EventCsvRow = {
@@ -238,8 +243,10 @@ export function readEventRows(text: string): EventCsvRow[] {
   return result;
 }
 
+/** Only the sentence-level wording counts, not the code meanings: "0 = Feed (reserved)" is a code. */
 function isRequired(row: EventCsvRow): boolean {
-  if (SAYS_OPTIONAL.test(row.description) || SAYS_OPTIONAL.test(row.allowed)) return false;
+  const wording = row.description.replace(CODE_MEANING, ' ');
+  if (SAYS_OPTIONAL.test(wording) || SAYS_OPTIONAL.test(row.allowed)) return false;
   return !OPTIONAL_OVERRIDES[row.property] && !OPTIONAL_OVERRIDES[`${row.event}.${row.property}`];
 }
 
@@ -283,7 +290,13 @@ export function taxonomyV2FromCsv(text: string): Record<string, EventRule> {
   return events;
 }
 
-/** common.csv → the top-level common property names ($pageview and user_info.* sub-keys left out). */
+/** Common properties spec §4.2 adds that common.csv has no row for (set by the senders). */
+const SENDER_SET_COMMON = ['env', 'type'];
+
+/**
+ * common.csv → the top-level common property names ($pageview and user_info.* sub-keys left
+ * out), plus SENDER_SET_COMMON, so /ingest's allowlist (AN-03) never strips env or type.
+ */
 export function commonPropertiesFromCsv(text: string): string[] {
   const [header = [], ...rows] = parseCsv(text);
   const nameAt = header.findIndex((cell) => cell.trim() === 'properties [JSON key]');
@@ -293,6 +306,7 @@ export function commonPropertiesFromCsv(text: string): string[] {
     .filter((cells) => cells[typeAt]?.trim() !== 'event' && !cells[nameAt]?.includes('.'))
     .map((cells) => cells[nameAt]?.trim() ?? '')
     .filter(Boolean)
+    .concat(SENDER_SET_COMMON.filter((name) => !rows.some((cells) => cells[nameAt]?.trim() === name)))
     .sort();
 }
 

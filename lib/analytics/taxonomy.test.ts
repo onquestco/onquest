@@ -114,10 +114,10 @@ describe('taxonomyV2.ts', () => {
       for (const [property, propertyRule] of Object.entries(rule.properties)) {
         if (propertyRule.required) continue;
         const override = OPTIONAL_OVERRIDES[`${event}.${property}`] ?? OPTIONAL_OVERRIDES[property];
-        optional[`${event}.${property}`] = override ? override.kind : 'sheet says null / if any / only / reserved';
+        optional[`${event}.${property}`] = override ? override.kind : 'sheet wording';
       }
     }
-    const sheet = 'sheet says null / if any / only / reserved';
+    const sheet = 'sheet wording';
     expect(optional).toEqual({
       'app_opened.utm_source': 'permanent',
       'blog_editor_action.blocked_flg': 'temporary',
@@ -128,7 +128,6 @@ describe('taxonomyV2.ts', () => {
       'blog_updated.days_since_post': 'temporary',
       'blog_viewed.read_time_min': 'temporary',
       'blog_viewed.source': 'permanent',
-      'comment_deleted.deleted_by': sheet,
       'comment_posted.is_owner_flg': 'temporary',
       'comment_posted.owner_user_id': 'temporary',
       'comments_toggled.comment_count': 'temporary',
@@ -143,46 +142,56 @@ describe('taxonomyV2.ts', () => {
       'error_shown.content_id': sheet,
       'guide_viewed.source': 'permanent',
       'instagram_export.slide_count': sheet,
-      'manage_menu_open.is_draft_flg': sheet,
       'notification_click.kind': sheet,
       'photo_limit_hit.quest_id': sheet,
-      'photos_selected.with_location_count': sheet,
       'profile_tab_click.filter': sheet,
       'profile_viewed.source': 'permanent',
       'quest_create_abandoned.quest_id': sheet,
-      'quest_edit.action': sheet,
       'quest_edit.caption_was_auto_flg': sheet,
       'quest_edit.page_no': sheet,
       'quest_unavailable.quest_id': sheet,
       'quest_viewed.position': sheet,
       'quest_viewed.source': 'permanent',
       'search.chip_name': sheet,
-      'user_followed.source': sheet,
       'user_signed_in.days_since_last_sign_in': 'permanent',
       'user_signed_up.first_seen_ts': 'permanent',
       'user_signed_up.referrer_blog_id': 'permanent',
       'user_signed_up.referrer_content_type': sheet,
       'user_signed_up.referrer_owner_user_id': 'permanent',
       'user_signed_up.referrer_quest_id': 'permanent',
-      'username_rejected.reason': sheet,
       'visibility_changed.days_since_publish': 'temporary',
       'visibility_changed.from_visibility': 'permanent',
     });
   });
 
-  it('lists the common properties of common.csv', () => {
+  it('reads only sentence-level wording for optional, not code meanings', () => {
+    // "3 = Place (reserved)" and "5 = Feed (reserved)" are codes, not the property being optional.
+    expect(EVENTS.quest_edit.properties.action.required).toBe(true);
+    expect(EVENTS.user_followed.properties.source.required).toBe(true);
+    expect(EVENTS.username_rejected.properties.reason.required).toBe(true);
+    // "(count only)" and "Draft menus only offer …" don't say the property can be absent.
+    expect(EVENTS.photos_selected.properties.with_location_count.required).toBe(true);
+    expect(EVENTS.manage_menu_open.properties.is_draft_flg.required).toBe(true);
+    // "…; null when action = 0" and "Quests tab only: …; null on profile" do.
+    expect(EVENTS.notification_click.properties.kind.required).toBe(false);
+    expect(EVENTS.profile_tab_click.properties.filter.required).toBe(false);
+  });
+
+  it('lists the common properties of spec §4.2 (common.csv plus env and type)', () => {
     expect(COMMON_PROPERTIES).toEqual([
       'anon_id',
       'app_version',
       'browser',
       'client_ts',
       'country',
+      'env',
       'event_id',
       'is_bot_flg',
       'os',
       'platform',
       'screen',
       'session_id',
+      'type',
       'user_id',
       'user_info',
     ]);
