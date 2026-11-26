@@ -1,0 +1,166 @@
+Code list,Code,Meaning (real UI label),Used by,In the app today
+from_screen,0,Home,"tab_click, create_option_click, manage_menu_open, error_shown",Yes
+from_screen,1,Explore,"tab_click, create_option_click, manage_menu_open, error_shown",Yes
+from_screen,2,Quests tab,"tab_click, create_option_click, manage_menu_open, error_shown",Yes
+from_screen,3,Profile,"tab_click, create_option_click, manage_menu_open, error_shown",Yes
+from_screen,4,Quest page,"tab_click, create_option_click, manage_menu_open, error_shown",Yes
+from_screen,5,Blog page,"tab_click, create_option_click, manage_menu_open, error_shown",Yes
+from_screen,6,Settings,"tab_click, create_option_click, manage_menu_open, error_shown",Yes
+from_screen,7,Notifications,"tab_click, create_option_click, manage_menu_open, error_shown",Yes
+from_screen,8,Create flow (Pick photos to Share),"tab_click, create_option_click, manage_menu_open, error_shown",Yes
+from_screen,9,Other,"tab_click, create_option_click, manage_menu_open, error_shown",Yes
+from_screen,10,Create page (What do you want to make?) (added v2),"tab_click, create_option_click, manage_menu_open, error_shown",Yes
+from_screen,11,Blog composer (added v2),"tab_click, create_option_click, manage_menu_open, error_shown",Yes
+from_screen,12,Guide page (added v2),"tab_click, create_option_click, manage_menu_open, error_shown",Yes
+from_screen,13,Sign-in (added v2),"tab_click, create_option_click, manage_menu_open, error_shown",Yes
+from_screen,14,Welcome screens (added v2),"tab_click, create_option_click, manage_menu_open, error_shown",Yes
+from_screen,15,Privacy / Terms (added v2),"tab_click, create_option_click, manage_menu_open, error_shown",Yes
+tab,0,Home,tab_click,Yes
+tab,1,Explore,tab_click,Yes
+tab,2,Create (+),tab_click,Yes
+tab,3,Quests,tab_click,Yes
+tab,4,Profile,tab_click,Yes
+landing_page,0,Home (Nav Bar),app_opened,Yes
+landing_page,1,Quest page,app_opened,Yes
+landing_page,2,Blog page,app_opened,Yes
+landing_page,3,Profile (Nav Bar),app_opened,Yes
+landing_page,4,Explore (Nav Bar),app_opened,Yes
+landing_page,5,Quests (Nav Bar),app_opened,Yes
+landing_page,6,Create (Nav Bar),app_opened,Yes
+landing_page,7,Other (suggested),app_opened,Yes
+entry_type,0,Default,app_opened,Yes
+entry_type,1,Shared link,app_opened,Yes
+entry_type,2,Email (notification or sign-in),app_opened,Needs ?src=email
+entry_type,4,Other,app_opened,Yes
+sign_in source,0,Sign in button (top right),"sign_in_click, user_signed_up, user_signed_in",Yes
+sign_in source,1,Make your own Quest,"sign_in_click, user_signed_up, user_signed_in",Yes
+sign_in source,2,Make your own Blog ('Write your own'),"sign_in_click, user_signed_up, user_signed_in",Yes
+sign_in source,3,"Other interactions (Like, Comment, Follow, Create tab)","sign_in_click, user_signed_up, user_signed_in",Yes
+click_loc,0,Home banner 'Create a Quest',"create_quest_click, quest_draft_created, quest_creation_complete",Yes
+click_loc,1,Create (+) → 'Start a Quest',"create_quest_click, quest_draft_created, quest_creation_complete",Yes
+click_loc,2,'Make your own Quest' on someone's Quest,"create_quest_click, quest_draft_created, quest_creation_complete",Yes
+click_loc,3,'Make your own Quest' on a private / removed Quest page,"create_quest_click, quest_draft_created, quest_creation_complete",Yes
+click_loc,4,'+ Create a Quest' tile in Your Quests on Home,"create_quest_click, quest_draft_created, quest_creation_complete",Yes
+click_loc,5,'Create a Quest' card on the Quests tab,"create_quest_click, quest_draft_created, quest_creation_complete",Yes
+click_loc,6,Empty-state button (Home or Quests tab),"create_quest_click, quest_draft_created, quest_creation_complete",No (reserved)
+click_loc,7,Welcome screen 'Create your first Quest',"create_quest_click, quest_draft_created, quest_creation_complete",No (removed 11 Nov)
+click_loc,8,What's a Quest? sheet 'Create a Quest',"create_quest_click, quest_draft_created, quest_creation_complete",Yes
+click_loc,9,Blog composer → Link a Quest → 'Create a Quest',"create_quest_click, quest_draft_created, quest_creation_complete",Yes
+click_loc,10,Feed / Explore,"create_quest_click, quest_draft_created, quest_creation_complete",No (reserved)
+blog click_loc,0,Create (+) → 'Write a blog',blog_create_started,Yes
+blog click_loc,1,'Write your own' on someone's blog,blog_create_started,Yes
+blog click_loc,2,Quests tab → Blogs empty state,blog_create_started,Yes
+content_type,0,Quest,"share_click, notification_sent, manage_menu_open, content_liked, comment_*, content_deleted, visibility_changed, comments_toggled, report_click, draft_resumed",Yes
+content_type,1,Blog,"share_click, notification_sent, manage_menu_open, content_liked, comment_*, content_deleted, visibility_changed, comments_toggled, report_click, draft_resumed",Yes
+content_type,2,Profile,"share_click, notification_sent, manage_menu_open, content_liked, comment_*, content_deleted, visibility_changed, comments_toggled, report_click, draft_resumed",Yes
+content_type,3,Guide (added v2),"share_click, notification_sent, manage_menu_open, content_liked, comment_*, content_deleted, visibility_changed, comments_toggled, report_click, draft_resumed",Yes
+visibility,0,Public: 'Anyone can find it on your profile.',"quest_viewed, quest_creation_complete, quest_updated, visibility_changed, manage_menu_open, blog_published, setting_changed",Yes
+visibility,1,Unlisted: 'Only people with the link.',"quest_viewed, quest_creation_complete, quest_updated, visibility_changed, manage_menu_open, blog_published, setting_changed",Yes
+visibility,2,Private: 'Only you.',"quest_viewed, quest_creation_complete, quest_updated, visibility_changed, manage_menu_open, blog_published, setting_changed",Yes
+template,0,"Coastal (id coastal, default)","template_select, quest_preview, quest_creation_complete, quest_viewed",Yes
+template,1,Mountain (id alpine),"template_select, quest_preview, quest_creation_complete, quest_viewed",Yes
+template,2,Roadtrip,"template_select, quest_preview, quest_creation_complete, quest_viewed",Yes
+template,3,Winter,"template_select, quest_preview, quest_creation_complete, quest_viewed",Yes
+template,4,Monsoon,"template_select, quest_preview, quest_creation_complete, quest_viewed",Yes
+template,5,Desert,"template_select, quest_preview, quest_creation_complete, quest_viewed",Yes
+template,6,"Beach (id beach, retired)","template_select, quest_preview, quest_creation_complete, quest_viewed",Old drafts only
+template,7,"Old Mountain (id mountain, retired)","template_select, quest_preview, quest_creation_complete, quest_viewed",Old drafts only
+quest_viewed source,0,Shared link,quest_viewed,Yes
+quest_viewed source,1,Home feed,quest_viewed,Yes
+quest_viewed source,2,Suggested for you / Popular on OnQuest,quest_viewed,Yes
+quest_viewed source,3,Explore Trending Quests,quest_viewed,Yes
+quest_viewed source,4,Search,quest_viewed,Yes
+quest_viewed source,5,Profile,quest_viewed,Yes
+quest_viewed source,6,Blog 'View Quest' or guide,quest_viewed,Yes
+quest_viewed source,7,Notification,quest_viewed,Yes
+quest_viewed source,8,Quests tab,quest_viewed,Yes
+quest_viewed source,9,'See an example',quest_viewed,Yes
+quest_viewed source,10,Your Quests on Home,quest_viewed,Yes
+referrer,0,None,"quest_viewed, blog_viewed",Yes
+referrer,1,WhatsApp,"quest_viewed, blog_viewed",Yes
+referrer,2,Instagram,"quest_viewed, blog_viewed",Yes
+referrer,3,Other site,"quest_viewed, blog_viewed",Yes
+like source,0,Quest or blog page,content_liked,Yes
+like source,1,Full screen,content_liked,Yes
+like source,2,Feed card,content_liked,Yes
+like source,3,Right after sign-in,content_liked,Yes
+follow source,0,Profile,user_followed,Yes
+follow source,1,Quest or blog page,user_followed,Yes
+follow source,2,Explore 'Travellers to follow',user_followed,Yes
+follow source,3,Search,user_followed,Yes
+follow source,4,Followers or Following list,user_followed,Yes
+follow source,5,Feed,user_followed,No (reserved)
+share channel,0,Copy link,share_click,Yes
+share channel,1,WhatsApp,share_click,Yes
+share channel,2,Native share sheet,share_click,Yes
+share source,0,Publish success screen,share_click,Yes
+share source,1,Feed card,share_click,Yes
+share source,2,⋯ menu,share_click,Yes
+share source,3,Blog or guide page top bar,share_click,Yes
+share source,4,Profile,share_click,Yes
+notification kind,0,Like,"notification_sent, notification_click",Yes
+notification kind,1,Comment,"notification_sent, notification_click",Yes
+notification kind,2,Follow,"notification_sent, notification_click",Yes
+channel (notification),0,Bell,"notification_sent, notification_click",Yes
+channel (notification),1,Email,"notification_sent, notification_click",Yes
+quest_edit action,0,Title,quest_edit,Yes
+quest_edit action,1,Caption,quest_edit,Yes
+quest_edit action,2,Date,quest_edit,Yes
+quest_edit action,3,Place,quest_edit,No (reserved)
+quest_edit action,4,Move photo,quest_edit,Yes
+quest_edit action,5,Swap photos,quest_edit,Yes
+quest_edit action,6,New page,quest_edit,Yes
+quest_edit action,7,Remove photo,quest_edit,Yes
+quest_edit action,8,Replace photo,quest_edit,Yes
+quest_edit action,9,Add photos,quest_edit,Yes
+quest_edit action,10,Rename page,quest_edit,Yes
+quest_edit action,11,Undo,quest_edit,Yes
+create step,0,Pick photos,quest_create_abandoned,Yes
+create step,1,Arranging,quest_create_abandoned,Yes
+create step,2,Review,quest_create_abandoned,Yes
+create step,3,Template,quest_create_abandoned,Yes
+create step,4,Preview,quest_create_abandoned,Yes
+create step,5,Who can see it sheet,quest_create_abandoned,Yes
+blog_editor_action,0,Add photos,blog_editor_action,Yes
+blog_editor_action,1,Remove photo,blog_editor_action,Yes
+blog_editor_action,2,Add a place,blog_editor_action,Yes
+blog_editor_action,3,Link a Quest,blog_editor_action,Yes
+blog_editor_action,4,'Create a Quest' from Link a Quest,blog_editor_action,Yes
+blog_editor_action,5,Preview,blog_editor_action,Yes
+blog_editor_action,6,Close (X),blog_editor_action,Yes
+blog_editor_action,7,Remove linked Quest,blog_editor_action,Yes
+blog_editor_action,8,Reorder photos (drag),blog_editor_action,Yes
+blog_editor_action,9,Remove place,blog_editor_action,Yes
+blog format,0,Bold,blog_format_click,Yes
+blog format,1,Italic,blog_format_click,Yes
+blog format,2,Strikethrough,blog_format_click,Yes
+blog format,3,Code,blog_format_click,Yes
+blog format,4,Heading 1,blog_format_click,Yes
+blog format,5,Heading 2,blog_format_click,Yes
+blog format,6,Heading 3,blog_format_click,Yes
+blog format,7,Bulleted list,blog_format_click,Yes
+blog format,8,Numbered list,blog_format_click,Yes
+blog format,9,Quote,blog_format_click,Yes
+blog format,10,Link,blog_format_click,Yes
+blog format,11,Spoiler,blog_format_click,Yes
+blog format,12,Undo,blog_format_click,Yes
+blog format,13,Redo,blog_format_click,Yes
+setting,0,Someone likes my Quest (email),setting_changed,Yes
+setting,1,Someone comments (email),setting_changed,Yes
+setting,2,Someone follows me (email),setting_changed,Yes
+setting,3,New Quests start as,setting_changed,Yes
+setting,4,Show places on my profile,setting_changed,Yes
+error_type,0,Sign-in failed,error_shown,Yes
+error_type,1,Photo upload failed,error_shown,Yes
+error_type,2,Arranging failed,error_shown,Yes
+error_type,3,Publish or save failed,error_shown,Yes
+error_type,4,Offline ('Waiting for a connection. Your photos are safe.'),error_shown,Yes
+error_type,5,'This Quest changed on another device.',error_shown,Yes
+error_type,6,Page failed to load,error_shown,Yes
+unavailable reason,0,Private,"quest_unavailable, blog_unavailable",Yes
+unavailable reason,1,Removed,"quest_unavailable, blog_unavailable",Yes
+unavailable reason,2,Not found,"quest_unavailable, blog_unavailable",Yes
+legal page / source,0,page: Privacy policy · source: Sign-in screen,legal_page_viewed,Yes
+legal page / source,1,page: Terms of use · source: Settings,legal_page_viewed,Yes
+legal page / source,2,source: Page footer,legal_page_viewed,Yes
+legal page / source,3,source: Direct,legal_page_viewed,Yes

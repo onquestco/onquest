@@ -92,7 +92,7 @@ One codebase, two kinds of pages:
 |---|---|---|
 | MapTiler + MapLibre GL | Trip + profile map | Page shows the place list instead |
 | OpenStreetMap Nominatim (free; Geoapify as fallback) | Place search + reverse geocode (behind `lib/geo.ts`, 1 request/s, cached) | User types place name, drops pin |
-| PostHog | Analytics + feedback | No-op |
+| PostHog (→ hourly batch export to BigQuery `onquest_analytics.events`, read through the `events_clean` view) | Analytics + feedback. Taxonomy v2 (`docs/analytics/v2`, spec `docs/specs/analytics-v2.md`): browser events through `/ingest`, which adds the verified user and `user_info` (decision 0004); server events for every count. Account deletion erases the person in PostHog and BigQuery | No-op |
 | Sentry | Errors | Vercel logs |
 | Resend | Magic-link email (as Supabase SMTP) and notification emails | Google login still works; bell still shows notifications |
 | Anthropic (Claude Haiku 5.5) | Short captions from date + town name while arranging | Quest is arranged without captions |

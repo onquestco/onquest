@@ -620,6 +620,8 @@ Frames use pixel sizes, not container units. No watermark for now (deferred). **
 
 ## 9. Analytics (`lib/analytics.ts`)
 
+> **Superseded** by spec A §3.9 and then `docs/specs/analytics-v2.md` (taxonomy v2 from `docs/analytics/v2/*.csv`, generated into `lib/analytics/taxonomy.ts`; common properties, `user_info` and erasure per decision 0004). The table below is the original week-1 sketch, kept for history.
+
 ```ts
 type Events = {
   signup: {}; handle_set: {};

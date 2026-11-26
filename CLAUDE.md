@@ -82,7 +82,7 @@ Imports flow one way: `app → features → templates → lib`. Templates never 
 - Never store photo GPS. Images are re-encoded in `features/editor/image.worker.ts` (removes EXIF).
 - The secret key is only used in `lib/supabase/admin.ts` (`import 'server-only'`).
 - Use `supabase.auth.getUser()` on the server to identify the user.
-- Don't log user text, emails or photo URLs.
+- Don't log user text, emails or photo URLs. One exception: analytics `user_info` (username, email, city), attached on the server only and erased on account deletion (`docs/decisions/0004-user-info-and-email-in-analytics.md`).
 
 ## Backward compatibility (do not break)
 
@@ -133,7 +133,7 @@ Rules:
 2. Add the route in `app/` that calls the loader and renders the view (nothing else).
 3. Public page? Add `generateMetadata`, decide index/noindex, add it to `sitemap.ts` if indexable.
 4. New table? Migration + RLS + database test + regenerate types.
-5. Track key actions with `track()` from `lib/analytics.ts`.
+5. Track key actions with `track()` from `lib/analytics/client.ts` (`trackServer()` in `server.ts` for counts).
 
 ## Testing
 

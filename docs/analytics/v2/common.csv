@@ -1,0 +1,20 @@
+properties [JSON key],Data type,Allowed values,Property description,Sent on,Exists today?,Where / how
+event_id,STRING,UUID,Unique per event; drop duplicates on it,every event,Yes,"lib/analytics/client.ts, server.ts"
+session_id,STRING,,Same on every event of one visit; new after 30 min idle. Its own column,every event,Client only,lib/analytics/ids.ts. Server events have none: pass it from the browser with each action
+anon_id,STRING,anon_<uuid>,"Random device id in localStorage, kept after sign-in. Unique viewers = distinct anon_id. Its own column",every event,Client only,lib/analytics/ids.ts. Server events have none: pass it from the browser
+user_id,STRING,,User key. Its own column; empty when signed out,every event,Server only,"client.ts identify() exists but nothing calls it, so client events carry only anon_id"
+client_ts,TIMESTAMP,,When it happened on the device (ts = server time),click / view / client,Yes,client.ts sends timestamp
+platform,INT64,0 / 1,0 = Mobile web / 1 = Desktop web,every event,Rename,Sent as STRING web_mobile / web_desktop (pointer: coarse)
+os,STRING,android / ios / windows / mac / other,From the user agent at ingest,every event,Cheap,PostHog parses the user agent; map in BigQuery
+browser,STRING,chrome / safari / instagram_in_app / whatsapp_in_app / other,In-app browsers matter: most shared links open inside WhatsApp or Instagram,every event,Cheap,From the user agent; add to the events_clean view
+app_version,STRING,,Short commit SHA,every event,Yes,"client.ts, server.ts"
+screen,STRING,home / explore / quests / profile / quest_page / blog_page / create_pick / create_review / create_template / create_preview / publish / settings / notifications / blog_editor / other,Screen the event happened on,every event,Broken,"setScreen() exists but is never called: every client event says unknown, server events say server"
+country,STRING,ISO 3166-1 alpha-2,From the request at ingest; IP never stored,every event,Partly,server.ts takes x-vercel-ip-country (no caller passes it yet); client events get PostHog GeoIP through /ingest. Moves into user_info.geoip
+is_bot_flg,BOOL,true / false,Link-preview bots and headless browsers,every event,Yes (by omission),"lib/analytics/bots.ts drops bot events before sending, so the stored value is always false"
+$pageview,event,$pathname = route pattern,"PostHog page view with the route pattern only (/@[handle]/[slug]), never the real path",each route change,Yes,lib/analytics/Pageviews.tsx + routeTemplate.ts. /@handle/blog/slug maps to /@[handle]/[slug] and /blogs/... to /[other]: add both patterns
+user_info,JSON,"object, null when signed out","Who and where, on signed-in events only",every signed-in event,To build,Add in client.ts common() and server.ts; geoip filled at ingest
+user_info.geoip.country,STRING,ISO 3166-1 alpha-2,Derived at ingest; never store the raw IP,inside user_info,To build,Vercel x-vercel-ip-country / PostHog GeoIP
+user_info.geoip.region,STRING,,"Region / state, derived at ingest",inside user_info,To build,x-vercel-ip-country-region
+user_info.geoip.city,STRING,,"City, derived at ingest; never finer",inside user_info,To build,x-vercel-ip-city
+user_info.username,STRING,,Public handle. Note: identify() in client.ts says never a handle; update that comment when building,inside user_info,To build,From the profile on the server
+user_info.email_id,STRING,,"Sign-in email, plain text. Plain email approved by CTO 26 Nov 2026. When building, update CLAUDE.md's logging rule and the privacy policy, and include analytics data in account deletion.",inside user_info,To build,Server events only (auth user); never send it from the browser
