@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | PRD | `docs/prds/2026-11-analytics-v2.md` (CTO brief, 26 Nov 2026) + `docs/analytics/v2/{events,common,codes,metrics}.csv` (export of the Google Sheet "OnQuest Taxonomy v2 (from code)", approved by the CTO) |
-| Status | Draft, revision 4 (plan review round 2 passed; CTO decision 26 Nov: one PostHog project and one dataset for Preview and Production) |
+| Status | **Approved (26 Nov 2026, CTO).** Revision 5: one PostHog project and dataset for Preview and Production; no internal-account marking (CTO, 26 Nov) |
 | Build mode | Backend + Frontend split, 14 tasks (AN-01 … AN-14), merged strictly in number order (§12.1) |
 | Tracker IDs | OQ-12, OQ-22 · AN-01 #50, AN-02 #51, AN-03 #52, AN-04 #53, AN-05 #54, AN-06 #55, AN-07 #56, AN-08 #57, AN-09 #58, AN-10 #59, AN-11 #60, AN-12 #61, AN-13 #62, AN-14 #64 (label `spec:analytics-v2`) |
 
@@ -30,7 +30,7 @@ Nothing changes for users except one privacy-policy update.
 | AC1 `identify()` everywhere: every signed-in event is on the person | `/ingest` sets `distinct_id` and `user_id` from the verified session and sends the `$identify` merge itself (§3.2). `trackServer` uses the session user. Browser `$identify`/alias events are dropped | `ingestEnrich.test.ts` (spoofed distinct id, browser `$identify`, alias and merge all rejected); preview check E1 |
 | AC2 `setScreen()` everywhere: no `unknown` / `server` screen | `screenFor(routeTemplate)` in `Pageviews.tsx` on every route change. `PublishSheet` sets `publish`. Server events read the screen from `oq_actx` once the cookie is on, else `null` | `screens.test.ts` (route groups and rewrites resolved, §6.1); E2 |
 | AC3 common properties per `common.csv` on every event | `lib/analytics/common.ts`, one shape for browser and server events | `common.test.ts`, `server.test.ts` |
-| AC4 `is_internal_flg` for @swativb, @alok18, @quest | `lib/analytics/internal.ts`: the verified **user key** is in `ANALYTICS_INTERNAL_USER_KEYS`, whatever the `user_info` flag says. BigQuery `internal_users` table holds the same keys | `internal.test.ts` (flag set with `ANALYTICS_USER_INFO` unset; a renamed handle stays flagged); Metrics query 1 dry-run |
+| AC4 ~~`is_internal_flg`~~ | **Dropped by the CTO (26 Nov 2026): no internal-account marking.** No property, env var, BigQuery table or Metrics filter for team accounts | `taxonomyRules.test.ts` (no `is_internal_flg` in the generated common properties) |
 | AC5 `is_bot_flg` | The browser drops bots, as today. `/ingest` and `trackServer` set the flag from the user agent. `events_clean` leaves out `true` | `privacy.test.ts`, `ingestEnrich.test.ts` |
 | AC6 `user_info` {geoip country/region/city, username, email_id}, null when signed out, never the raw IP | `lib/analytics/userInfo.ts` (`server-only`), attached only by `/ingest` and `trackServer` for the session's own user, behind `ANALYTICS_USER_INFO`. Bodies that can't be parsed are dropped | `userInfo.test.ts`, `ingestEnrich.test.ts` (browser `user_info` overwritten; gzip, oversized and junk bodies dropped; no `x-forwarded-for` upstream) |
 | AC7 generated `taxonomy.ts` from the v2 CSVs replaces the old one; script kept | `taxonomyFromCsv.ts` v2 reader and `generate.ts` (`npm run analytics`) | `taxonomy.test.ts`; the **taxonomy check test** `taxonomyRules.test.ts` (§11) |
@@ -62,7 +62,7 @@ AN-01 adds the v2 generator and writes `taxonomy.ts` as **`taxonomyV2.ts`**, nex
 browser track() ──► /ingest (our route handler) ──► PostHog ──hourly──► BigQuery events
   common props       distinct_id + user_id   ← verified session, else the body's anon_id
   no identity        $identify               ← sent by /ingest itself; browser ones dropped
-  no user_info       user_info (gate), is_internal_flg (user key), is_bot_flg, os/browser,
+  no user_info       user_info (gate), is_bot_flg, env, os/browser,
                      country; drops IP; $geoip_disable; v2 or v1 allowlist
 server action / auth route ──► trackServer() ── same rules from the request ──► PostHog
 ```
@@ -75,7 +75,7 @@ server action / auth route ──► trackServer() ── same rules from the re
    - **`distinct_id`.** The verified user key. If there is no session, the body's `properties.anon_id` when it matches `^anon_[0-9a-f-]{36}$`. Otherwise the event is dropped.
    - **`user_id`.** The verified key, or null.
    - **Merge events.** `$identify`, `$create_alias` and `$merge_dangerously` from the browser are dropped. When a verified key arrives with an `anon_id` that this server instance hasn't merged in the last 24 hours (LRU, 10,000 pairs), `/ingest` adds one `$identify` (`distinct_id = key`, `$anon_distinct_id = anon_id`). Repeats are no-ops in PostHog. This is the only `identify()` in the system (D2).
-   - **Server-set properties.** `user_info`, `is_internal_flg`, `is_bot_flg`, `os`, `browser`, `country` and `$geoip_disable: true` are set here, overwriting anything the browser sent.
+   - **Server-set properties.** `user_info`, `is_bot_flg`, `env`, `os`, `browser`, `country` and `$geoip_disable: true` are set here, overwriting anything the browser sent.
    - **Allowlist.** Properties are filtered to the event's allowlist (§3.5) plus the common properties.
 4. **Forwarding.** The request is forwarded to PostHog **without** `x-forwarded-for`.
 
@@ -246,7 +246,6 @@ Common properties on every event (`common.ts`, from `common.csv`):
 | `env` | `production` / `preview`, from `NEXT_PUBLIC_VERCEL_ENV` (anything else, e.g. local dev, sends `preview`) | `production` / `preview`, from `VERCEL_ENV` (same rule); `/ingest` overwrites the browser's value with its own |
 | `screen` | current screen (§6.1) | `oq_actx`, else null |
 | `country` | `x-vercel-ip-country` at `/ingest` | request header |
-| `is_internal_flg` | `/ingest`: verified key ∈ `ANALYTICS_INTERNAL_USER_KEYS` | same |
 | `is_bot_flg` | `/ingest`: `isBot(user-agent)` | same |
 | `user_info` | `/ingest` when the gate allows (below), else null | same; null for `notification_sent`, `account_deleted` |
 
@@ -276,14 +275,14 @@ export async function userInfoForSession(expectedUserKey: string): Promise<UserI
 
 - **Gate.** `ANALYTICS_USER_INFO` has three values:
   - unset or `off`: always null;
-  - `team`: only when the user key is in `ANALYTICS_INTERNAL_USER_KEYS`;
+  - `team`: only when the user key is in `ANALYTICS_USER_INFO_TEAM_KEYS`, a comma list of the team's test-account keys used **only** for this gate (nothing is marked or stored with it);
   - `on`: every signed-in person.
 
   Preview uses `team` and stays there (review #12, CTO 26 Nov). Production uses `off` until gates G3–G6, then `on`.
 - **Cache.** One LRU, max 1,000 entries, 60 s TTL, keyed by SHA-256 of the access token. It holds `{ userKey, email, handle }`.
 - **Lookups.** `getUser()` gives the key and email. The handle comes from the request's own RLS client: `profiles.select('handle').eq('key', user.id).maybeSingle()`. `/ingest` and `trackServer` share this module.
 
-**Internal flag** (`lib/analytics/internal.ts`): `ANALYTICS_INTERNAL_USER_KEYS` is a comma list of UUIDs. It is not secret: keys aren't personal data. The CTO fills it from `select key from profiles where handle in ('swativb','alok18','quest')` (gate G2). It doesn't depend on `user_info` or handles, so a renamed handle can't flag someone else (review #3).
+**No internal-account marking** (CTO, 26 Nov 2026). There is no `is_internal_flg` property, no internal-keys list and no `internal_users` table; team traffic is counted like anyone's. The `is_internal_flg` row in `common.csv` and the `internal_users` filter in Metrics query 1 are removed from the committed CSVs; the CTO makes the same change in the sheet so the next export matches.
 
 ### 4.3 Server actions
 
@@ -374,7 +373,6 @@ Files in `docs/analytics/bigquery/`:
 |---|---|
 | `deleted_users.sql` | Key-only table `(user_id STRING, deleted_at TIMESTAMP)` |
 | `deleted_devices.sql` | Table `(anon_id STRING, user_id STRING, deleted_at TIMESTAMP)`: device ids of deleted people (random ids and keys, nothing personal) |
-| `internal_users.sql` | Table `(user_id STRING)` seeded with the `ANALYTICS_INTERNAL_USER_KEYS` values |
 | `events_clean.sql` | View, no `email_id` |
 | `events_people.sql` | Founders-only view: `events_clean` + `user_info` (review #10d) |
 | `events_clean_all.sql`, `events_people_all.sql` | The same two views without the `env = 'production'` filter, for Preview checks |
@@ -383,7 +381,7 @@ Notes for the SQL:
 
 - **Properties type.** It assumes the export's `properties` column is **STRING** (PostHog's default) and reads it with `SAFE.PARSE_JSON`. If the export uses the JSON type, the CTO says so at G1 and the builder drops the parse. Rewritten properties use `JSON_SET` / `JSON_REMOVE`. The view's `properties` output is **JSON**, which the Metrics `JSON_VALUE` calls accept.
 - **One project, one dataset (CTO, 26 Nov 2026).** Preview and Production send to the same PostHog project and the same dataset `onquest_analytics`; every event carries `env`. v1 rows have no `env` and count as `production` (Preview had no PostHog key before v2).
-- **Columns.** `event_id, name, type, env, ts, client_ts, user_id, anon_id, session_id, platform, os, browser, screen, country, app_version, is_internal_flg, properties`.
+- **Columns.** `event_id, name, type, env, ts, client_ts, user_id, anon_id, session_id, platform, os, browser, screen, country, app_version, properties`.
 - **Environment filter.** `events_clean` and `events_people` return `env = 'production'` only, so the Metrics queries need no change. For Preview, query the all-environment views `events_clean_all` / `events_people_all` (same columns, no `env` filter; same access rules) and add `WHERE env = 'preview'`. In PostHog, filter insights on `env = production` (G4 adds it to every repointed insight).
   - `user_id`, `anon_id`, `session_id`, `platform` and `screen` come out of `properties`.
   - For v1 rows, `user_id` is `distinct_id` when it doesn't start with `anon_`, and `anon_id` is `properties.anon_id` or that `distinct_id` (review #10b).
@@ -394,7 +392,6 @@ Notes for the SQL:
 - **Renames.** v1 rows are renamed and rewritten with the table below.
 - **Common values.** `platform` `web_mobile`/`web_desktop` → 0/1. A missing `type` gets the event's v2 type.
 - **Time.** For v1 browser rows, `client_ts = timestamp`. `ts` before the cut-over (AN-02's deploy time, a constant in the SQL) is **device time**, and that is documented in the view (review #9c).
-- **Internal flag.** `is_internal_flg` is true when `user_id ∈ internal_users`, or when the row's `anon_id` was ever seen with such a `user_id`. That covers v1 history, which has no flag.
 - **`anon_id` on server events.** While `oq_actx` is off (until G3), server events have a null `anon_id`. `events_clean` fills it from the same `user_id`'s browser rows: the latest browser `anon_id` at or before the event's `ts`, else the earliest one after it (a sign-up's first browser event can arrive a moment later). The `person_id` logic uses the same mapping. This keeps "Viewer → creator" (joins `quest_viewed` to `quest_creation_complete` by `anon_id`) and `first_seen_ts` working without changing those queries.
 - **Derived properties.** `first_seen_ts` is MIN(ts) per (filled) anon_id, written into `user_signed_up`. `days_since_last_sign_in` is LAG over the user's sign-in events.
 
@@ -528,13 +525,12 @@ Under "Add a new page or feature" step 5, change `lib/analytics.ts` to `lib/anal
 | Gate | Before | Who | What |
 |---|---|---|---|
 | G1 | AN-01 merges | CTO | Apply `docs/analytics/bigquery/*.sql`. `bq query --dry_run` each file and each Metrics query. Report the `properties` type. Confirm `ip` is empty in history, and null it once if not. Once Preview has data with the cookie off (after AN-07 on Preview), run "Viewer → creator" and the `first_seen_ts` derivation on `events_clean_all` with `env = 'preview'` and confirm both are non-zero |
-| G2 | AN-03 merges | CTO | Set `ANALYTICS_INTERNAL_USER_KEYS` (Production and Preview) and seed `internal_users` |
 | G3 | `NEXT_PUBLIC_ANALYTICS_CONTEXT_COOKIE=on` or `ANALYTICS_USER_INFO=on` in Production | Founder | Privacy policy update and in-app notice live (§14). `NEXT_PUBLIC_*` flags are inlined at build time: switching `NEXT_PUBLIC_ANALYTICS_CONTEXT_COOKIE` needs a redeploy (`ANALYTICS_USER_INFO` is read at runtime) |
 | G4 | AN-02 deploys | CTO | Export the list of PostHog insights and dashboards that use v1 names, paste it on AN-02's issue, and repoint them on deploy day. Reset the changed property types (§8 table) |
 | G5 | AN-04 merges | CTO + builder | Preview proof against the **shared** PostHog project and `onquest_analytics` dataset (CTO, 26 Nov), with team test accounts. It relies on the DELETE being scoped to the deleted `user_id` and its devices (§5.2): Preview accounts live in Preview's Supabase project, so their keys never match a Production person, and device ids are per origin. Steps: sign in two team test accounts, A then B, in one browser. Delete A on Preview, then check (1) the PostHog person is gone via the API, (2) `SELECT COUNT(*) … WHERE user_id = @keyA OR distinct_id = @keyA` is 0 after the next cron run, (3) `deleted_users` has A's key and `deleted_devices` the shared `anon_id`, (4) B's signed-in rows on that `anon_id` are all still there, (5) `account_deleted` for A is still in `events_clean_all` (`env = 'preview'`), (6) the Production row count outside A's key and devices is unchanged. Record the result in the runbook |
 | G6 | `ANALYTICS_USER_INFO=on` in Production | CTO | Same check in Production with a team test account. Record it in the runbook |
 
-**Order:** G1 → AN-01 → AN-02 (with G4) → G2 → AN-03 (cookie off, `user_info` `off` in Production and `team` on Preview) → AN-04 (G5) → AN-05 … AN-13 in number order → AN-14 → G3 → cookie on → G6 → `ANALYTICS_USER_INFO=on`.
+**Order:** G1 → AN-01 → AN-02 (with G4) → AN-03 (cookie off, `user_info` `off` in Production and `team` on Preview) → AN-04 (G5) → AN-05 … AN-13 in number order → AN-14 → G3 → cookie on → G6 → `ANALYTICS_USER_INFO=on`.
 
 ## 9. Performance and cost
 
@@ -597,11 +593,9 @@ AN-02 adds this row to `docs/analytics/change-log.csv`. "Tested" is filled in wh
   - gzip header, `compression` param, oversized and non-JSON bodies → 204, nothing forwarded;
   - no `x-forwarded-for` upstream;
   - v1 body keeps its v1 properties;
-  - `is_internal_flg` set from the key with `ANALYTICS_USER_INFO` unset.
   - `env` set from the server's `VERCEL_ENV`, overwriting the browser's value.
 - **Smaller modules**:
   - `userInfo.test.ts`: null when the session user ≠ the expected key; `off`/`team`/`on`; cache bound and expiry;
-  - `internal.test.ts`;
   - `common.test.ts`;
   - `screens.test.ts` (§6.1);
   - `userAgent.test.ts`;
@@ -624,7 +618,7 @@ AN-02 adds this row to `docs/analytics/change-log.csv`. "Tested" is filled in wh
   - `tests/e2e/analytics.spec.ts` runs the flow sign in → create → publish → open the Quest signed out → turn pages → leave, with `/ingest` requests captured.
   - It asserts that every captured browser payload is a known v2 event with valid properties, and that `quest_viewed`, `quest_page_turn` and `quest_view_ended` fire in order.
   - It asserts that **no browser payload contains the test account's email or handle**. The `@` check is dropped, because route templates contain `@`.
-  - It checks the shared PostHog project through its API for the same run, filtered on `env = preview`: `user_id` and `user_info` present on signed-in events (Preview is `team`, the test account is internal), null when signed out.
+  - It checks the shared PostHog project through its API for the same run, filtered on `env = preview`: `user_id` and `user_info` present on signed-in events (Preview is `team`, the test account's key is in `ANALYTICS_USER_INFO_TEAM_KEYS`), null when signed out.
   - The bot guard lets headless browsers through only when `NEXT_PUBLIC_ANALYTICS_E2E=1`. That is set on **Preview only** and inert when `NEXT_PUBLIC_VERCEL_ENV=production`; a unit test asserts this. It is inlined at build time, so set it and **redeploy the preview** before the run.
   - The run and its result are recorded on the AN-14 issue, the same way as `blogs.spec.ts`.
 - **BigQuery:** gate G1.
@@ -662,9 +656,9 @@ AN-02 adds this row to `docs/analytics/change-log.csv`. "Tested" is filled in wh
 
 | ID | Owner | Task | Touches | Covers | Depends on | Done when |
 |---|---|---|---|---|---|---|
-| AN-01 | backend | v2 generator, validation, rules and BigQuery SQL (no call-site change) | `lib/analytics/{taxonomyFromCsv,generate,validate,renameMap}.ts`, generated `taxonomyV2.ts`; tests `taxonomy`, `taxonomyRules` (v2 part), `metricsSql`, `renameMap`, `validate`; `docs/analytics/bigquery/{events_clean,events_people,events_clean_all,events_people_all,internal_users,deleted_users,deleted_devices}.sql`; `docs/analytics/README.md` | AC7, AC10, AC14 | G1 (before merge) | `npm run analytics` writes `taxonomyV2.ts` from v2. Validation removes bad properties but never drops an event. The SQL is committed and G1 has passed (CTO comment on the PR) |
+| AN-01 | backend | v2 generator, validation, rules and BigQuery SQL (no call-site change) | `lib/analytics/{taxonomyFromCsv,generate,validate,renameMap}.ts`, generated `taxonomyV2.ts`; tests `taxonomy`, `taxonomyRules` (v2 part), `metricsSql`, `renameMap`, `validate`; `docs/analytics/bigquery/{events_clean,events_people,events_clean_all,events_people_all,deleted_users,deleted_devices}.sql`; `docs/analytics/README.md` | AC7, AC10, AC14 | G1 (before merge) | `npm run analytics` writes `taxonomyV2.ts` from v2. Validation removes bad properties but never drops an event. The SQL is committed and G1 has passed (CTO comment on the PR) |
 | AN-02 | backend | Rename the 14 live events | `taxonomyV2.ts` → `taxonomy.ts`; old file frozen as `taxonomyV1.ts`; v1 CSVs → `docs/analytics/v1/`; `lib/analytics/codes.ts` (AN-02 section); `features/shell/{CreateChooser.tsx,CreateChooser.test.ts}`; `features/blog-editor/{NewBlogView,LinkQuestRow,BlogComposer,actions,shouldTrackDraftSave}.ts(x)`, `deleteBlogDraft.test.ts`; `features/blogs/{actions,socialActions,blogEvents,blogEvents.test,readerEvents,blogReferrer,LiveBlogSocialProvider,LinkedQuestCard,BlogPageArticle,ManageBlogSheet}.ts(x)`; `features/legal/LegalViewed.tsx`; `tests/e2e/blogs.spec.ts`; `docs/analytics/change-log.csv` | AC8 | AN-01, G4 | All 14 send v2 names. Each required property is filled from the §4.1 "AN-02 fills these itself" table, or is a temporary override. The old-draft test passes. No v1 name is left in code. Change-log row added. G4 list is on the issue |
-| AN-03 | backend | Identity, common properties, screens, `user_info`, `app_opened` | `lib/analytics/{client,server,common,ids,screens,userAgent,internal,userInfo,src,routeTemplate,ingestProxy,ingestEnrich,codes}.ts`, `Pageviews.tsx` and tests; `app/ingest/[...path]/route.ts`; `features/editor/PublishSheet.tsx` (setScreen only); `.env.example`; removes the `from_screen` override | AC1–AC6, `app_opened` | AN-02, G2 | All §11 `ingestEnrich`, `userInfo`, `internal`, `screens` and `server` tests pass. The cookie is behind its flag. `user_info` is behind `off`/`team`/`on`. `app_opened` fires once per new session. E1 and E2 pass on Preview |
+| AN-03 | backend | Identity, common properties, screens, `user_info`, `app_opened` | `lib/analytics/{client,server,common,ids,screens,userAgent,userInfo,src,routeTemplate,ingestProxy,ingestEnrich,codes}.ts`, `Pageviews.tsx` and tests; `app/ingest/[...path]/route.ts`; `features/editor/PublishSheet.tsx` (setScreen only); `.env.example`; removes the `from_screen` override | AC1–AC3, AC5, AC6, `app_opened` | AN-02 | All §11 `ingestEnrich`, `userInfo`, `screens` and `server` tests pass. The cookie is behind its flag. `user_info` is behind `off`/`team`/`on`. `app_opened` fires once per new session. E1 and E2 pass on Preview |
 | AN-04 | backend | Analytics erasure and `account_deleted` | `lib/analytics/erasure.ts` and test; `features/account/{accountDeletion,actions}.ts` (`account_deleted` + erasure); `app/api/cron/finish-deletions/route.ts`; `docs/runbooks/analytics-erasure.md`; `.env.example` | AC12, `account_deleted` | AN-03, G5 (before merge) | `account_deleted` is sent with a `deleted_` distinct id and null anon/session/`user_info`. Erasure runs from deletion and from the cron for 30 days. G5 proof recorded in the runbook |
 | AN-05 | frontend | Quest page events | `features/trip-page/{LiveSocialProvider,TripView,QuestFullscreen,QuestUnavailable,UnavailableActions}.tsx` and builders; `templates/shared/{QuestPlayer,MemorySheet}.tsx` (optional callbacks); `features/shell/SiteFooter.tsx`; `?src=` on Quest links in `features/{home,explore,profile,quests,notifications,blogs,guides}/` cards; `codes.ts` (AN-05) | `quest_viewed`, `quest_unavailable`, `quest_page_turn`, `quest_fullscreen`, `quest_photo_click`, `quest_view_ended`, `report_click` | AN-04 | 7 events pass E3. Templates import no analytics |
 | AN-06 | backend | Create flow server events | `features/editor/{actions,arrangeActions,publishActions}.ts` (+ `publishQuest.analytics`), builders and tests; `codes.ts` (AN-06) | `quest_draft_created`, `quest_arranged`, `quest_creation_complete`, `quest_updated` | AN-05 | Sent after successful writes. Old publish input still valid |
@@ -685,7 +679,7 @@ AN-02 adds this row to `docs/analytics/change-log.csv`. "Tested" is filled in wh
 | D2 | Who decides identity and merges anon → user | `oq_uid` cookie + browser `identify()`; `/ingest` sets `distinct_id` and emits `$identify` | `/ingest` (revised) | A browser-set id can file events under someone else (review #1) | **Yes** (changes the brief's "call identify()" into one server-side identify) |
 | D3 | anon/session/screen on server events | cookie `oq_actx`; field on every action | Cookie, behind its own flag until the policy is live | No change to action schemas. Holding the cookie back meets the founder gate (review #4) | No |
 | D4 | os / browser | parse UA in code; BigQuery mapping | Code | Testable; same on both senders | No |
-| D5 | `is_internal_flg` | handles; user keys | User keys (`ANALYTICS_INTERNAL_USER_KEYS` + `internal_users` table) (revised) | Works with `user_info` off and on sign-up. Handle reuse can't flag a stranger (review #3) | No |
+| D5 | `is_internal_flg` | handles; user keys; none | **None** (CTO decision, 26 Nov 2026) | No internal-account marking; Metrics don't filter team accounts | Decided by the CTO |
 | D6 | Required properties | all required; none required; conditional + overrides | Conditional + permanent/temporary overrides, and **never drop an event** (revised) | Renamed and counted events can't silently disappear (review #2) | No |
 | D7 | `first_seen_ts`, `days_since_last_sign_in` | send; derive in `events_clean` | Derive | The previous sign-in time isn't available at the callback | **Yes** (deviates from the sheet) |
 | D8 | `click_loc` at publish | store in the draft; browser passes it | Browser passes it | No stored-shape change | No |
@@ -702,7 +696,7 @@ AN-02 adds this row to `docs/analytics/change-log.csv`. "Tested" is filled in wh
 
 **Technical, for the CTO:**
 
-- Gates G1, G2, G4, G5 and G6 (§8.1).
+- Gates G1, G4, G5 and G6 (§8.1). (G2 removed with internal marking.)
 - Sign-off on D1, D2, D7, D9 and D14 (D15 decided 26 Nov).
 - Credentials: one PostHog personal API key with `person:write` and one GCP service account `analytics-eraser`, set in Vercel Production and Preview. No Preview project, dataset or keys.
 - Change the DAU query in the sheet's Metrics tab to `COUNT(DISTINCT person_id)` and re-export `metrics.csv` (§5.3).

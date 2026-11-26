@@ -1,8 +1,7 @@
 Metric,"Target, first 30 days",How to compute,Events used,Can be measured today?,BigQuery SQL
-Users onboarded (primary),100,"Count of user_signed_up, team accounts excluded",user_signed_up,No: user_signed_up to build,"SELECT COUNT(DISTINCT user_id) AS users
+Users onboarded (primary),100,Count of user_signed_up,user_signed_up,No: user_signed_up to build,"SELECT COUNT(DISTINCT user_id) AS users
 FROM `onquest_analytics.events_clean`
-WHERE name = 'user_signed_up'
-  AND user_id NOT IN (SELECT user_id FROM `onquest_analytics.internal_users`)"
+WHERE name = 'user_signed_up'"
 Daily / weekly active users,20 DAU by day 30,"Distinct people with any click or view event per day; report WAU too (trips are bursty). Until identify() is called, count anon_id",all click / view events,"Partly: only blog events + pageviews, anon_id only","SELECT DATE(ts) AS day, COUNT(DISTINCT COALESCE(user_id, anon_id)) AS dau
 FROM `onquest_analytics.events_clean`
 WHERE type IN ('click','view')
