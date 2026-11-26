@@ -3,68 +3,119 @@
 | | |
 |---|---|
 | PRD | `docs/prds/2026-11-analytics-v2.md` (CTO brief, 26 Nov 2026) + `docs/analytics/v2/{events,common,codes,metrics}.csv` (export of the Google Sheet "OnQuest Taxonomy v2 (from code)", approved by the CTO) |
-| Status | Draft |
-| Build mode | Backend + Frontend split, 13 tasks (AN-01 … AN-13); backend lands first in each group |
-| Tracker IDs | OQ-12, OQ-22 · AN-01 #50, AN-02 #51, AN-03 #52, AN-04 #53, AN-05 #54, AN-06 #55, AN-07 #56, AN-08 #57, AN-09 #58, AN-10 #59, AN-11 #60, AN-12 #61, AN-13 #62 (label `spec:analytics-v2`) |
+| Status | Draft, revision 2 (plan review round 1: `docs/reviews/analytics-v2-plan.md`) |
+| Build mode | Backend + Frontend split, 14 tasks (AN-01 … AN-14), merged strictly in number order (§12.1) |
+| Tracker IDs | OQ-12, OQ-22 · AN-01 #50, AN-02 #51, AN-03 #52, AN-04 #53, AN-05 #54, AN-06 #55, AN-07 #56, AN-08 #57, AN-09 #58, AN-10 #59, AN-11 #60, AN-12 #61, AN-13 #62, AN-14 #64 (label `spec:analytics-v2`) |
 
-**Readiness.** The CSVs give every event, property, allowed value, firing rule, code location and metric; the brief gives the order, the rules and the CTO decisions. There is no user-facing UI, so empty/loading/error states don't apply (analytics never shows anything and never fails an action); the UX test plan is replaced by an event check on the Vercel preview (§11). Technical gaps the sheet leaves open (which properties are required, how browser events get `user_info`, how server events get `anon_id`/`session_id`, two properties that can't be measured at send time) are decided in §13. Nothing blocks the build. **One gate before `user_info` turns on in production:** the founder's privacy policy update (§14).
+**Readiness.** The CSVs give every event, property, allowed value, firing rule, code location and metric. The brief gives the order, the rules and the CTO decisions. There is no user-facing UI, so empty, loading and error states don't apply: analytics never shows anything and never fails an action. The UX test plan is replaced by an event check on the Vercel preview (§11). Technical gaps the sheet leaves open are decided in §13. The build can start. Some switches wait for the founder and the CTO; they are listed as **gates** in §8.1. The main one: the privacy policy update must be live before any new cookie or any `user_info` is sent. Until the founder says otherwise, the spec assumes AN-03 ships with the new cookie switched off and turns it on only after the policy is live (review founder #1, technical #4).
 
-**No database migration.** Nothing in this spec adds or changes a table, function, grant or RLS policy. Erasure reads `deleted_accounts` through the admin client (already granted `select` to `service_role`). BigQuery gets two views (`events_clean`, `internal_users`) applied by hand (§5.3).
+**No database migration.** Nothing in this spec adds or changes a Postgres table, function, grant or RLS policy. Erasure reads `deleted_accounts` through the admin client, which already has `select` as `service_role`. BigQuery gets views and one key-only table (§5.3). The CTO applies them by hand and dry-runs them first; that is a gate on merging AN-01.
 
-**Not done by this PR, for the CTO:** the CLAUDE.md line (§7.1). Agents don't edit CLAUDE.md; apply it on this PR before merging.
+**Not done by this PR:** the CLAUDE.md line in §7.1. Agents don't edit CLAUDE.md, so the coordinator applies it after the CTO approves.
 
 ## 1. Summary
 
-Nothing changes for users except one privacy-policy update. Under the hood, `lib/analytics/taxonomy.ts` is regenerated from the v2 CSVs (72 events, typed codes instead of strings), every event gets the v2 common properties (user key, anon/session ids on server events too, screen, platform/os/browser, internal and bot flags) and a server-attached `user_info` (geo, username, email; decision 0004), the 14 live events are renamed in one step with a BigQuery view that maps their history to the new names, and the 57 new events are wired screen by screen in the sheet's order. Account deletion now also deletes the person's PostHog data and BigQuery rows.
+Nothing changes for users except one privacy-policy update.
+
+- **Taxonomy.** `lib/analytics/taxonomy.ts` is regenerated from the v2 CSVs: 72 events, with typed codes instead of strings.
+- **Identity and common properties.** Identity is decided on our server. `/ingest` and `trackServer` take the user from the verified session, and the browser can't claim one. Every event gets the v2 common properties and, behind the policy gate, `user_info` (geo, username, email; decision 0004).
+- **Renames.** The 14 live events are renamed in one step. A BigQuery view maps their history to the new names.
+- **New events.** The 57 new events are added screen by screen, in the sheet's order.
+- **Deletion.** Deleting an account now also deletes the person's PostHog data and BigQuery rows. This is proved end to end on Preview and then in Production before `user_info` turns on.
 
 ## 2. Acceptance criteria map
 
 | Brief / sheet criterion | Satisfied by | Proved by |
 |---|---|---|
-| AC1 `identify()` called everywhere: every signed-in browser event has the user key | `oq_uid` cookie set by `proxy.ts` and the auth routes, read by `client.ts` (`identify()` on change, `forgetUser()` when gone); `/ingest` sets `user_id` from the verified session (§3.2) | `client.test.ts` identify/forget; `ingestEnrich.test.ts` user_id from session, spoofed key replaced; preview check E1 |
-| AC2 `setScreen()` everywhere: no `unknown` / `server` screen | `screenFor(routeTemplate)` in `Pageviews.tsx` on every route change; `PublishSheet` sets `publish`; server events read the screen from `oq_actx` | `screens.test.ts` every route in `app/` maps to a listed screen; E2 |
-| AC3 common properties per `common.csv` on every event | `lib/analytics/common.ts` (one shape for browser and server); `oq_actx` cookie carries anon/session/screen/platform to server events | `common.test.ts` (every common.csv row present, types right); `server.test.ts` |
-| AC4 `is_internal_flg` for @swativb, @alok18, @quest | `lib/analytics/internal.ts` (`INTERNAL_HANDLES`), applied where `user_info.username` is known; BigQuery `internal_users` view | `internal.test.ts`; Metrics query 1 dry-run |
-| AC5 `is_bot_flg` | Browser drops bots (unchanged); `/ingest` and `trackServer` set the flag from the user agent; `events_clean` excludes `true` | `privacy.test.ts` isBot; `ingestEnrich.test.ts` |
-| AC6 `user_info` {geoip country/region/city, username, email_id}, null signed out, never the raw IP | `lib/analytics/userInfo.ts`, attached by `/ingest` and `trackServer` only, behind `ANALYTICS_USER_INFO=on` | `userInfo.test.ts`; `ingestEnrich.test.ts` (browser-sent user_info overwritten, no `x-forwarded-for` upstream); `privacy.test.ts` (no email in client bundle code paths) |
-| AC7 generated `taxonomy.ts` from the v2 CSVs replaces the old one; script kept | `taxonomyFromCsv.ts` v2 reader, `generate.ts` (`npm run analytics`) | `taxonomy.test.ts` (stale check, 72 events, parse rules); **taxonomy check test** `taxonomyRules.test.ts` (§11) |
-| AC8 14 live events renamed, blog_* keep working, change log | AN-01 renames every call site in one PR; `docs/analytics/bigquery/events_clean.sql` maps old names and values to v2; row in `docs/analytics/change-log.csv` | `taxonomy.test.ts` no old name in `features/`; `renameMap.test.ts` (each old → new mapping valid against the taxonomy); Metrics "Blog adoption" and "Blog read-through" dry-run over history |
-| AC9 57 To-build events wired, in the sheet's order | AN-04 … AN-12 (§12), each event at the sheet's code location | Per-task unit tests of the property builders; E3 preview checks; AN-13 Playwright |
-| AC10 no user text in properties (lengths, counts), email_id the only exception | Generated rules: free STRING properties only for keys and an allowlisted few, with strict patterns (§4.1); `user_info` attached on the server only | `taxonomyRules.test.ts`; `validate.test.ts` (spaces/URLs/emails in a key property rejected) |
-| AC11 server events are the source of truth for counts | Every counted thing (sign-ups, publishes, likes, comments, follows, deletes, notifications) is a `server` event sent after the database write succeeds; browser events never duplicate them | §10 table; `taxonomyRules.test.ts` (every Metric "count" event is type server) |
-| AC12 account deletion removes the user's analytics | `lib/analytics/erasure.ts` (PostHog bulk delete + BigQuery DELETE), called from `deleteAccount()` and re-run by the daily cron for 7 days; manual runbook | `erasure.test.ts` (requests built right, failures don't stop deletion); `accountDelete.test.ts` unchanged; runbook |
-| AC13 CLAUDE.md rule, decision record, privacy-policy flag | Decision `0004`; §7.1 line for the CTO; §14 founder item | Review |
-| AC14 Metrics tab queries stay valid | `events_clean` exposes the columns the queries use; `metricsSql.test.ts` checks every event name and `$.property` in `metrics.csv` exists in the taxonomy; dry-run step in the runbook | `metricsSql.test.ts`; `bq query --dry_run` (§11) |
-| AC15 tests per CLAUDE.md | Vitest next to each file; no RLS change so no new `tests/db/` file, existing `accountDelete.test.ts` must still pass | CI |
+| AC1 `identify()` everywhere: every signed-in event is on the person | `/ingest` sets `distinct_id` and `user_id` from the verified session and sends the `$identify` merge itself (§3.2). `trackServer` uses the session user. Browser `$identify`/alias events are dropped | `ingestEnrich.test.ts` (spoofed distinct id, browser `$identify`, alias and merge all rejected); preview check E1 |
+| AC2 `setScreen()` everywhere: no `unknown` / `server` screen | `screenFor(routeTemplate)` in `Pageviews.tsx` on every route change. `PublishSheet` sets `publish`. Server events read the screen from `oq_actx` once the cookie is on, else `null` | `screens.test.ts` (route groups and rewrites resolved, §6.1); E2 |
+| AC3 common properties per `common.csv` on every event | `lib/analytics/common.ts`, one shape for browser and server events | `common.test.ts`, `server.test.ts` |
+| AC4 `is_internal_flg` for @swativb, @alok18, @quest | `lib/analytics/internal.ts`: the verified **user key** is in `ANALYTICS_INTERNAL_USER_KEYS`, whatever the `user_info` flag says. BigQuery `internal_users` table holds the same keys | `internal.test.ts` (flag set with `ANALYTICS_USER_INFO` unset; a renamed handle stays flagged); Metrics query 1 dry-run |
+| AC5 `is_bot_flg` | The browser drops bots, as today. `/ingest` and `trackServer` set the flag from the user agent. `events_clean` leaves out `true` | `privacy.test.ts`, `ingestEnrich.test.ts` |
+| AC6 `user_info` {geoip country/region/city, username, email_id}, null when signed out, never the raw IP | `lib/analytics/userInfo.ts` (`server-only`), attached only by `/ingest` and `trackServer` for the session's own user, behind `ANALYTICS_USER_INFO`. Bodies that can't be parsed are dropped | `userInfo.test.ts`, `ingestEnrich.test.ts` (browser `user_info` overwritten; gzip, oversized and junk bodies dropped; no `x-forwarded-for` upstream) |
+| AC7 generated `taxonomy.ts` from the v2 CSVs replaces the old one; script kept | `taxonomyFromCsv.ts` v2 reader and `generate.ts` (`npm run analytics`) | `taxonomy.test.ts`; the **taxonomy check test** `taxonomyRules.test.ts` (§11) |
+| AC8 14 live events renamed, blog_* keep working, change log updated | AN-02 renames every call site in one PR. Missing properties never drop an event (§4.1). `events_clean.sql` maps old names and values to v2. Row added to `change-log.csv` | `renameMap.test.ts`; `blogEvents.test.ts` old-shape draft still sends `blog_published`; "Blog adoption" and "Blog read-through" dry-run over history |
+| AC9 57 To-build events wired, in the sheet's order | AN-05 … AN-13 (§12) | Property-builder unit tests; E3; AN-14 manual gate |
+| AC10 no user text in properties (lengths and counts only); email_id is the only exception | Generated rules: free STRING properties only for keys and an allowlisted few, with strict patterns (§4.1). `user_info` attached on the server only | `taxonomyRules.test.ts`, `validate.test.ts` |
+| AC11 server events are the source of truth for counts | §10 | `taxonomyRules.test.ts` |
+| AC12 account deletion removes the user's analytics | `lib/analytics/erasure.ts`: PostHog bulk delete, BigQuery DELETE and the `deleted_users` anti-join. Runs from `deleteAccount()` and again from the daily cron for 30 days | `erasure.test.ts`; **gates G5/G6**: proved on Preview with Preview-scoped keys, then on Production with a team test account, before `user_info` turns on |
+| AC13 CLAUDE.md rule, decision record, privacy-policy flag | Decision 0004; §7.1 line (coordinator); §14 founder items | Review |
+| AC14 Metrics tab queries stay valid | `events_clean` exposes the columns they use. `metricsSql.test.ts` checks event names and properties. CTO dry-run is gate G1 | `metricsSql.test.ts`, `bq query --dry_run` |
+| AC15 tests per CLAUDE.md | Vitest next to each file. No RLS change, so no new `tests/db/` file; `accountDelete.test.ts` must still pass | CI |
 
 ## 3. Approach
 
 ### 3.1 Taxonomy as code
 
-`npm run analytics` reads `docs/analytics/v2/events.csv` and writes `lib/analytics/taxonomy.ts`: one `EVENTS` object keyed by event name with its `type` (`click` / `view` / `client` / `server`), who it's about (`user`: `signed_in` / `optional` / `other_user`, from the `user_id` column) and its property rules. `click`, `view` and `client` events are sent from the browser with `track()`; `server` events with `trackServer()`. TypeScript names come from the file, so calling `track()` with a server event, an old name or a wrong property is a type error, and a bad value is dropped at runtime (as today). The old CSVs move to `docs/analytics/v1/` for history; `change-log.csv` stays where it is.
+`npm run analytics` reads `docs/analytics/v2/events.csv` and writes `lib/analytics/taxonomy.ts`.
 
-### 3.2 Who and where (identify, user_info, geo)
+- **What it generates.** One `EVENTS` object keyed by event name. Each entry has its `type` (`click`, `view`, `client` or `server`), who it is about (`user`: `signed_in`, `optional` or `other_user`, from the `user_id` column) and its property rules.
+- **Who sends what.** `click`, `view` and `client` events are sent from the browser with `track()`. `server` events are sent with `trackServer()`.
+- **Type safety.** Calling with the wrong sender, an old name or an unknown property is a type error.
+- **Old files.** The v1 CSVs move to `docs/analytics/v1/`. The v1 rules are frozen into `lib/analytics/taxonomyV1.ts`, which only `/ingest` uses (§3.5).
+
+AN-01 adds the v2 generator and writes `taxonomy.ts` as **`taxonomyV2.ts`**, next to the untouched v1 file, so nothing in the app changes. AN-02 switches the call sites to it, renames it to `taxonomy.ts` and freezes the old one as `taxonomyV1.ts`. That splits the largest task (review #11) without a release where the code doesn't type-check.
+
+### 3.2 Identity, user_info and geo: decided on the server
 
 ```
 browser track() ──► /ingest (our route handler) ──► PostHog ──hourly──► BigQuery events
-   common props        + user_id (verified session)                       └─ events_clean view
-   no user_info        + user_info (flag on), is_internal_flg, is_bot_flg,
-                         os/browser, country; drops IP; $geoip_disable
-server action / auth route ──► trackServer() ── same enrichment from the request ──► PostHog
+  common props       distinct_id + user_id   ← verified session, else the body's anon_id
+  no identity        $identify               ← sent by /ingest itself; browser ones dropped
+  no user_info       user_info (gate), is_internal_flg (user key), is_bot_flg, os/browser,
+                     country; drops IP; $geoip_disable; v2 or v1 allowlist
+server action / auth route ──► trackServer() ── same rules from the request ──► PostHog
 ```
 
-- **identify().** `proxy.ts` already calls `getUser()` on app routes; it also sets a cookie `oq_uid=<user key>` (or deletes it when signed out). The auth callback/confirm routes set it, `signOut` and `deleteMyAccount` delete it. `client.ts` reads it before each send: a new key → `identify(key)` (one `$identify` merging the anon id), no cookie → `forgetUser()`. The user key is a random UUID already in public API paths; no name, handle or email is in the cookie.
-- **The `/ingest` handler is the trust boundary.** It parses the body (single event or `batch`), and on each event: sets `user_id` from `supabase.auth.getUser()` on the request's session (null if none; a browser-claimed key that doesn't match is replaced), sets `user_info` (or null), `country` from `x-vercel-ip-country`, `os`/`browser` from the user agent, `is_bot_flg`, `is_internal_flg`, `$geoip_disable: true`; strips anything else not in the allowlist; then forwards **without** `x-forwarded-for`. The session lookup is cached per server instance for 60 s, keyed by a SHA-256 of the access token, so a burst of events costs one auth call.
-- **Server events** read the same context from the request: `cookies()` for `oq_actx` (anon_id, session_id, screen, platform) and the session, `headers()` for geo and user agent. `after()` in server actions and route handlers can read both.
-- **Geo:** Vercel headers only (country, region, URL-decoded city). Signed-out events keep the top-level `country` (as today); region and city exist only inside `user_info`.
+**`/ingest` is the only trust boundary** (`lib/analytics/ingestEnrich.ts`, called from `app/ingest/[...path]/route.ts`).
 
-### 3.3 Renames without a gap (AN-01)
+1. **Body checks.** The body must be JSON (a single event or a `batch` array). It must not be compressed: requests with a `content-encoding` header or a `compression` query parameter are rejected. It must be ≤ 64 KB. Anything else gets **204 and is not forwarded**. Our `client.ts` never compresses, so only foreign senders are affected.
+2. **Session lookup.** The session is looked up once per request with `supabase.auth.getUser()`, through `userInfo.ts`'s bounded cache (§4.2).
+3. **Per event:**
+   - **`distinct_id`.** The verified user key. If there is no session, the body's `properties.anon_id` when it matches `^anon_[0-9a-f-]{36}$`. Otherwise the event is dropped.
+   - **`user_id`.** The verified key, or null.
+   - **Merge events.** `$identify`, `$create_alias` and `$merge_dangerously` from the browser are dropped. When a verified key arrives with an `anon_id` that this server instance hasn't merged in the last 24 hours (LRU, 10,000 pairs), `/ingest` adds one `$identify` (`distinct_id = key`, `$anon_distinct_id = anon_id`). Repeats are no-ops in PostHog. This is the only `identify()` in the system (D2).
+   - **Server-set properties.** `user_info`, `is_internal_flg`, `is_bot_flg`, `os`, `browser`, `country` and `$geoip_disable: true` are set here, overwriting anything the browser sent.
+   - **Allowlist.** Properties are filtered to the event's allowlist (§3.5) plus the common properties.
+4. **Forwarding.** The request is forwarded to PostHog **without** `x-forwarded-for`.
 
-All 14 renamed events switch in the same PR that regenerates the taxonomy, so there is no release where a blog event isn't sent. Old rows in BigQuery keep their old names and string values; `events_clean` maps them to the v2 name and codes (§5.3), so every Metrics query reads one continuous series. The quest halves of the merged events (`visibility_changed`, `comments_toggled`, `content_deleted`, `content_liked`, `comment_posted`) are new sends and land with their groups (AN-08).
+**Server events** read the request context. `cookies()` gives `oq_actx` (anon_id, session_id, screen, platform) once the cookie is switched on (§4.2) and the session. `headers()` gives geo and the user agent. `after()` in server actions and route handlers can read both. The session user's key is the event's `user_id` and `distinct_id`, except for `notification_sent` (recipient key, null anon/session/`user_info`) and `account_deleted` (§5.2).
 
-### 3.4 Order of the 57 new events
+**Geo** comes only from Vercel's headers: country, region and URL-decoded city. Every event keeps a top-level `country`, signed out too (D14). Region and city exist only inside `user_info`.
 
-Foundations (AN-01 … AN-03), then the sheet's Summary order: Quest view (AN-04), create (AN-05/06), sign-in (AN-07), share/social/notifications (AN-08/09), everything else (AN-10 … AN-12), then the end-to-end check (AN-13). Each task wires the events at the sheet's "Code location" and tags the in-app links its screens own with `?src=` (§4.4).
+**No `oq_uid` cookie.** The previous revision had the browser call `identify()` from a cookie. That let anyone file events under someone else's key (review #1). The browser now knows nothing about identity: `client.ts` drops its exported `identify()` and `forgetUser()`.
+
+### 3.3 Renames without a gap (AN-02)
+
+All 14 renamed events switch in one PR, so no release goes without a blog event.
+
+- **Properties AN-02 can't fill yet** are optional until the task that fills them (§4.1 table). An event is never dropped for a missing or bad property (§4.2).
+- **History.** Old rows in BigQuery keep their old names and string values. `events_clean` maps them to v2 (§5.3).
+- **Quest halves.** The quest halves of the merged events are new sends and land in AN-09.
+
+### 3.4 Order
+
+Foundations come first:
+
+- AN-01: generator, rules and tests.
+- AN-02: renames.
+- AN-03: identity, common properties and `user_info`.
+- AN-04: erasure.
+
+Then the sheet's Summary order:
+
+- Quest view (AN-05).
+- Create (AN-06, AN-07).
+- Sign-in (AN-08).
+- Share, social and notifications (AN-09, AN-10).
+- Everything else (AN-11 … AN-13).
+- The end-to-end gate (AN-14).
+
+Tasks merge strictly in number order (§12.1).
+
+### 3.5 Old tabs and rollback through `/ingest`
+
+`/ingest` keeps two allowlists. v2 names are filtered by `taxonomy.ts`. v1 names, sent by a browser tab still open on the old bundle or by a rolled-back release, are filtered by the frozen `taxonomyV1.ts`. They keep their v1 properties, so `events_clean` can map them. Identity, `user_info` and IP rules apply to both. Names in neither list are dropped. `taxonomyV1.ts` and the v1 branch are removed 30 days after AN-02 deploys. That removal is in §15, as the contract step.
 
 ## 4. Contract
 
@@ -75,160 +126,283 @@ export type EventType = 'click' | 'view' | 'client' | 'server';
 export type PropertyType = 'STRING' | 'BOOL' | 'INT64' | 'FLOAT64' | 'TIMESTAMP';
 export type PropertyRule = {
   type: PropertyType;
-  required: boolean;
+  required: boolean;              // drives types and dev warnings only, never drops an event
   values?: (string | number)[];   // "0 / 1 / 2" → [0, 1, 2] (INT64); "google / email_link" (STRING)
   list?: string[];                // comma lists: fields_changed, change_types
   min?: number; max?: number;     // "0 – 6", "3–20"; "2–" → min only
-  pattern?: 'key' | 'town' | 'utm';  // free STRINGs, see below
+  pattern?: 'key' | 'town' | 'utm';
 };
 export type EventRule = {
   type: EventType;
-  user: 'signed_in' | 'optional' | 'other_user'; // "user_id" / "user_id (empty when signed out)" / "(person notified)"
+  user: 'signed_in' | 'optional' | 'other_user';
   properties: Record<string, PropertyRule>;
 };
 export const EVENTS = { /* generated, sorted */ } as const satisfies Record<string, EventRule>;
-export type BrowserEventName = /* names with type click | view | client */;
-export type ServerEventName  = /* names with type server */;
-export type EventProps<Name extends keyof typeof EVENTS> = /* typed from the rules */;
+export type BrowserEventName = /* type click | view | client */;
+export type ServerEventName  = /* type server */;
+export type EventProps<Name extends keyof typeof EVENTS> = /* required keys required, optional keys optional */;
 ```
 
-Parse rules (each covered by `taxonomy.test.ts`):
+Parse rules, each covered by `taxonomy.test.ts`:
 
-- Rows with an empty `name` are more properties of the event above; section rows (area only) and `(common props only)` are skipped. Columns are found by header name (`area,name,user_id,anon_id,session_id,type,ts,properties [JSON key],Data type,Allowed values,Property description,Fires when,Status,…`).
-- **Required:** a property is required unless its description or allowed values mention `null`, `if any`, `only` (e.g. "Caption edits only", "Quests tab only"), `reserved`, or it is in `OPTIONAL_OVERRIDES` = `referrer_quest_id`, `referrer_blog_id`, `referrer_owner_user_id`, `utm_source`, `attempt`, `first_seen_ts`, `days_since_last_sign_in`, `from_visibility`. The test snapshots the optional list, so a sheet edit that changes it shows in review. (Later: a Required column in the sheet.)
-- **Free STRINGs** (no allowed values) are allowed only as: keys (`*_id`, `content_id`, `view_id`) → `pattern: 'key'` = `^[a-z0-9_-]{1,64}$`i (UUIDs, `anon_…`, guide slugs); `chip_name` → `'town'` = `^[\p{L}\p{M} .'-]{1,60}$`u; `utm_source` → `'utm'` = lowercased, `^[a-z0-9_.-]{1,40}$`, anything else is sent as `other`. Overrides for the two unparseable cells: `change_types` = list of `0…11`, `fields_changed` = list `name,username,photo,city,bio`. **Any other free STRING fails the generator** (that's the taxonomy check for "no user text").
-- `TIMESTAMP` values are ISO-8601 strings with offset.
-- `first_seen_ts` and `days_since_last_sign_in` are in the taxonomy but **derived in `events_clean`**, never sent (§13 D7).
+- **Rows.** A row with an empty `name` adds properties to the event above. Section rows and `(common props only)` rows are skipped. Columns are found by their header names.
+- **Required.** A property is required unless one of these applies:
+  - its description or allowed values mention `null`, `if any`, `only` or `reserved`;
+  - it is listed in `OPTIONAL_OVERRIDES` (below).
 
-### 4.2 Sending (`lib/analytics/client.ts`, `server.ts`, `common.ts`)
+  The test snapshots the full optional list.
+- **Free STRINGs** (no allowed values) are only allowed in these forms:
+
+  | Property | Pattern |
+  |---|---|
+  | keys (`*_id`, `content_id`, `view_id`) | `'key'` = `^[a-z0-9_-]{1,64}$`i |
+  | `chip_name` | `'town'` = `^[\p{L}\p{M} .'-]{1,60}$`u |
+  | `utm_source` | `'utm'` = `^[a-z0-9_.-]{1,40}$` after lowercasing; anything else is sent as `other` |
+  | `change_types` | list of `0…11` |
+  | `fields_changed` | list `name,username,photo,city,bio` |
+
+  **Any other free STRING fails the generator.**
+- **`TIMESTAMP`** values are ISO-8601 with an offset.
+- **Derived, never sent.** `first_seen_ts` and `days_since_last_sign_in` are derived in `events_clean` (D7).
+
+`OPTIONAL_OVERRIDES` (in `taxonomyFromCsv.ts`). **Permanent** entries are conditional by nature:
+
+| Property | Why optional |
+|---|---|
+| `referrer_quest_id`, `referrer_blog_id`, `referrer_owner_user_id` | Only when a shared link brought the person in |
+| `utm_source` | Only when the link has one |
+| `attempt` | Only for error_type 1 |
+| `from_visibility` | Unknown for blog history |
+| `blog_published.minutes_since_start` | Old drafts have no `startedAt` (review #2; `blogEvents.test.ts` old-draft case) |
+| `quest_viewed.source`, `blog_viewed.source`, `profile_viewed.source`, `guide_viewed.source` | Untagged in-app links |
+| `first_seen_ts`, `days_since_last_sign_in` | Derived in BigQuery |
+
+**Temporary** entries cover properties AN-02 can't fill yet. Each one names the task that fills it, and that task deletes the entry; its Done-when says so.
+
+| Event.property | Filled by |
+|---|---|
+| `create_option_click.from_screen` | AN-03 (screens) |
+| `blog_viewed.read_time_min` | AN-13 |
+| `content_liked.owner_user_id` | AN-09 |
+| `comment_posted.owner_user_id`, `comment_posted.is_owner_flg` | AN-09 |
+| `comments_toggled.comment_count` | AN-09 |
+| `visibility_changed.days_since_publish` | AN-09 |
+| `content_deleted.like_count`, `.comment_count`, `.age_days`, `.photo_count` (posted blogs) | AN-09 |
+| `blog_published.is_first_blog_flg` | AN-09 |
+| `blog_updated.days_since_post` | AN-09 |
+| `blog_editor_action.photo_count`, `.blocked_flg` | AN-13 |
+
+AN-02 fills these itself:
+
+| Property | Source |
+|---|---|
+| `blog_viewed.author_user_id` | The provider's `ownerKey` |
+| `content_liked.like_count_after` | `set_blog_like`'s `like_count` |
+| `content_liked.source` | `blog_page` / `feed` / `after_sign_in` → 0 / 2 / 3 |
+| `comment_posted.comment_length` | Existing length |
+| `blog_create_started.click_loc` | `source` → 0 / 1 |
+| `content_deleted.photo_count` for drafts | `deletedProperties` |
+| Everything else in the rename map (§5.3) | The mapped v1 value |
+
+### 4.2 Sending (`client.ts`, `server.ts`, `common.ts`, `userInfo.ts`)
 
 ```ts
-// Browser. Unchanged names; typed by the generated file.
+// Browser
 track<Name extends BrowserEventName>(event: Name, properties: EventProps<Name>): void;
 setScreen(screen: Screen): void;              // Screen = the 15 common.csv values
-identify(userKey: string): void;              // called by client.ts itself from oq_uid; exported for tests
-forgetUser(): void;
 trackPageview(pathname: string): void;        // + setScreen(screenFor(routeTemplate(pathname)))
+// identify() and forgetUser() are removed: identity is decided by /ingest (§3.2)
 
-// Server. Same signature as today, so existing call sites only change names/props.
+// Server
 trackServer<Name extends ServerEventName>(
   event: Name,
-  userKey: string | null,                     // event's user_id; recipient for notification_sent
+  userKey: string | null,  // the event's user_id; must equal the session user except for
+                           // notification_sent (recipient) and account_deleted (§5.2)
   properties: EventProps<Name>,
 ): Promise<void>;
 ```
+
+**Validation never drops an event** (review #2).
+
+- A missing required property, an unknown property or a bad value: the event is still sent.
+- Unknown properties and bad values are removed from it.
+- Each problem is reported by property **name** only (never the value) with `console.warn` outside production.
+- Unit tests use `expectNoProblems(event, builder(...))` from `validate.ts`, so every property builder proves it fills its required properties.
 
 Common properties on every event (`common.ts`, from `common.csv`):
 
 | Property | Browser event | Server event |
 |---|---|---|
 | `event_id` | `crypto.randomUUID()` | same |
-| `type` | the event's type from the taxonomy | `server` |
-| `user_id` | set by `/ingest` from the session | `userKey` argument |
-| `anon_id`, `session_id` | `ids.ts` (unchanged) | from `oq_actx`; `null` for `notification_sent` (sheet) and when the cookie is missing |
+| `type` | event type from the taxonomy | `server` |
+| `user_id` | `/ingest`, verified session, else null | session user (or the recipient for `notification_sent`) |
+| `anon_id`, `session_id` | `ids.ts` (localStorage, as today) | from `oq_actx` when the cookie is on; otherwise null. Always null on `notification_sent` and `account_deleted` |
 | `client_ts` | device time, ISO | absent |
-| `platform` | `0` mobile (pointer: coarse) / `1` desktop | from `oq_actx` |
-| `os`, `browser` | set by `/ingest` from the user agent (`lib/analytics/userAgent.ts`) | same function on the request's user agent |
-| `app_version` | short SHA (unchanged) | same |
-| `screen` | current screen (§6.1) | from `oq_actx` |
-| `country` | `/ingest`, `x-vercel-ip-country` | request header |
-| `is_internal_flg` | `/ingest`: `user_info.username` in `INTERNAL_HANDLES` | same |
+| `platform` | `0` mobile (pointer: coarse) / `1` desktop | `oq_actx`, else from the user agent (`Mobi` → 0) |
+| `os`, `browser` | `/ingest`, `userAgent.ts` | same function |
+| `app_version` | short SHA | same |
+| `screen` | current screen (§6.1) | `oq_actx`, else null |
+| `country` | `x-vercel-ip-country` at `/ingest` | request header |
+| `is_internal_flg` | `/ingest`: verified key ∈ `ANALYTICS_INTERNAL_USER_KEYS` | same |
 | `is_bot_flg` | `/ingest`: `isBot(user-agent)` | same |
-| `user_info` | `/ingest` (flag on, signed in) else `null` | same; `null` for `notification_sent` |
+| `user_info` | `/ingest` when the gate allows (below), else null | same; null for `notification_sent`, `account_deleted` |
 
-`oq_actx` cookie: `v1.<anon_id>.<session_id>.<screen>.<platform>`, written by `client.ts` on every send and page view, `Path=/; SameSite=Lax; Max-Age=1800`, not httpOnly. The server accepts it only if it matches `^v1\.anon_[0-9a-f-]{36}\.[0-9a-f-]{36}\.[a-z_]{2,20}\.[01]$`, otherwise treats it as missing. `oq_uid` cookie: a UUID, `Path=/; SameSite=Lax; Max-Age=34560000`, not httpOnly.
+**`oq_actx` cookie** (the only new cookie): `v1.<anon_id>.<session_id>.<screen>.<platform>`, `Path=/; SameSite=Lax; Max-Age=1800`, not httpOnly.
 
-PostHog `timestamp` is **not** sent by the browser, so PostHog stamps server time (the sheet's `ts = server_ts`); `client_ts` keeps the device time. Server events send `timestamp` = now.
+- `client.ts` writes it only when `NEXT_PUBLIC_ANALYTICS_CONTEXT_COOKIE=on`. That flag is **off until the privacy policy is live** (gate G3). While it's off, server events carry null `anon_id`, `session_id` and `screen`, and BigQuery joins them to browser events by `user_id`.
+- The server accepts the cookie only if it matches `^v1\.anon_[0-9a-f-]{36}\.[0-9a-f-]{36}\.[a-z_]{2,20}\.[01]$`.
+- Nothing in it identifies the person, so a forged one can only mislabel the forger's own server events.
 
-`user_info` (`lib/analytics/userInfo.ts`):
+**Timestamps.** The browser does **not** send PostHog `timestamp`, so PostHog stamps server time (the sheet's `ts = server_ts`). Server events send `timestamp` = now.
+
+**`user_info`** (`lib/analytics/userInfo.ts`, `import 'server-only'`):
 
 ```ts
 export const UserInfoSchema = z.object({
   geoip: z.object({ country: z.string().regex(/^[A-Z]{2}$/).nullable(),
                     region: z.string().max(10).nullable(), city: z.string().max(80).nullable() }).nullable(),
   username: z.string().max(20).nullable(),   // profiles.handle; null before onboarding
-  email_id: z.string().max(320).nullable(),  // auth user email; null for phone/none
+  email_id: z.string().max(320).nullable(),
 }).nullable();
-export async function userInfoForRequest(userKey: string): Promise<UserInfo>; // null unless ANALYTICS_USER_INFO=on
+
+/** The session's own user_info, or null. Returns null unless the request's verified session user
+ *  is `expectedUserKey`, so a cron job, the unsubscribe link or notification_sent can never look up
+ *  someone's email by key. */
+export async function userInfoForSession(expectedUserKey: string): Promise<UserInfo>;
 ```
+
+- **Gate.** `ANALYTICS_USER_INFO` has three values:
+  - unset or `off`: always null;
+  - `team`: only when the user key is in `ANALYTICS_INTERNAL_USER_KEYS`;
+  - `on`: every signed-in person.
+
+  Preview uses `team` (review #12). Production uses `off` until gates G3–G6, then `on`.
+- **Cache.** One LRU, max 1,000 entries, 60 s TTL, keyed by SHA-256 of the access token. It holds `{ userKey, email, handle }`.
+- **Lookups.** `getUser()` gives the key and email. The handle comes from the request's own RLS client: `profiles.select('handle').eq('key', user.id).maybeSingle()`. `/ingest` and `trackServer` share this module.
+
+**Internal flag** (`lib/analytics/internal.ts`): `ANALYTICS_INTERNAL_USER_KEYS` is a comma list of UUIDs. It is not secret: keys aren't personal data. The CTO fills it from `select key from profiles where handle in ('swativb','alok18','quest')` (gate G2). It doesn't depend on `user_info` or handles, so a renamed handle can't flag someone else (review #3).
 
 ### 4.3 Server actions
 
-No new actions. Changed inputs (additive, optional, so old browsers keep working):
+There are no new actions. Changed inputs are additive and optional:
 
 | Action | Input change | Used for | Task |
 |---|---|---|---|
-| `publishQuest` (`features/editor/publishActions.ts`) | `+ analytics?: { clickLoc?: int 0–10, editCount?: int ≥ 0, changeTypes?: int[] (0–11, unique) }` | `quest_creation_complete.click_loc/edit_count`, `quest_updated.change_types` | AN-05 (schema), AN-06 (sends it) |
-| `setLike`, `setFollow`, `setBlogLike` | `source` already arrives; mapped to the v2 code | `content_liked.source`, `user_followed.source` | AN-01 / AN-08 |
-| `createQuest` | `source` already arrives (`QuestCreateSourceSchema`); mapped to `click_loc` | `quest_draft_created.click_loc` | AN-05 |
-| `reportCreateProgress` | unchanged input; now sends `quest_arranged` | | AN-05 |
+| `publishQuest` | `+ analytics?: { clickLoc?: int 0–10, editCount?: int ≥ 0, changeTypes?: int[] (0–11, unique) }` | `quest_creation_complete`, `quest_updated` | AN-06 (schema), AN-07 (sends it) |
+| `setLike`, `setFollow`, `setBlogLike` | `source` already arrives; mapped to the v2 code | `content_liked`, `user_followed` | AN-02 / AN-09 |
+| `createQuest` | `source` already arrives; mapped to `click_loc` | `quest_draft_created` | AN-06 |
+| `reportCreateProgress` | unchanged; now sends `quest_arranged` | | AN-06 |
 
-The `?source=` values in `/quests/new` links and `lib/analytics/sources.ts` stay strings (they are in links people have); `lib/analytics/codes.ts` maps them, and every other internal enum, to the v2 codes. `codes.test.ts` checks each mapped number exists for that list in `codes.csv`.
+The `?source=` strings in `/quests/new` links stay. `lib/analytics/codes.ts` maps them and every other internal enum to v2 codes. Merge rule: one section per task, append-only (§12.1). `codes.test.ts` checks each number against `codes.csv`.
 
 ### 4.4 Routes and link tags
 
-- `app/ingest/[...path]/route.ts`: same paths, now enriches the body (§3.2). Bodies over 64 KB, or that don't parse, are forwarded unchanged **minus** IP, and `user_info`/`user_id` set to null (never fail open with a browser-supplied identity).
-- `?src=<code>` on in-app links to Quests and blogs (`quest_viewed.source`, `blog_viewed.source`, `profile_viewed.source`, `guide_viewed.source`), built with `withSrc(href, code)` in `lib/analytics/src.ts` and read once on the page, then removed from the address bar with `history.replaceState` so a copied link doesn't carry it. Cached public pages ignore query strings for rendering, so `?src=` doesn't fragment the cache.
-- `?src=email` on notification email links (`lib/email/notify.ts`, AN-08) for `app_opened.entry_type = 2` and `notification_click.channel = 1`.
-- No new pages, no metadata or sitemap change.
+- **`app/ingest/[...path]/route.ts`**: same paths, rules as in §3.2.
+- **`?src=<code>` on in-app links** to Quests, blogs, profiles and guides. Links are built with `withSrc(href, code)` (`lib/analytics/src.ts`, AN-03). The page reads the tag once and removes it with `history.replaceState`. Cached pages ignore query strings when rendering.
+- **`?src=email` on notification email links** (AN-09).
+- No new pages, and no metadata or sitemap change.
 
 ## 5. Database and storage
 
 ### 5.1 Postgres
 
-None. No table, function, grant or policy changes, so no `tests/db/` additions; `accountDelete.test.ts` must still pass. No in-place updates are involved: analytics writes go to PostHog, not Postgres.
+None. No `tests/db/` additions; `accountDelete.test.ts` must still pass.
 
-### 5.2 Erasure on account deletion (AN-03)
+### 5.2 Erasure on account deletion (AN-04)
 
 `lib/analytics/erasure.ts` (`import 'server-only'`):
 
 ```ts
-export async function eraseAnalytics(userKey: string): Promise<{ posthog: 'done' | 'skipped' | 'failed'; bigquery: 'done' | 'skipped' | 'failed' }>;
+export async function eraseAnalytics(userKey: string): Promise<{ posthog: Status; bigquery: Status }>; // Status = 'done' | 'skipped' | 'failed'
 ```
 
-1. **PostHog:** `POST https://{POSTHOG_API_HOST}/api/projects/{POSTHOG_PROJECT_ID}/persons/bulk_delete/` with `{ "distinct_ids": [userKey], "delete_events": true }`, header `Authorization: Bearer {POSTHOG_PERSONAL_API_KEY}` (key scoped to `person:write` only). PostHog deletes the person, its merged anon ids, and queues its events for deletion. 404 / "not found" counts as done. The builder confirms the endpoint shape against PostHog's API docs at build time and records it in the runbook.
-2. **BigQuery:** a parameterised query job, `DELETE FROM \`onquest_analytics.events\` WHERE JSON_VALUE(properties, '$.user_id') = @key AND event != 'account_deleted'` (plus `distinct_id = @key`, covering rows sent before `user_id` existed), via the BigQuery REST API `jobs.query` with a service-account token signed with `node:crypto` (no new npm dependency). Service account `analytics-eraser`: `roles/bigquery.jobUser` on the project and `roles/bigquery.dataEditor` on the dataset only. Key in `BIGQUERY_ERASER_KEY` (base64 JSON).
-3. Called from `deleteAccount()` **after** the database delete succeeded, inside `after()`-style best effort: a failure is logged by error name only and never fails the deletion. `account_deleted` is sent first, with `user_info: null`, and is the only row kept (key + counts, no personal data).
-4. **Daily re-run.** `app/api/cron/finish-deletions` also calls `eraseAnalytics` for every `deleted_accounts` row with `saved_at` in the last 7 days (admin `select`, already granted). This catches events still in the hourly export when the first delete ran, and retries failures. Markers live 30 days (`run_retention_cleanup`), so the window is always available.
-5. **Unset env (or failure 2 days running):** the cron logs `Analytics erasure pending: N`; the manual step is in `docs/runbooks/analytics-erasure.md` (PostHog UI person delete + the `bq query` DELETE with the key).
+**Order inside `deleteAccount()`**, after the database delete succeeded:
 
-### 5.3 BigQuery views (AN-01, applied by the CTO with `bq`)
+1. **Send `account_deleted`** (AN-04 owns this event). Await it, don't defer it to `after()`.
+   - `distinct_id` is a fresh `deleted_<uuid>`, so the event never recreates or attaches to the deleted person in PostHog.
+   - The properties are `user_id = key` and the counts.
+   - `anon_id`, `session_id` and `user_info` are null, so the kept row can't be linked back to a device (review #7b).
+2. **PostHog.** `POST https://{POSTHOG_API_HOST}/api/projects/{POSTHOG_PROJECT_ID}/persons/bulk_delete/` with `{ "distinct_ids": [key], "delete_events": true }` and `Authorization: Bearer {POSTHOG_PERSONAL_API_KEY}` (scope `person:write`).
+   - This removes the person and the anon ids merged into it, and **queues** their events for deletion. PostHog deletes events in the background, so "person gone" isn't "events gone".
+   - The builder confirms the endpoint, the body and the deletion timing against PostHog's API docs, and writes them into the runbook (review #7d).
+   - A 404 counts as done.
+3. **BigQuery.** One `jobs.query` script, with `@key` as a parameter:
+   ```sql
+   INSERT INTO `{dataset}.deleted_users` (user_id, deleted_at) SELECT @key, CURRENT_TIMESTAMP()
+     FROM UNNEST([1]) WHERE NOT EXISTS (SELECT 1 FROM `{dataset}.deleted_users` WHERE user_id = @key);
+   DELETE FROM `{dataset}.events`
+   WHERE event != 'account_deleted' AND (
+     distinct_id = @key OR JSON_VALUE(properties, '$.user_id') = @key
+     OR JSON_VALUE(properties, '$.anon_id') IN (   -- rows from this person's devices, signed out too (review #7b)
+       SELECT DISTINCT JSON_VALUE(properties, '$.anon_id') FROM `{dataset}.events`
+       WHERE (distinct_id = @key OR JSON_VALUE(properties, '$.user_id') = @key)
+         AND JSON_VALUE(properties, '$.anon_id') IS NOT NULL));
+   ```
+   - The request is authenticated with a service-account token signed with `node:crypto` (no new dependency).
+   - The project id comes from the key JSON's `project_id`. The dataset and location come from `BIGQUERY_DATASET` and `BIGQUERY_LOCATION`; the key has no location (review #7e).
+   - Service account `analytics-eraser` has `roles/bigquery.jobUser` on the project and `roles/bigquery.dataEditor` on that dataset only. The key is in `BIGQUERY_ERASER_KEY` (base64 JSON).
+   - A shared device's signed-out rows go too. That's accepted: they hold no personal data, and erring towards deletion is the safer side.
+4. **Failure handling.** Steps 2 and 3 are best effort. A failure is logged by error name only and never fails the deletion.
 
-Committed as `docs/analytics/bigquery/events_clean.sql` and `internal_users.sql`.
+**Daily re-run, 30 days.** `app/api/cron/finish-deletions` calls `eraseAnalytics` for every `deleted_accounts` row with `saved_at` in the last 30 days. It uses an admin `select`; markers live at least 30 days.
 
-`events_clean` columns (what the Metrics queries use, plus the rest): `event_id, name, type, ts, client_ts, user_id, anon_id, session_id, platform, os, browser, screen, country, app_version, is_internal_flg, user_info (JSON), properties (JSON)`. It:
+- The re-run catches rows still in the hourly export and rows from a paused-then-backfilled export, and it retries failures (review #7a).
+- **Belt and braces:** `events_clean` anti-joins `deleted_users`, so a row that arrives after day 30 is still never read.
 
-- reads `onquest_analytics.events`, drops `$`-events except `$pageview`, drops `is_bot_flg = true`, de-duplicates on `event_id`;
-- renames old events and rewrites their properties with the table below, so history and new rows read the same;
-- maps old common values (`platform` `web_mobile`/`web_desktop` → 0/1; missing `type` → the v2 type of the event);
-- sets `is_internal_flg = true` also for any row whose `anon_id` was ever seen with an internal `user_id`;
-- derives `first_seen_ts` (MIN ts per anon_id) into `user_signed_up` properties and `days_since_last_sign_in` (LAG over the user's `user_signed_in` / `user_signed_up`) into `user_signed_in` properties.
+**Unset env, or failure two days running.** The cron logs `Analytics erasure pending: N`. `docs/runbooks/analytics-erasure.md` has the manual step (PostHog person delete in the UI, plus the same SQL with `bq query`) and the proof records for G5/G6.
 
-`internal_users` = `SELECT DISTINCT user_id FROM events_clean WHERE is_internal_flg AND user_id IS NOT NULL`.
+**Retention after deletion.** BigQuery keeps deleted rows in time travel (7 days by default) plus fail-safe (7 days). The policy text therefore says "within 30 days" (founder item 2).
 
-**Rename map** (also `lib/analytics/renameMap.ts`, a plain data table that `renameMap.test.ts` validates against the taxonomy, so the SQL and the code can't drift silently):
+### 5.3 BigQuery (AN-01 writes the SQL; the CTO applies it and dry-runs it: gate G1)
+
+Files in `docs/analytics/bigquery/`:
+
+| File | Contents |
+|---|---|
+| `deleted_users.sql` | Key-only table `(user_id STRING, deleted_at TIMESTAMP)` |
+| `internal_users.sql` | Table `(user_id STRING)` seeded with the `ANALYTICS_INTERNAL_USER_KEYS` values |
+| `events_clean.sql` | View, no `email_id` |
+| `events_people.sql` | Founders-only view: `events_clean` + `user_info` (review #10d) |
+
+Notes for the SQL:
+
+- **Properties type.** It assumes the export's `properties` column is **STRING** (PostHog's default) and reads it with `SAFE.PARSE_JSON`. If the export uses the JSON type, the CTO says so at G1 and the builder drops the parse. Rewritten properties use `JSON_SET` / `JSON_REMOVE`. The view's `properties` output is **JSON**, which the Metrics `JSON_VALUE` calls accept.
+- **Columns.** `event_id, name, type, ts, client_ts, user_id, anon_id, session_id, platform, os, browser, screen, country, app_version, is_internal_flg, properties`.
+  - `user_id`, `anon_id`, `session_id`, `platform` and `screen` come out of `properties`.
+  - For v1 rows, `user_id` is `distinct_id` when it doesn't start with `anon_`, and `anon_id` is `properties.anon_id` or that `distinct_id` (review #10b).
+  - The export's `ip` column is **never** selected (review #10c).
+- **Filters.** Leaves out: `$`-events except `$pageview`, `is_bot_flg = true`, duplicate `event_id`s, and every row whose `user_id` or `anon_id` belongs to `deleted_users`.
+- **Renames.** v1 rows are renamed and rewritten with the table below.
+- **Common values.** `platform` `web_mobile`/`web_desktop` → 0/1. A missing `type` gets the event's v2 type.
+- **Time.** For v1 browser rows, `client_ts = timestamp`. `ts` before the cut-over (AN-02's deploy time, a constant in the SQL) is **device time**, and that is documented in the view (review #9c).
+- **Internal flag.** `is_internal_flg` is true when `user_id ∈ internal_users`, or when the row's `anon_id` was ever seen with such a `user_id`. That covers v1 history, which has no flag.
+- **Derived properties.** `first_seen_ts` is MIN(ts) per anon_id, written into `user_signed_up`. `days_since_last_sign_in` is LAG over the user's sign-in events.
+
+**Rename map.** It also lives in `lib/analytics/renameMap.ts`, validated by `renameMap.test.ts`:
 
 | Old event (old props) | v2 event | Property mapping |
 |---|---|---|
 | `create_option_tapped` {option quest/blog, available} | `create_option_click` | option quest→0, blog→1; available→available_flg |
-| `blog_managed` {action visibility, value} | `visibility_changed` | content_type 1; blog_id→content_id; value public/unlisted/private→to_visibility 0/1/2 |
-| `blog_managed` {action comments, value on/off} | `comments_toggled` | content_type 1; blog_id→content_id; on→comments_on_flg true |
+| `blog_managed` {action visibility, value} | `visibility_changed` | content_type 1; blog_id→content_id; value→to_visibility 0/1/2 |
+| `blog_managed` {action comments, value on/off} | `comments_toggled` | content_type 1; blog_id→content_id; on→comments_on_flg |
 | `blog_managed` {action delete} | `content_deleted` | content_type 1; blog_id→content_id; was_published_flg true |
 | `blog_deleted` {status draft, photos, chars_bucket, has_quest} | `content_deleted` | content_type 1; was_published_flg false; photos→photo_count |
 | `blog_managed` {action edit} | `blog_updated` | blog_id |
-| `blog_liked` {unlike, source blog_page/feed/after_sign_in} | `content_liked` | content_type 1; unlike→unlike_flg; source→0/2/3 |
+| `blog_liked` {unlike, source} | `content_liked` | content_type 1; unlike→unlike_flg; source blog_page/feed/after_sign_in→0/2/3 |
 | `blog_comment_posted` {length} | `comment_posted` | content_type 1; length→comment_length |
-| `legal_page_viewed` {page privacy/terms, source sign_in/settings/footer/direct} | same name | page→0/1; source→0/1/2/3 |
-| `blog_create_started` {source create/write_your_own} | same name | source→click_loc 0/1 |
+| `legal_page_viewed` {page, source} | same | page privacy/terms→0/1; source sign_in/settings/footer/direct→0/1/2/3 |
+| `blog_create_started` {source} | same | source create/write_your_own→click_loc 0/1 |
 | `blog_quest_linked` {action link/remove} | `blog_editor_action` | action→3/7 |
 | `blog_previewed` | `blog_editor_action` | action 5 |
-| `blog_draft_saved` {photos} | same name | photos→photo_count |
-| `blog_published` {visibility string, photos, has_quest, has_place} | same name | visibility→0/1/2; photos→photo_count; has_*→has_*_flg |
-| `blog_viewed` {signed_in, referrer string, has_quest} | same name | signed_in→signed_in_flg; referrer none/whatsapp/instagram/other→0/1/2/3; has_quest→has_quest_flg |
+| `blog_draft_saved` {photos} | same | photos→photo_count |
+| `blog_published` {visibility, photos, has_quest, has_place} | same | visibility→0/1/2; photos→photo_count; has_*→has_*_flg |
+| `blog_viewed` {signed_in, referrer, has_quest} | same | signed_in→signed_in_flg; referrer none/whatsapp/instagram/other→0/1/2/3; has_quest→has_quest_flg |
 | `blog_quest_opened` | `blog_quest_click` | unchanged |
 | `blog_read_end` | unchanged (Live) | |
 
-No other old event was ever sent (checked: no other call sites on main), so nothing else needs mapping.
+No other v1 event was ever sent; main has no other call sites.
+
+**DAU note (review #10).** Metrics' `COUNT(DISTINCT COALESCE(user_id, anon_id))` counts a person twice on the day they sign in. `events_clean` adds a column `person_id`: the `user_id`, else the `user_id` last seen with that `anon_id`, else the `anon_id`. The CTO should change that Metrics query to `COUNT(DISTINCT person_id)` in the sheet, then re-export (§14). The current query still runs unchanged.
 
 ### 5.4 Storage
 
@@ -236,11 +410,11 @@ None.
 
 ## 6. Frontend
 
-No visible UI. Rules for every frontend task:
+There is no visible UI.
 
 ### 6.1 Screens
 
-`lib/analytics/screens.ts`: `screenFor(template)` and `fromScreenFor(template)` (the INT64 `from_screen` code, 0–15 from `codes.csv`), from the route template:
+`lib/analytics/screens.ts`: `screenFor(template)` gives the screen, and `fromScreenFor(template)` gives the `from_screen` code (0–15), both from the public route template:
 
 | Route template | `screen` | `from_screen` |
 |---|---|---|
@@ -249,7 +423,7 @@ No visible UI. Rules for every frontend task:
 | `/quests` | quests | 2 |
 | `/@[handle]`, `/@[handle]/followers`, `/@[handle]/following` | profile | 3 |
 | `/@[handle]/[slug]` | quest_page | 4 |
-| `/@[handle]/blog/[slug]` (new template, AN-02) | blog_page | 5 |
+| `/@[handle]/blog/[slug]` (new template, AN-03) | blog_page | 5 |
 | `/settings`, `/settings/profile` | settings | 6 |
 | `/notifications` | notifications | 7 |
 | `/quests/new`, `/quests/[key]/arrange` | create_pick | 8 |
@@ -258,43 +432,50 @@ No visible UI. Rules for every frontend task:
 | `/quests/[key]/preview` | create_preview | 8 |
 | `/quests/[key]/share`; `PublishSheet` while open | publish | 8 |
 | `/create` | other | 10 |
-| `/blogs/new`, `/blogs/[key]/edit` (new templates, AN-02) | blog_editor | 11 |
+| `/blogs/new`, `/blogs/[key]/edit` (new templates, AN-03) | blog_editor | 11 |
 | `/guides/[slug]` | other | 12 |
 | `/login` | other | 13 |
 | `/onboarding`, `/welcome` | other | 14 |
 | `/privacy`, `/terms` | other | 15 |
-| anything else (incl. `/quests/[key]/export`, `/blogs/[key]`, `/blogs/[key]/share`, `/demo`) | other | 9 |
+| `/` and anything else (`/quests/[key]/export`, `/blogs/[key]`, `/blogs/[key]/share`, `/demo`) | other | 9 |
 
-`screens.test.ts` walks `app/` for `page.tsx` files, turns each into its public path, and asserts `screenFor(routeTemplate(path))` is defined and that only the rows above map to non-`other` screens.
+**`screens.test.ts`** checks the routes users actually see (review #13):
+
+1. Walk `app/` for `page.tsx`.
+2. Strip route-group segments like `(public)` and `(signed-in)`.
+3. Reverse the `next.config.ts` rewrites: `/u/[handle]` → `/@[handle]`, `/u/[handle]/{followers,following}` → `/@[handle]/…`, `/u/[handle]/[slug]` → `/@[handle]/[slug]`, `/b/[handle]/[slug]` → `/@[handle]/blog/[slug]`. The rewrites are read from the config, so a new rewrite breaks the test until it's mapped.
+4. Assert every resulting public path maps through `routeTemplate` to a row above.
 
 ### 6.2 Firing rules
 
-- Views fire once per mount (a `useRef` guard, like `useBlogViewed`), after the data they report is known; never in render.
-- Clicks fire in the handler before navigation; navigation away uses `sendBeacon` (already in `send()`).
-- `quest_view_ended` and `quest_create_abandoned` fire on `pagehide` or `visibilitychange → hidden` (once per view), and on in-app exits.
-- Templates stay pure: `templates/shared/QuestPlayer.tsx` gets an optional `onPageChange?(change: { pageNo; totalPages; direction; via; looped; fullscreen })` prop and `MemorySheet` an optional `onAction?(action, pageNo)`; `features/trip-page/TripView.tsx` sends the events. No analytics import in `templates/`. Jitter keys, defaults and markup don't change.
-- Property builders are pure functions next to the component (`questViewedProperties()`, …) with a unit test each; components only call `track(name, builder(...))`.
-- Owner views: `quest_viewed` is sent with `is_owner_flg` (the sheet keeps owner views); `blog_viewed` keeps skipping the writer (as today).
+- **Views** fire once per mount, guarded with a `useRef`, after their data is known.
+- **Clicks** fire in the handler. Navigation uses `sendBeacon`.
+- **Leaving.** `quest_view_ended` and `quest_create_abandoned` fire on `pagehide` or `visibilitychange → hidden` (once per view), and on in-app exits.
+- **Templates stay pure.** `QuestPlayer` gets an optional `onPageChange` prop and `MemorySheet` an optional `onAction` prop. The `features/trip-page` code sends the events. Templates import no analytics, and jitter and markup don't change.
+- **Property builders** are pure functions with a unit test that uses `expectNoProblems`.
+- **Owner views.** `quest_viewed` is sent with `is_owner_flg`. `blog_viewed` keeps skipping the writer, as today.
 
 ## 7. Security and privacy
 
 | Rule | Applies? | How the design meets it |
 |---|---|---|
-| Don't log user text, emails or photo URLs | Yes, changed | Decision 0004: `user_info.email_id` is the one exception, added on the server only, behind `ANALYTICS_USER_INFO`. Every other property is a code, count, length, flag or key (§4.1 patterns); the generator refuses any other free STRING |
-| Never store photo GPS / exact location | Yes | `photos_selected.with_location_count` is a count; geo is Vercel's city at most; no coordinates anywhere |
-| Raw IP never stored | Yes | `/ingest` stops forwarding `x-forwarded-for`; `$geoip_disable: true` on every event; PostHog "Discard client IP data" stays on |
-| Secret keys server-only | Yes | `POSTHOG_PERSONAL_API_KEY`, `BIGQUERY_ERASER_KEY` used only in `lib/analytics/erasure.ts` (`import 'server-only'`); Production env only |
-| `getUser()` on the server | Yes | `/ingest` and `trackServer` identify with `auth.getUser()` (cached 60 s per token hash in `/ingest`) |
-| No anonymous `select` policy | No change | No database change |
-| Public pages read only via `get_*` | Yes | Quest/blog page events use data the page already has; the follow state for `follows_owner_flg` comes from the existing `/api/quests/{key}/me` viewer route |
-| Unlisted URLs not leaked | Yes | Pageviews keep route templates (now also `/@[handle]/blog/[slug]`); `?src=` is removed from the address bar after reading; `/ingest` still drops Referer/cookies upstream |
-| Cache: no per-person data in cached HTML | Yes | `oq_uid`/`oq_actx` are read in the browser and in no-store handlers; public pages stay cached; `proxy.ts` matcher unchanged |
-| Analytics never fails an action | Yes | `trackServer` and `eraseAnalytics` swallow errors (error name logged only); events sent in `after()` |
-| Account deletion removes everything | Yes, extended | §5.2 |
+| Don't log user text, emails or photo URLs | Yes, changed | Decision 0004. `user_info.email_id` is the only exception. It is attached on the server only (`userInfo.ts` is `server-only`), for the session's own user, behind the gate. Other properties are codes, counts, lengths, flags or keys |
+| Identity can't be spoofed | Yes | `/ingest` and `trackServer` take identity only from `getUser()`. Browser merge events are dropped. Unparseable bodies are never forwarded (review #1) |
+| Never store photo GPS / exact location | Yes | Counts only. Geo stops at city |
+| Raw IP never stored | Yes | No `x-forwarded-for` upstream, `$geoip_disable`, PostHog "Discard client IP data" stays on, `ip` never selected. The CTO checks the history column (G1) |
+| Secret keys server-only | Yes | `POSTHOG_PERSONAL_API_KEY` and `BIGQUERY_ERASER_KEY` are used only in `erasure.ts`. Production and Preview each have their own scoped keys |
+| `getUser()` on the server | Yes | Bounded 60 s cache |
+| No anonymous `select` / public reads via `get_*` | No change | |
+| Unlisted URLs not leaked | Yes | Route templates only (blog template added). `?src=` is removed from the address bar. Referer is still dropped upstream |
+| No per-person data in cached HTML | Yes | No server-set cookie at all now. `proxy.ts` is unchanged (review #16 is moot) |
+| Notice before collection | Yes | `oq_actx` and `user_info` are both behind the policy gate (G3) |
+| Access to personal data in BigQuery | Yes | `events_clean` has no email. `events_people` is founders-only |
+| Account deletion removes everything | Yes, extended | §5.2, proved at G5/G6 |
+| Analytics never fails an action | Yes | Errors swallowed and logged by name only |
 
-### 7.1 CLAUDE.md line (for the CTO to apply on this PR)
+### 7.1 CLAUDE.md line (the coordinator applies it after CTO approval)
 
-Replace, under "Security rules (do not break)":
+Under "Security rules (do not break)", replace:
 
 > - Don't log user text, emails or photo URLs.
 
@@ -302,41 +483,50 @@ with:
 
 > - Don't log user text, emails or photo URLs. One exception: analytics `user_info` (username, email, city), attached on the server only and erased on account deletion (`docs/decisions/0004-user-info-and-email-in-analytics.md`).
 
-and under "Add a new page or feature" step 5, `lib/analytics.ts` → `lib/analytics/client.ts` (and `server.ts` for counts). This PR already updates `docs/03-security-visibility-seo.md` §B.4, `docs/01-hld.md` §3.3 and `docs/02-lld.md` §9 to point at the decision.
+Under "Add a new page or feature" step 5, change `lib/analytics.ts` to `lib/analytics/client.ts` (and `server.ts` for counts). Decision 0004 uses the same wording (review #14).
 
 ## 8. Backward compatibility
 
 | Area | Impact | How it stays compatible | Test |
 |---|---|---|---|
-| Stored `trips.content` | None | No stored shape changes | — |
-| Drafts in progress | None | `publishQuest.analytics` is optional; a draft started before the release publishes fine (click_loc null) | `publishActions` test with no `analytics` |
-| Migrations | None | — | — |
-| Archived rows | None | — | — |
-| Public functions and their zod schemas | None | — | — |
-| Public URLs, slugs, handles, OG | `?src=` added to in-app links | Pages ignore unknown params; old links without it work (source falls back to referrer rules) | `src.test.ts` |
-| Existing trip rendering | None | New props on `QuestPlayer`/`MemorySheet` are optional, default no-op | existing template tests |
-| Storage paths and variants | None | — | — |
-| Analytics events | **Breaking in PostHog** (names and types change) | One switch in AN-01; history mapped by `events_clean`; Metrics queries read `events_clean` only; PostHog insights on old names must be repointed (CTO) | `renameMap.test.ts`, Metrics dry-run |
-| Server actions | `publishQuest` input gains an optional field | Optional, so the previous release's browser bundle still validates | unit |
-| `/ingest` | Body is now parsed and rewritten | Unparseable bodies still forwarded (minus identity/IP); old cached browser bundles sending v1 names: PostHog receives them, `events_clean` maps them (same table) | `ingestEnrich.test.ts` with a v1-shaped body |
-| Env vars | New: `ANALYTICS_USER_INFO`, `POSTHOG_PROJECT_ID`, `POSTHOG_API_HOST`, `POSTHOG_PERSONAL_API_KEY`, `BIGQUERY_ERASER_KEY`, `NEXT_PUBLIC_ANALYTICS_E2E` (CI only) | All optional; unset = today's behaviour (no user_info, erasure skipped and logged) | unit |
-| Rollback | Previous release sends v1 names again | `events_clean` handles both; nothing in Postgres to undo | — |
+| Stored `trips.content`, blog drafts | No shape change | An old draft without `startedAt` still sends `blog_published` (optional `minutes_since_start`; events never drop) | `blogEvents.test.ts` old-draft case |
+| Migrations, archives, public functions | None | | |
+| Public URLs, OG | `?src=` on in-app links | Optional and stripped | `src.test.ts` |
+| Trip rendering | None | New template props are optional no-ops | Existing template tests |
+| Server actions | `publishQuest.analytics` optional | Old bundles validate | Unit |
+| PostHog event names | **Breaking** | One switch in AN-02. BigQuery history mapped. Insights repointed on deploy day (G4) | `renameMap.test.ts` |
+| PostHog property types | **Breaking**: `platform` (STRING→INT64), `visibility` (`blog_published`), `referrer` (`blog_viewed`), `source` (`legal_page_viewed`, `content_liked`), `page` (`legal_page_viewed`), `action` (`blog_editor_action`), `option` (`create_option_click`) keep names but change type | The CTO resets these property definitions' types in PostHog on deploy day (G4) | |
+| `ts` meaning | v1 browser rows have device time, v2 rows server time | `events_clean` sets `client_ts` for v1 rows and documents `ts` before the cut-over | Dry-run |
+| Old tabs / rollback through `/ingest` | v1 names still arrive | Frozen v1 allowlist keeps their properties (§3.5) | `ingestEnrich.test.ts` v1 body |
+| Env vars | New, all optional | Unset means today's behaviour, plus server-side identity | Unit |
+| Rollback | The old release sends v1 names, and its `/ingest` forwards IP again | `events_clean` handles both. Rolling back past AN-03 re-enables IP forwarding, so the CTO must not roll back past AN-03 once `user_info` is on (it isn't attached by the old code anyway) | |
 
-**Deploy order:** BigQuery views first (they handle v1 and v2 rows), then AN-01 (renames), then AN-02 with `ANALYTICS_USER_INFO` unset, AN-03 with its env vars, then the privacy policy + in-app notice (founder), then set `ANALYTICS_USER_INFO=on`. AN-04 … AN-12 in any order after AN-02.
+### 8.1 Deploy order and gates
+
+| Gate | Before | Who | What |
+|---|---|---|---|
+| G1 | AN-01 merges | CTO | Apply `docs/analytics/bigquery/*.sql`. `bq query --dry_run` each file and each Metrics query. Report the `properties` type. Confirm `ip` is empty in history, and null it once if not |
+| G2 | AN-03 merges | CTO | Set `ANALYTICS_INTERNAL_USER_KEYS` (Production and Preview) and seed `internal_users` |
+| G3 | `NEXT_PUBLIC_ANALYTICS_CONTEXT_COOKIE=on` or `ANALYTICS_USER_INFO=on` in Production | Founder | Privacy policy update and in-app notice live (§14) |
+| G4 | AN-02 deploys | CTO | Export the list of PostHog insights and dashboards that use v1 names, paste it on AN-02's issue, and repoint them on deploy day. Reset the changed property types (§8 table) |
+| G5 | AN-04 merges | CTO + builder | Preview proof with Preview-scoped keys. Preview has its own PostHog project and BigQuery dataset `onquest_analytics_preview` (with its own batch export) and its own eraser credentials, set in Vercel **Preview** only. Steps: delete a team test account on Preview, then check (1) the PostHog person is gone via the API, (2) `SELECT COUNT(*) … WHERE user_id = @key OR distinct_id = @key` is 0 after the next cron run, (3) `deleted_users` has the key. Record the result in the runbook |
+| G6 | `ANALYTICS_USER_INFO=on` in Production | CTO | Same check in Production with a team test account. Record it in the runbook |
+
+**Order:** G1 → AN-01 → AN-02 (with G4) → G2 → AN-03 (cookie off, `user_info` `off` in Production and `team` on Preview) → AN-04 (G5) → AN-05 … AN-13 in number order → AN-14 → G3 → cookie on → G6 → `ANALYTICS_USER_INFO=on`.
 
 ## 9. Performance and cost
 
-- **Page speed:** no new client library; `track()` cost unchanged. `oq_actx` write is one `document.cookie` per event. No effect on LCP.
-- **`/ingest`:** one extra `getUser()` (≈ 50–150 ms, server side, off the user's path since sends are beacons) per 60 s per signed-in browser instance; Vercel function time per ingest request rises slightly. Within Hobby limits at friends-test volume.
-- **PostHog:** about 3–5× more events per session than today (57 new events). Free tier is 1 M events/month; at 100 users × ~150 events/day ≈ 450 k/month. Watch it; `quest_page_turn` is the heaviest.
-- **BigQuery:** views cost nothing stored; queries scan `events` (small). One DML DELETE per deleted account per day for 7 days: under 10 MB billed each, pennies.
-- No Supabase image transformations; no new paid service. A personal API key and a GCP service account, both free.
+- **Page speed.** No new client library. No effect on LCP.
+- **`/ingest`.** Body parsing, plus at most one `getUser()` per access token per 60 s (bounded cache). Function time per ingest request rises slightly. That fits Hobby at friends-test volume.
+- **PostHog.** About 3× more events. Production at around 450k events a month fits the 1M free tier. The Preview project is a second free project.
+- **BigQuery.** Views and two tiny tables. Erasure runs one DML script per deleted account per day for 30 days, each under 10 MB billed, so pennies. The Preview dataset is free-tier size.
+- No Supabase image transformations and no new paid service.
 
 ## 10. Analytics
 
-The events are the feature: names, properties and codes are exactly `docs/analytics/v2/events.csv` and `codes.csv`. Counts come from server events only:
+Names, properties and codes are exactly `docs/analytics/v2/events.csv` and `codes.csv`. Counts come only from server events, sent after a successful write and only on a state change:
 
-| Counted | Server event (source of truth) | Browser events that must not be counted |
+| Counted | Server event (source of truth) | Browser events never counted |
 |---|---|---|
 | Sign-ups / sign-ins | `user_signed_up`, `user_signed_in` | `sign_in_click` |
 | Quests published / updated | `quest_creation_complete`, `quest_updated` | `preview_exit` action 1 |
@@ -346,89 +536,173 @@ The events are the feature: names, properties and codes are exactly `docs/analyt
 | Notifications | `notification_sent` | `notification_click` |
 | Blogs | `blog_draft_saved`, `blog_published`, `blog_updated` | `blog_create_started` |
 
-Server events are sent only after the database write returned success, and only when the state changed (a repeat like, re-tapping the same visibility or setting sends nothing, as the sheet says).
-
-Change-log row (AN-01 adds it to `docs/analytics/change-log.csv`, "Tested" filled when the preview check passes):
+AN-02 adds this row to `docs/analytics/change-log.csv`. "Tested" is filled in when E3 passes:
 
 `2026-11-xx, "Analytics v2 (OQ-12, OQ-22, spec docs/specs/analytics-v2.md)", "Taxonomy v2 from docs/analytics/v2 replaces v1 (moved to docs/analytics/v1). Renamed: create_option_tapped→create_option_click; blog_managed→visibility_changed / comments_toggled / content_deleted / blog_updated; blog_deleted→content_deleted; blog_liked→content_liked; blog_comment_posted→comment_posted; blog_quest_linked, blog_previewed→blog_editor_action; blog_quest_opened→blog_quest_click; codes replace strings on legal_page_viewed, blog_create_started, blog_draft_saved, blog_published, blog_viewed. History mapped in BigQuery events_clean.", "Not yet"`
 
 ## 11. Test plan
 
-- **Unit (Vitest), next to each file:**
-  - `taxonomy.test.ts`: generated file matches the CSVs (stale check); 72 events; 1 Live + 14 rename + 57 to build in the CSV; parse cases (INT64 enum, en-dash range, open range `2–`, comma list, `(common props only)`, continuation rows); optional-list snapshot.
-  - **`taxonomyRules.test.ts` (the taxonomy check):** every event has a known type and user rule; every free STRING has a pattern (no user text); every `*_flg` is BOOL; every code list a property cites ("Codes: from_screen") exists in `codes.csv`; every event type `server` in the "counted" column of §10; no name in `features/`, `app/` or `lib/` passed to `track`/`trackServer` that isn't in the taxonomy (grep over sources, so a stale call fails even if typed as `string`); no v1 name left in code.
-  - `metricsSql.test.ts`: every `name = '…'` / `name IN (…)` and `'$.prop'` in `metrics.csv` exists in the taxonomy (or is a common column).
-  - `renameMap.test.ts`: every mapped v2 property and value is valid in the taxonomy.
-  - `validate.test.ts`: INT64 enums, ranges, patterns; a key property with a space, `@` or `http` is rejected; an email in any property except `user_info` is rejected.
-  - `common.test.ts`, `screens.test.ts`, `userAgent.test.ts`, `internal.test.ts`, `userInfo.test.ts`, `ingestEnrich.test.ts` (user_id from session; spoofed key replaced; browser `user_info` overwritten; no `x-forwarded-for` upstream; v1 body forwarded), `server.test.ts` (context from cookie; notification_sent has null anon/session/user_info), `erasure.test.ts` (request shapes; 404 = done; failure doesn't throw), `codes.test.ts`, `src.test.ts`, and each event's property builder.
-  - `privacy.test.ts` (extended): route templates for blog pages; `client.ts` common props contain no `user_info` / email; `oq_actx` never contains anything but ids, screen and platform.
-- **Database access (`tests/db/`):** no change; `accountDelete.test.ts` and the full suite must still pass.
-- **Backward compatibility:** `ingestEnrich.test.ts` with a v1-shaped body; `publishQuest` without `analytics`; `QuestPlayer` without `onPageChange`.
-- **Playwright (AN-13):** the existing smoke flow (create → publish → view logged out → export one frame) with `/ingest` intercepted: every captured event is in the taxonomy and valid; `quest_viewed`, `quest_page_turn`, `quest_view_ended`, `quest_creation_complete`-preceding client events appear in order; no captured browser payload contains `user_info`, `@` or the test account's email. The bot guard lets events through only when `NEXT_PUBLIC_ANALYTICS_E2E=1`, which is set in the CI e2e job and never in Vercel (a unit test asserts it's ignored when `NODE_ENV=production` and `VERCEL=1`).
-- **BigQuery (CTO, once per view change):** `bq query --dry_run` on `events_clean.sql`, `internal_users.sql` and each Metrics query (commands in `docs/runbooks/analytics-erasure.md` § Views).
-- **Preview check on the Vercel preview, per task (replaces UX tests):** with PostHog's live events view open:
-  - E1 signed in: events carry `user_id` and (flag on in Preview) `user_info` with your email and city; signed out: `user_id` and `user_info` null.
-  - E2 every screen visited shows the right `screen`; no `unknown`.
-  - E3 the task's events fire once each, with the sheet's properties, at the sheet's "Fires when".
-  - E4 (AN-03) delete a test account: the person is gone from PostHog; the BigQuery DELETE ran (cron log `analytics erasure done`).
+**Unit tests (Vitest), next to each file:**
+
+- **`taxonomy.test.ts`**:
+  - stale check;
+  - 72 events in the CSV (1 Live, 14 rename, 57 to build);
+  - each parse case;
+  - optional-list snapshot, with permanent and temporary entries labelled.
+- **`taxonomyRules.test.ts`** (the taxonomy check):
+  - every free STRING has a pattern;
+  - `*_flg` properties are BOOL;
+  - cited code lists exist in `codes.csv`;
+  - counted events are type `server`;
+  - every name passed to `track`/`trackServer` in `features/`, `app/` and `lib/` is in the taxonomy (source grep);
+  - no v1 name is left outside `taxonomyV1.ts`, `renameMap.ts` and `ingestEnrich.ts`;
+  - every temporary override names a task.
+- **`metricsSql.test.ts`**: every event name and `'$.prop'` in `metrics.csv` exists in the taxonomy, or is a common column of `events_clean`.
+- **`renameMap.test.ts`**: every mapped v2 property and value is valid.
+- **`validate.test.ts`**:
+  - patterns;
+  - a key with a space, `@` or `http` is removed;
+  - an email-shaped value in any property is removed;
+  - **an event with a missing required property is still sent**;
+  - `expectNoProblems` works.
+- **`ingestEnrich.test.ts`**:
+  - distinct id and `user_id` come from the session;
+  - a body claiming another key is re-keyed;
+  - no session and no valid anon_id → dropped;
+  - browser `$identify`, `$create_alias` and `$merge_dangerously` dropped;
+  - `/ingest` emits one `$identify` per new (anon, key) pair;
+  - browser `user_info` overwritten;
+  - gzip header, `compression` param, oversized and non-JSON bodies → 204, nothing forwarded;
+  - no `x-forwarded-for` upstream;
+  - v1 body keeps its v1 properties;
+  - `is_internal_flg` set from the key with `ANALYTICS_USER_INFO` unset.
+- **Smaller modules**:
+  - `userInfo.test.ts`: null when the session user ≠ the expected key; `off`/`team`/`on`; cache bound and expiry;
+  - `internal.test.ts`;
+  - `common.test.ts`;
+  - `screens.test.ts` (§6.1);
+  - `userAgent.test.ts`;
+  - `server.test.ts`: cookie off → null anon/session/screen and platform from UA; `notification_sent` and `account_deleted` shapes;
+  - `erasure.test.ts`: request shapes, 404 = done, failures don't throw, the 30-day cron window;
+  - `codes.test.ts`;
+  - `src.test.ts`;
+  - `blogEvents.test.ts`: old-shape draft (no `startedAt`) → `blog_published` sent with no `minutes_since_start`;
+  - every property builder.
+- **`privacy.test.ts`**:
+  - blog route templates;
+  - `client.ts` sends no `user_info`, `distinct_id` claim or `$identify`;
+  - `userInfo.ts` and `erasure.ts` start with `import 'server-only'`.
+
+**Other checks:**
+
+- **Database access (`tests/db/`):** no change; the full suite must pass.
+- **Backward compatibility:** v1 `/ingest` body; `publishQuest` without `analytics`; `QuestPlayer` without `onPageChange`; old blog draft.
+- **AN-14, a manual gate, run by hand against a Vercel preview like `blogs.spec.ts` (review #6).** There is no CI e2e job: CI has no Supabase and Playwright isn't installed.
+  - `tests/e2e/analytics.spec.ts` runs the flow sign in → create → publish → open the Quest signed out → turn pages → leave, with `/ingest` requests captured.
+  - It asserts that every captured browser payload is a known v2 event with valid properties, and that `quest_viewed`, `quest_page_turn` and `quest_view_ended` fire in order.
+  - It asserts that **no browser payload contains the test account's email or handle**. The `@` check is dropped, because route templates contain `@`.
+  - It checks the Preview PostHog project through its API for the same run: `user_id` and `user_info` present on signed-in events (Preview is `team`, the test account is internal), null when signed out.
+  - The bot guard lets headless browsers through only when `NEXT_PUBLIC_ANALYTICS_E2E=1`. That is set on **Preview only** and inert when `NEXT_PUBLIC_VERCEL_ENV=production`; a unit test asserts this.
+  - The run and its result are recorded on the AN-14 issue, the same way as `blogs.spec.ts`.
+- **BigQuery:** gate G1.
+- **Preview check per task (E1–E4):**
+  - E1: signed-in events carry `user_id`, and `user_info` for team accounts; signed out, both are null.
+  - E2: `screen` is right everywhere.
+  - E3: the task's events fire once, with the sheet's properties.
+  - E4: is G5.
 
 ## 12. Tasks
 
-Build mode: Backend + Frontend split. Backend lands first in each group where the frontend depends on it. Every task: one PR, CI green, Reviewer agent review.
+### 12.1 Ordering and merge rules
+
+- **Strict order.** Tasks merge in number order: AN-01, then AN-02, and so on through AN-14. A task may start against the contract before the one ahead of it merges. It rebases on main before review and merges only after every lower number has merged.
+- **Shared files.** These follow the merge order:
+
+  | File | Tasks |
+  |---|---|
+  | `features/account/actions.ts` | AN-03, AN-04, AN-08, AN-11 |
+  | `app/auth/{callback,confirm}/route.ts` | AN-08 only (AN-03 no longer touches them) |
+  | `features/editor/publishActions.ts` | AN-06, AN-09 |
+  | `features/quests/ManageQuestSheet.tsx` | AN-07, AN-10 |
+  | `features/account/SettingsView.tsx` | AN-12, AN-13 |
+  | `features/home/{FeedCard,BlogFeedCard}.tsx`, `features/blogs/BlogList.tsx` | AN-05 (`?src=`), AN-10 (share) |
+  | `features/blog-editor/{LinkQuestRow,NewBlogView}.tsx` | AN-02, AN-13 |
+  | `features/blogs/ManageBlogSheet.tsx` | AN-02, AN-10 |
+  | `.env.example` | AN-03, AN-04 |
+
+- **`lib/analytics/codes.ts`** has one section per task, headed `// AN-xx`. Tasks only append. A task that needs an earlier task's mapping imports it and doesn't edit it.
+- **`OPTIONAL_OVERRIDES`.** A task removes only its own temporary entries and regenerates `taxonomy.ts`.
+
+### 12.2 Tasks
 
 | ID | Owner | Task | Touches | Covers | Depends on | Done when |
 |---|---|---|---|---|---|---|
-| AN-01 | backend | Taxonomy v2 + rename the 14 live events | `lib/analytics/{taxonomyFromCsv,generate,taxonomy,validate,codes,renameMap}.ts` + tests (`taxonomy`, `taxonomyRules`, `metricsSql`, `renameMap`, `validate`, `codes`); move `docs/analytics/*.csv` (not change-log) to `docs/analytics/v1/`; `docs/analytics/README.md`; `docs/analytics/change-log.csv`; `docs/analytics/bigquery/{events_clean,internal_users}.sql`; call sites: `features/shell/CreateChooser.tsx`, `features/blog-editor/{NewBlogView,LinkQuestRow,BlogComposer,actions}.ts(x)` + their property helpers, `features/blogs/{actions,socialActions,LiveBlogSocialProvider,LinkedQuestCard,BlogPageArticle}.ts(x)`, `features/legal/LegalViewed.tsx` | AC7, AC8, AC10, AC14 | — | `npm run analytics` regenerates `taxonomy.ts` from v2; all 14 renamed + `blog_read_end` send v2 shapes (blog halves); no v1 name in code; views dry-run clean; change-log row added |
-| AN-02 | backend | Common properties, identify, screens, user_info, app_opened | `lib/analytics/{client,server,common,ids,screens,userAgent,internal,userInfo,src,routeTemplate,ingestProxy,ingestEnrich}.ts`, `Pageviews.tsx` + tests; `app/ingest/[...path]/route.ts`; `proxy.ts` (oq_uid only); `app/auth/{callback,confirm}/route.ts` (oq_uid only); `features/account/actions.ts` (clear oq_uid in signOut/deleteMyAccount); `features/editor/PublishSheet.tsx` (setScreen only); `.env.example` | AC1–AC6, `app_opened` | AN-01 | Every event has all common.csv properties; no `unknown` screen; user_info behind flag; `/ingest` drops IP; `app_opened` fires once per new session with landing_page/entry_type/signed_in_flg/first_open_flg/utm_source |
-| AN-03 | backend | Analytics erasure on account deletion | `lib/analytics/erasure.ts` + test, `features/account/accountDeletion.ts`, `app/api/cron/finish-deletions/route.ts`, `docs/runbooks/analytics-erasure.md` (incl. § Views dry-run commands), `.env.example` | AC12 | AN-02 | Deleting a test account on Preview removes the PostHog person and BigQuery rows; failure logged and retried by cron for 7 days; manual runbook works |
-| AN-04 | frontend | Quest page: view, unavailable, page turns, full screen, photo sheet, view ended, report | `features/trip-page/{LiveSocialProvider,TripView,QuestFullscreen,QuestUnavailable,UnavailableActions}.tsx` + builders/tests, `templates/shared/{QuestPlayer,MemorySheet}.tsx` (optional callbacks only), `features/shell/SiteFooter.tsx`; `?src=` on Quest links in `features/{home,explore,profile,quests,notifications,blogs,guides}/` card components | `quest_viewed`, `quest_unavailable`, `quest_page_turn`, `quest_fullscreen`, `quest_photo_click`, `quest_view_ended`, `report_click` | AN-02 | 7 events fire per the sheet on Preview (E3); templates import no analytics; template tests unchanged |
-| AN-05 | backend | Create flow server events | `features/editor/{actions,arrangeActions,publishActions}.ts` (+ `analytics` input on `publishQuest`), builders + tests, `lib/analytics/codes.ts` (source→click_loc) | `quest_draft_created`, `quest_arranged`, `quest_creation_complete`, `quest_updated` | AN-02 | Server events sent after successful writes; `arrange_mode`, `captions_auto_kept`, `minutes_since_start`, `days_since_signup` computed on the server; old publish input still valid |
-| AN-06 | frontend | Create flow client events | Every `/quests/new` link listed in the sheet (adds the missing `?source=` for Make your own and What's a Quest?), `features/editor/{NewQuestView,usePickPhotos,ReviewPages,PageCard,ChooseTemplate,PreviewQuest,EditorDraft,draftStore}.ts(x)`, `features/quests/{QuestTile,ManageQuestSheet}.tsx`, `features/blogs/ManageDraftSheet.tsx`, builders + tests | `create_quest_click`, `photos_selected`, `photo_limit_hit`, `quest_edit`, `template_select`, `quest_preview`, `preview_exit`, `draft_resumed`, `quest_create_abandoned`; sends `publishQuest.analytics` | AN-05 | 9 events per the sheet; abandon fires once on pagehide; publish passes clickLoc/editCount/changeTypes |
-| AN-07 | backend (single builder) | Sign up, sign in, username, welcome | `app/auth/{callback,confirm}/route.ts`, `lib/auth/next.ts` (intent → source code), `features/account/{actions,LoginForm,SignInSheet,HandleForm,EditProfileForm,Welcome}.ts(x)` + builders/tests | `sign_in_click`, `user_signed_up`, `user_signed_in`, `username_set`, `username_rejected`, `welcome_step_viewed`, `welcome_click` | AN-02 | 7 events per the sheet; referrer_* from `?ref=`; sign-up vs sign-in by profile existence |
-| AN-08 | backend | Social, notifications and manage server events | `features/trip-page/actions.ts`, `features/blogs/socialActions.ts` (comment_deleted), `features/profile/actions.ts`, `lib/email/{notify,notifyServer}.ts` (+ `?src=email`), `features/editor/publishActions.ts` (setQuestVisibility, setQuestComments, deleteQuest), builders + tests | Quest halves of `content_liked`, `comment_posted`, `visibility_changed`, `comments_toggled`, `content_deleted`; `comment_deleted`, `user_followed`, `notification_sent` | AN-02 | Sent only on state change; notification_sent has recipient user_id and null anon/session/user_info |
-| AN-09 | frontend | Share, Instagram export, comment box, notification clicks, manage menu | `features/editor/ShareScreen.tsx`, `features/blog-editor/BlogShareScreen.tsx`, `features/home/{FeedCard,BlogFeedCard}.tsx`, `features/quests/ManageQuestSheet.tsx`, `features/blogs/{ManageBlogSheet,BlogTopBar,BlogList}.tsx`, `features/shell/{ShareLinkButton,AppHeader}.tsx`, `features/profile/ProfileHeader.tsx`, `features/export/ExportScreen.tsx`, `features/trip-page/{CommentComposer,QuestTopBar}.tsx`, `features/notifications/NotificationsView.tsx`, builders + tests | `share_click`, `instagram_export`, `comment_box_open`, `notification_click`, `manage_menu_open` | AN-02 (AN-08 for `?src=email`) | 5 events per the sheet; share channel is the one actually used |
-| AN-10 | backend | Profile, settings and account server events | `features/account/actions.ts` (saveProfile, saveSettings, signOut, deleteMyAccount), `app/email/unsubscribe/route.ts`, builders + tests | `profile_updated`, `setting_changed`, `user_signed_out`, `account_deleted` (user_info null) | AN-03 | 4 events per the sheet; `account_deleted` survives erasure |
-| AN-11 | frontend | Navigation, Home, Explore, search, guides | `features/shell/AppBottomBar.tsx`, `features/home/{HomeView,HomeFeed,HomeBanner,WhatIsAQuestSheet}.tsx`, `features/account/SettingsView.tsx` (whats_a_quest only), `features/explore/ExploreView.tsx`, `features/guides/GuideView.tsx`, builders + tests | `tab_click`, `home_viewed`, `feed_load_more_click`, `whats_a_quest_click`, `explore_viewed`, `search`, `search_result_click`, `guide_viewed` | AN-02 | 8 events per the sheet; search sends lengths and chip town only |
-| AN-12 | frontend | Profile, settings, errors, blog extras | `features/profile/{ProfileView,ProfileSections,FollowsView}.tsx`, `features/quests/YourQuestsView.tsx`, `features/account/{SettingsView,DeleteAccountDialog}.tsx`, the `error_shown` locations in the sheet, `features/blog-editor/{FormatToolbar,useBodyFormatting,PhotoRow,PlaceRow,ComposerTopBar,LinkQuestRow,NewBlogView}.ts(x)`, `features/blogs/BlogUnavailable.tsx`, builders + tests | `profile_viewed`, `profile_tab_click`, `follow_list_viewed`, `settings_viewed`, `feedback_click`, `account_delete_click`, `error_shown`, `blog_format_click`, `blog_unavailable`; remaining `blog_editor_action` actions (0, 1, 2, 4, 6, 8, 9) and `blog_create_started` click_loc 2 | AN-02 | 9 events + the blog extras per the sheet |
-| AN-13 | frontend | End-to-end analytics check | `tests/e2e/` (smoke + new `analytics.spec.ts`), `lib/analytics/bots.ts` (E2E override), `.github/workflows/ci.yml` (env for the e2e job only) | AC9, AC10 | AN-04, AN-06 | Playwright asserts valid events and no email in browser payloads; the override is inert in production |
+| AN-01 | backend | v2 generator, validation, rules and BigQuery SQL (no call-site change) | `lib/analytics/{taxonomyFromCsv,generate,validate,renameMap}.ts`, generated `taxonomyV2.ts`; tests `taxonomy`, `taxonomyRules` (v2 part), `metricsSql`, `renameMap`, `validate`; `docs/analytics/bigquery/{events_clean,events_people,internal_users,deleted_users}.sql`; `docs/analytics/README.md` | AC7, AC10, AC14 | G1 (before merge) | `npm run analytics` writes `taxonomyV2.ts` from v2. Validation removes bad properties but never drops an event. The SQL is committed and G1 has passed (CTO comment on the PR) |
+| AN-02 | backend | Rename the 14 live events | `taxonomyV2.ts` → `taxonomy.ts`; old file frozen as `taxonomyV1.ts`; v1 CSVs → `docs/analytics/v1/`; `lib/analytics/codes.ts` (AN-02 section); `features/shell/{CreateChooser.tsx,CreateChooser.test.ts}`; `features/blog-editor/{NewBlogView,LinkQuestRow,BlogComposer,actions,shouldTrackDraftSave}.ts(x)`, `deleteBlogDraft.test.ts`; `features/blogs/{actions,socialActions,blogEvents,blogEvents.test,readerEvents,blogReferrer,LiveBlogSocialProvider,LinkedQuestCard,BlogPageArticle,ManageBlogSheet}.ts(x)`; `features/legal/LegalViewed.tsx`; `tests/e2e/blogs.spec.ts`; `docs/analytics/change-log.csv` | AC8 | AN-01, G4 | All 14 send v2 names. Each required property is filled from the §4.1 "AN-02 fills these itself" table, or is a temporary override. The old-draft test passes. No v1 name is left in code. Change-log row added. G4 list is on the issue |
+| AN-03 | backend | Identity, common properties, screens, `user_info`, `app_opened` | `lib/analytics/{client,server,common,ids,screens,userAgent,internal,userInfo,src,routeTemplate,ingestProxy,ingestEnrich,codes}.ts`, `Pageviews.tsx` and tests; `app/ingest/[...path]/route.ts`; `features/editor/PublishSheet.tsx` (setScreen only); `.env.example`; removes the `from_screen` override | AC1–AC6, `app_opened` | AN-02, G2 | All §11 `ingestEnrich`, `userInfo`, `internal`, `screens` and `server` tests pass. The cookie is behind its flag. `user_info` is behind `off`/`team`/`on`. `app_opened` fires once per new session. E1 and E2 pass on Preview |
+| AN-04 | backend | Analytics erasure and `account_deleted` | `lib/analytics/erasure.ts` and test; `features/account/{accountDeletion,actions}.ts` (`account_deleted` + erasure); `app/api/cron/finish-deletions/route.ts`; `docs/runbooks/analytics-erasure.md`; `.env.example` | AC12, `account_deleted` | AN-03, G5 (before merge) | `account_deleted` is sent with a `deleted_` distinct id and null anon/session/`user_info`. Erasure runs from deletion and from the cron for 30 days. G5 proof recorded in the runbook |
+| AN-05 | frontend | Quest page events | `features/trip-page/{LiveSocialProvider,TripView,QuestFullscreen,QuestUnavailable,UnavailableActions}.tsx` and builders; `templates/shared/{QuestPlayer,MemorySheet}.tsx` (optional callbacks); `features/shell/SiteFooter.tsx`; `?src=` on Quest links in `features/{home,explore,profile,quests,notifications,blogs,guides}/` cards; `codes.ts` (AN-05) | `quest_viewed`, `quest_unavailable`, `quest_page_turn`, `quest_fullscreen`, `quest_photo_click`, `quest_view_ended`, `report_click` | AN-04 | 7 events pass E3. Templates import no analytics |
+| AN-06 | backend | Create flow server events | `features/editor/{actions,arrangeActions,publishActions}.ts` (+ `publishQuest.analytics`), builders and tests; `codes.ts` (AN-06) | `quest_draft_created`, `quest_arranged`, `quest_creation_complete`, `quest_updated` | AN-05 | Sent after successful writes. Old publish input still valid |
+| AN-07 | frontend | Create flow client events | the `/quests/new` links listed in the sheet (adds the missing `?source=`); `features/editor/{NewQuestView,usePickPhotos,ReviewPages,PageCard,ChooseTemplate,PreviewQuest,EditorDraft,draftStore}.ts(x)`; `features/quests/{QuestTile,ManageQuestSheet}.tsx`; `features/blogs/ManageDraftSheet.tsx`; builders and tests; `codes.ts` (AN-07) | `create_quest_click`, `photos_selected`, `photo_limit_hit`, `quest_edit`, `template_select`, `quest_preview`, `preview_exit`, `draft_resumed`, `quest_create_abandoned`; sends `publishQuest.analytics` | AN-06 | 9 events pass E3 |
+| AN-08 | backend (single builder) | Sign up, sign in, username, welcome | `app/auth/{callback,confirm}/route.ts`; `lib/auth/next.ts`; `features/account/{actions,LoginForm,SignInSheet,HandleForm,EditProfileForm,Welcome}.ts(x)`; builders and tests; `codes.ts` (AN-08) | `sign_in_click`, `user_signed_up`, `user_signed_in`, `username_set`, `username_rejected`, `welcome_step_viewed`, `welcome_click` | AN-07 | 7 events pass E3 |
+| AN-09 | backend | Social, notifications, manage and blog server extras | `features/trip-page/actions.ts`; `features/blogs/{socialActions,actions,blogEvents}.ts`; `features/blog-editor/actions.ts`; `features/profile/actions.ts`; `lib/email/{notify,notifyServer}.ts` (+ `?src=email`); `features/editor/publishActions.ts` (visibility, comments, delete); builders and tests; `codes.ts` (AN-09); removes its overrides | Quest halves of `content_liked`, `comment_posted`, `visibility_changed`, `comments_toggled`, `content_deleted`; `comment_deleted`, `user_followed`, `notification_sent`; the blog properties in §4.1 owned by AN-09 | AN-08 | Sent only on a state change. `notification_sent` shape right. Overrides removed |
+| AN-10 | frontend | Share, export, comment box, notification clicks, manage menu | `features/editor/ShareScreen.tsx`, `features/blog-editor/BlogShareScreen.tsx`, `features/home/{FeedCard,BlogFeedCard}.tsx`, `features/quests/ManageQuestSheet.tsx`, `features/blogs/{ManageBlogSheet,BlogTopBar,BlogList}.tsx`, `features/shell/{ShareLinkButton,AppHeader}.tsx`, `features/profile/ProfileHeader.tsx`, `features/export/ExportScreen.tsx`, `features/trip-page/{CommentComposer,QuestTopBar}.tsx`, `features/notifications/NotificationsView.tsx`; builders and tests; `codes.ts` (AN-10) | `share_click`, `instagram_export`, `comment_box_open`, `notification_click`, `manage_menu_open` | AN-09 | 5 events pass E3 |
+| AN-11 | backend | Profile, settings, sign-out server events | `features/account/actions.ts` (saveProfile, saveSettings, signOut), `app/email/unsubscribe/route.ts`; builders and tests; `codes.ts` (AN-11) | `profile_updated`, `setting_changed`, `user_signed_out` | AN-10 | 3 events pass E3. The unsubscribe route sends `user_info: null` (no session) |
+| AN-12 | frontend | Navigation, Home, Explore, search, guides | `features/shell/AppBottomBar.tsx`, `features/home/{HomeView,HomeFeed,HomeBanner,WhatIsAQuestSheet}.tsx`, `features/account/SettingsView.tsx` (whats_a_quest), `features/explore/ExploreView.tsx`, `features/guides/GuideView.tsx`; builders and tests; `codes.ts` (AN-12) | `tab_click`, `home_viewed`, `feed_load_more_click`, `whats_a_quest_click`, `explore_viewed`, `search`, `search_result_click`, `guide_viewed` | AN-11 | 8 events pass E3 |
+| AN-13 | frontend | Profile, settings, errors, blog extras | `features/profile/{ProfileView,ProfileSections,FollowsView}.tsx`, `features/quests/YourQuestsView.tsx`, `features/account/{SettingsView,DeleteAccountDialog}.tsx`, the sheet's `error_shown` locations, `features/blog-editor/{FormatToolbar,useBodyFormatting,PhotoRow,PlaceRow,ComposerTopBar,LinkQuestRow,NewBlogView}.ts(x)`, `features/blogs/{BlogUnavailable,LiveBlogSocialProvider}.tsx` (read_time_min); builders and tests; `codes.ts` (AN-13); removes its overrides | `profile_viewed`, `profile_tab_click`, `follow_list_viewed`, `settings_viewed`, `feedback_click`, `account_delete_click`, `error_shown`, `blog_format_click`, `blog_unavailable`; the other `blog_editor_action` actions; `blog_create_started` click_loc 2 | AN-12 | Events pass E3. No temporary override left |
+| AN-14 | frontend | End-to-end analytics gate (manual, Preview) | `tests/e2e/analytics.spec.ts`, `tests/e2e/playwright.config.ts` (comment), `lib/analytics/bots.ts` (Preview-only override) and test | AC9, AC10 | AN-13 | Run by hand on a Preview. Result posted on the issue. Assertions as in §11 |
 
 ## 13. Decisions
 
 | # | Decision | Options considered | Choice | Reason | Needs CTO sign-off? |
 |---|---|---|---|---|---|
-| D1 | Where `user_info` is attached | (a) browser sends it; (b) `/ingest` and `trackServer` attach it from the session; (c) BigQuery join with a users table | (b) | Email never reaches the browser bundle or localStorage; one trust boundary; (c) needs Postgres data in BigQuery | **Yes** (decision 0004) |
-| D2 | How client events get the user key | (a) `oq_uid` cookie set by server, client calls `identify()`; (b) `/ingest` rewrites distinct ids and emits `$identify` itself; (c) `/api/me` fetch per page | (a), with `/ingest` verifying `user_id` | Matches "call identify()"; no extra request; the proxy check stops a spoofed key | No |
-| D3 | How server events get anon/session/screen/platform | (a) cookie `oq_actx`; (b) an `analytics` field on every action input | (a) | No change to dozens of action schemas; works for auth route handlers too | No |
-| D4 | os / browser | (a) parse the user agent in code; (b) map PostHog's `$os`/`$browser` in BigQuery | (a) | Testable in Vitest; same value on browser and server events | No |
-| D5 | `is_internal_flg` | (a) handles list in code; (b) BigQuery table of keys only (common.csv's suggestion) | (a) + `internal_users` view built from it | The brief names handles and asks for a property; the view keeps Metrics query 1 valid. Risk: a renamed handle stops being flagged (Later: keys) | No |
-| D6 | Which properties are required | (a) all; (b) none; (c) required unless the sheet marks them conditional, plus an override list | (c) | Catches missing data in dev without false alarms; list snapshotted in a test | No |
-| D7 | `first_seen_ts`, `days_since_last_sign_in` | (a) send from the server; (b) derive in `events_clean` | (b) | The previous sign-in time isn't available at callback (Supabase has already updated `last_sign_in_at`); the sheet itself calls first_seen_ts cheaper in BigQuery | **Yes** (deviates from the sheet) |
-| D8 | `click_loc` on `quest_creation_complete` | (a) store it in the draft document; (b) browser passes it to `publishQuest` | (b) | No stored-shape change; a draft resumed on another device sends null and BigQuery can join `quest_draft_created` | No |
-| D9 | BigQuery erasure | (a) automated DELETE job from Vercel; (b) manual step only; (c) BigQuery scheduled query keyed on `account_deleted` | (a) with (b) as fallback | Deletion actually happens without a human; (c) races with PostHog deleting the very event it keys on | **Yes** (new GCP service account + secret) |
-| D10 | Raw IP to PostHog | (a) keep forwarding for PostHog GeoIP; (b) stop, use Vercel headers | (b) | "Never the raw IP"; one geo source for browser and server events | No |
-| D11 | `user_info` on `notification_sent` | (a) recipient's; (b) null | (b) | No request from the recipient (no geo); joins on `user_id`; one less copy of an email | No |
-| D12 | `/ingest` session check | `getUser()` per event; `getUser()` cached 60 s per token hash; `getClaims()` (local JWT) | cached `getUser()` | Follows CLAUDE.md; cost bounded | No |
-| D13 | Old CSVs | delete; keep in place; move to `docs/analytics/v1/` | move | History for the rename map, no confusion with v2 | No |
+| D1 | Where `user_info` is attached | browser; server (`/ingest`, `trackServer`); BigQuery join | Server, for the session's own user only | Email never reaches the browser. One trust boundary | **Yes** (decision 0004) |
+| D2 | Who decides identity and merges anon → user | `oq_uid` cookie + browser `identify()`; `/ingest` sets `distinct_id` and emits `$identify` | `/ingest` (revised) | A browser-set id can file events under someone else (review #1) | **Yes** (changes the brief's "call identify()" into one server-side identify) |
+| D3 | anon/session/screen on server events | cookie `oq_actx`; field on every action | Cookie, behind its own flag until the policy is live | No change to action schemas. Holding the cookie back meets the founder gate (review #4) | No |
+| D4 | os / browser | parse UA in code; BigQuery mapping | Code | Testable; same on both senders | No |
+| D5 | `is_internal_flg` | handles; user keys | User keys (`ANALYTICS_INTERNAL_USER_KEYS` + `internal_users` table) (revised) | Works with `user_info` off and on sign-up. Handle reuse can't flag a stranger (review #3) | No |
+| D6 | Required properties | all required; none required; conditional + overrides | Conditional + permanent/temporary overrides, and **never drop an event** (revised) | Renamed and counted events can't silently disappear (review #2) | No |
+| D7 | `first_seen_ts`, `days_since_last_sign_in` | send; derive in `events_clean` | Derive | The previous sign-in time isn't available at the callback | **Yes** (deviates from the sheet) |
+| D8 | `click_loc` at publish | store in the draft; browser passes it | Browser passes it | No stored-shape change | No |
+| D9 | BigQuery erasure | automated DELETE; manual only; scheduled query | Automated + 30-day re-run + `deleted_users` anti-join, with a manual fallback | Deletion happens without a human. Backfills can't resurrect rows | **Yes** (GCP service accounts and keys, Preview and Production) |
+| D10 | Raw IP to PostHog | keep; stop | Stop | "Never the raw IP" | No |
+| D11 | `user_info` on `notification_sent` | recipient's; null | Null | No request from the recipient; one copy fewer | No |
+| D12 | Session check in `/ingest` | per event; cached `getUser()`; `getClaims()` | Cached `getUser()`, LRU 1,000, 60 s | CLAUDE.md rule, bounded cost | No |
+| D13 | Old CSVs and old taxonomy | delete; move + freeze | Move to `docs/analytics/v1/`, freeze `taxonomyV1.ts` for 30 days | Old tabs and rollback keep their properties (review #9d) | No |
+| D14 | Top-level `country` | move into `user_info.geoip` only (common.csv); keep top-level too | Keep top-level too | Signed-out events would otherwise have no geo at all. Deliberate deviation from common.csv (review #15) | **Yes** (deviates from the sheet) |
+| D15 | Preview analytics | share the Production PostHog project; separate Preview project and dataset | Separate, with `ANALYTICS_USER_INFO=team` on Preview | Testers' emails never reach analytics before the policy, and erasure can be proved with Preview-scoped keys (review #5, #12) | **Yes** (new PostHog project, BigQuery dataset, credentials) |
+| D16 | Personal data in BigQuery views | one view; `events_clean` without email + founders-only `events_people` | Two views | Metrics readers never see emails (review #10d) | No |
 
 ## 14. Risks and open questions
 
-- **Technical (for the CTO):**
-  - Apply the CLAUDE.md line (§7.1) on this PR.
-  - D1, D7, D9 sign-off. D9 needs a GCP service account `analytics-eraser` and a PostHog personal API key (scope `person:write`), both added to Vercel Production only.
-  - `events_clean` and `internal_users` could not be checked against the live dataset from here (no BigQuery access in this session); their SQL is written in AN-01 against the PostHog export schema and must be dry-run by you before AN-01 merges. If `events_clean` already exists with a different shape, tell AN-01 before it starts.
-  - PostHog insights and dashboards built on v1 names stop getting new data on AN-01's deploy; repoint them to v2 names (or read BigQuery).
-  - PostHog event volume roughly triples (§9); free tier still fits the friends test.
-  - The BigQuery DELETE can collide with an export load job in progress; it's retried daily for 7 days.
-  - Team handle flagging breaks if a team member renames their handle (D5).
-  - `/ingest` doesn't refresh sessions (only `proxy.ts` on app routes does). A signed-in person whose access token expired while reading a public page sends `user_id: null` / `user_info: null` until they next open an app route; PostHog still merges by distinct id. Accepted; measure the share on Preview (E1).
-- **Product (for the founder):**
-  1. Privacy policy update (decision 0004, Consequences): new text for "What we collect" (analytics now include your email, username and city when signed in; still no IP address), "Cookies and storage" (two small first-party analytics cookies: a random device/visit id and your account id), and deletion; plus the in-app notice the policy promises before a change that matters. `ANALYTICS_USER_INFO` stays off until it's live.
-  2. Short legal check (DPDP) on emailing-in-analytics before public launch (already planned in `docs/03` §B.4).
+**Technical, for the CTO:**
+
+- Gates G1, G2, G4, G5 and G6 (§8.1).
+- Sign-off on D1, D2, D7, D9, D14 and D15.
+- Credentials: a PostHog personal API key with `person:write`, and a GCP service account `analytics-eraser`, **one set per environment**. Plus the Preview PostHog project and the `onquest_analytics_preview` dataset with its own batch export.
+- Change the DAU query in the sheet's Metrics tab to `COUNT(DISTINCT person_id)` and re-export `metrics.csv` (§5.3).
+- **PostHog's `bulk_delete` contract and deletion timing are unverified here.** AN-04 confirms them, and G5 proves them.
+- The BigQuery DELETE can collide with an export load job. The daily re-run covers it.
+- **Expired sessions.** `/ingest` doesn't refresh sessions. A signed-in person whose access token expired while on a public page is treated as signed out (anon distinct id) until they open an app route. PostHog still has the earlier merge, so their events join up. The share is measured on Preview (E1).
+- After `user_info` is on, never roll back past AN-03 (§8).
+
+**Product, for the founder** (review founder #1–#3):
+
+1. **Policy timing.** The spec assumes **AN-03 holds the new cookie (`oq_actx`) and `user_info` back until the policy is live**. Tell us if you'd rather publish the policy before AN-03 deploys.
+2. **Policy text.**
+   - "What we collect": analytics include your email, username and city when signed in, and still no IP address.
+   - "Cookies and storage": one small first-party analytics cookie with a random device and visit id.
+   - "Services": add Google Cloud (BigQuery) next to PostHog.
+   - Deletion: analytics are deleted "within 30 days" of deleting the account.
+   - The in-app notice before it applies.
+   - OK with "within 30 days"?
+3. **Plain email.** Do you agree with plain email, not hashed, in PostHog (US host) and BigQuery, given decision 0004's reasons? Plus the short DPDP legal check before public launch.
 
 ## 15. Later
 
-- A Required column in the taxonomy sheet (replaces D6's heuristic).
-- Flag internal users by key instead of handle.
-- Move counts dashboards from PostHog to BigQuery entirely.
-- `sign_in_click.source` split of code 3 into Like / Comment / Follow / Create tab (sheet comment; not approved).
-- Automatic export check that the sheet and the CSVs match (today: re-export by hand in the same PR).
+- Remove `taxonomyV1.ts` and the v1 branch in `/ingest` 30 days after AN-02 deploys (contract step).
+- A Required column in the taxonomy sheet.
+- Move count dashboards from PostHog to BigQuery entirely.
+- `sign_in_click.source` split of code 3 (sheet comment; not approved).
+- Automatic check that the sheet and the CSVs match.
+- A CI e2e job, once CI has a Supabase project and Playwright is installed.
