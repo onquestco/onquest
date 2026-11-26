@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | PRD | `docs/prds/2026-11-analytics-v2.md` (CTO brief, 26 Nov 2026) + `docs/analytics/v2/{events,common,codes,metrics}.csv` (export of the Google Sheet "OnQuest Taxonomy v2 (from code)", approved by the CTO) |
-| Status | Draft, revision 3 (plan review round 2 passed; its should-fixes applied: `docs/reviews/analytics-v2-plan.md`) |
+| Status | Draft, revision 4 (plan review round 2 passed; CTO decision 26 Nov: one PostHog project and one dataset for Preview and Production) |
 | Build mode | Backend + Frontend split, 14 tasks (AN-01 … AN-14), merged strictly in number order (§12.1) |
 | Tracker IDs | OQ-12, OQ-22 · AN-01 #50, AN-02 #51, AN-03 #52, AN-04 #53, AN-05 #54, AN-06 #55, AN-07 #56, AN-08 #57, AN-09 #58, AN-10 #59, AN-11 #60, AN-12 #61, AN-13 #62, AN-14 #64 (label `spec:analytics-v2`) |
 
@@ -38,7 +38,7 @@ Nothing changes for users except one privacy-policy update.
 | AC9 57 To-build events wired, in the sheet's order | AN-05 … AN-13 (§12) | Property-builder unit tests; E3; AN-14 manual gate |
 | AC10 no user text in properties (lengths and counts only); email_id is the only exception | Generated rules: free STRING properties only for keys and an allowlisted few, with strict patterns (§4.1). `user_info` attached on the server only | `taxonomyRules.test.ts`, `validate.test.ts` |
 | AC11 server events are the source of truth for counts | §10 | `taxonomyRules.test.ts` |
-| AC12 account deletion removes the user's analytics | `lib/analytics/erasure.ts`: PostHog bulk delete, BigQuery DELETE and the `deleted_users` anti-join. Runs from `deleteAccount()` and again from the daily cron for 30 days | `erasure.test.ts`; **gates G5/G6**: proved on Preview with Preview-scoped keys, then on Production with a team test account, before `user_info` turns on |
+| AC12 account deletion removes the user's analytics | `lib/analytics/erasure.ts`: PostHog bulk delete, BigQuery DELETE and the `deleted_users` anti-join. Runs from `deleteAccount()` and again from the daily cron for 30 days | `erasure.test.ts`; **gates G5/G6**: proved on Preview against the shared project and dataset with a team test account, then on Production, before `user_info` turns on |
 | AC13 CLAUDE.md rule, decision record, privacy-policy flag | Decision 0004; §7.1 line (coordinator); §14 founder items | Review |
 | AC14 Metrics tab queries stay valid | `events_clean` exposes the columns they use. `metricsSql.test.ts` checks event names and properties. CTO dry-run is gate G1 | `metricsSql.test.ts`, `bq query --dry_run` |
 | AC15 tests per CLAUDE.md | Vitest next to each file. No RLS change, so no new `tests/db/` file; `accountDelete.test.ts` must still pass | CI |
@@ -243,6 +243,7 @@ Common properties on every event (`common.ts`, from `common.csv`):
 | `platform` | `0` mobile (pointer: coarse) / `1` desktop | `oq_actx`, else from the user agent (`Mobi` → 0) |
 | `os`, `browser` | `/ingest`, `userAgent.ts` | same function |
 | `app_version` | short SHA | same |
+| `env` | `production` / `preview`, from `NEXT_PUBLIC_VERCEL_ENV` (anything else, e.g. local dev, sends `preview`) | `production` / `preview`, from `VERCEL_ENV` (same rule); `/ingest` overwrites the browser's value with its own |
 | `screen` | current screen (§6.1) | `oq_actx`, else null |
 | `country` | `x-vercel-ip-country` at `/ingest` | request header |
 | `is_internal_flg` | `/ingest`: verified key ∈ `ANALYTICS_INTERNAL_USER_KEYS` | same |
@@ -278,7 +279,7 @@ export async function userInfoForSession(expectedUserKey: string): Promise<UserI
   - `team`: only when the user key is in `ANALYTICS_INTERNAL_USER_KEYS`;
   - `on`: every signed-in person.
 
-  Preview uses `team` (review #12). Production uses `off` until gates G3–G6, then `on`.
+  Preview uses `team` and stays there (review #12, CTO 26 Nov). Production uses `off` until gates G3–G6, then `on`.
 - **Cache.** One LRU, max 1,000 entries, 60 s TTL, keyed by SHA-256 of the access token. It holds `{ userKey, email, handle }`.
 - **Lookups.** `getUser()` gives the key and email. The handle comes from the request's own RLS client: `profiles.select('handle').eq('key', user.id).maybeSingle()`. `/ingest` and `trackServer` share this module.
 
@@ -376,11 +377,14 @@ Files in `docs/analytics/bigquery/`:
 | `internal_users.sql` | Table `(user_id STRING)` seeded with the `ANALYTICS_INTERNAL_USER_KEYS` values |
 | `events_clean.sql` | View, no `email_id` |
 | `events_people.sql` | Founders-only view: `events_clean` + `user_info` (review #10d) |
+| `events_clean_all.sql`, `events_people_all.sql` | The same two views without the `env = 'production'` filter, for Preview checks |
 
 Notes for the SQL:
 
 - **Properties type.** It assumes the export's `properties` column is **STRING** (PostHog's default) and reads it with `SAFE.PARSE_JSON`. If the export uses the JSON type, the CTO says so at G1 and the builder drops the parse. Rewritten properties use `JSON_SET` / `JSON_REMOVE`. The view's `properties` output is **JSON**, which the Metrics `JSON_VALUE` calls accept.
-- **Columns.** `event_id, name, type, ts, client_ts, user_id, anon_id, session_id, platform, os, browser, screen, country, app_version, is_internal_flg, properties`.
+- **One project, one dataset (CTO, 26 Nov 2026).** Preview and Production send to the same PostHog project and the same dataset `onquest_analytics`; every event carries `env`. v1 rows have no `env` and count as `production` (Preview had no PostHog key before v2).
+- **Columns.** `event_id, name, type, env, ts, client_ts, user_id, anon_id, session_id, platform, os, browser, screen, country, app_version, is_internal_flg, properties`.
+- **Environment filter.** `events_clean` and `events_people` return `env = 'production'` only, so the Metrics queries need no change. For Preview, query the all-environment views `events_clean_all` / `events_people_all` (same columns, no `env` filter; same access rules) and add `WHERE env = 'preview'`. In PostHog, filter insights on `env = production` (G4 adds it to every repointed insight).
   - `user_id`, `anon_id`, `session_id`, `platform` and `screen` come out of `properties`.
   - For v1 rows, `user_id` is `distinct_id` when it doesn't start with `anon_`, and `anon_id` is `properties.anon_id` or that `distinct_id` (review #10b).
   - The export's `ip` column is **never** selected (review #10c).
@@ -479,7 +483,7 @@ There is no visible UI.
 | Identity can't be spoofed | Yes | `/ingest` and `trackServer` take identity only from `getUser()`. Browser merge events are dropped. Unparseable bodies are never forwarded (review #1) |
 | Never store photo GPS / exact location | Yes | Counts only. Geo stops at city |
 | Raw IP never stored | Yes | No `x-forwarded-for` upstream, `$geoip_disable`, PostHog "Discard client IP data" stays on, `ip` never selected. The CTO checks the history column (G1) |
-| Secret keys server-only | Yes | `POSTHOG_PERSONAL_API_KEY` and `BIGQUERY_ERASER_KEY` are used only in `erasure.ts`. Production and Preview each have their own scoped keys |
+| Secret keys server-only | Yes | `POSTHOG_PERSONAL_API_KEY` and `BIGQUERY_ERASER_KEY` are used only in `erasure.ts`. One set, in Vercel Production and Preview (shared project and dataset). The DELETE is scoped to the deleted key and its devices, so a Preview deletion (Preview's own Supabase keys) can't touch Production people |
 | `getUser()` on the server | Yes | Bounded 60 s cache |
 | No anonymous `select` / public reads via `get_*` | No change | |
 | Unlisted URLs not leaked | Yes | Route templates only (blog template added). `?src=` is removed from the address bar. Referer is still dropped upstream |
@@ -523,11 +527,11 @@ Under "Add a new page or feature" step 5, change `lib/analytics.ts` to `lib/anal
 
 | Gate | Before | Who | What |
 |---|---|---|---|
-| G1 | AN-01 merges | CTO | Apply `docs/analytics/bigquery/*.sql`. `bq query --dry_run` each file and each Metrics query. Report the `properties` type. Confirm `ip` is empty in history, and null it once if not. Once Preview has data with the cookie off (after AN-07 on Preview), run "Viewer → creator" and the `first_seen_ts` derivation on the Preview dataset and confirm both are non-zero |
+| G1 | AN-01 merges | CTO | Apply `docs/analytics/bigquery/*.sql`. `bq query --dry_run` each file and each Metrics query. Report the `properties` type. Confirm `ip` is empty in history, and null it once if not. Once Preview has data with the cookie off (after AN-07 on Preview), run "Viewer → creator" and the `first_seen_ts` derivation on `events_clean_all` with `env = 'preview'` and confirm both are non-zero |
 | G2 | AN-03 merges | CTO | Set `ANALYTICS_INTERNAL_USER_KEYS` (Production and Preview) and seed `internal_users` |
 | G3 | `NEXT_PUBLIC_ANALYTICS_CONTEXT_COOKIE=on` or `ANALYTICS_USER_INFO=on` in Production | Founder | Privacy policy update and in-app notice live (§14). `NEXT_PUBLIC_*` flags are inlined at build time: switching `NEXT_PUBLIC_ANALYTICS_CONTEXT_COOKIE` needs a redeploy (`ANALYTICS_USER_INFO` is read at runtime) |
 | G4 | AN-02 deploys | CTO | Export the list of PostHog insights and dashboards that use v1 names, paste it on AN-02's issue, and repoint them on deploy day. Reset the changed property types (§8 table) |
-| G5 | AN-04 merges | CTO + builder | Preview proof with Preview-scoped keys. Preview has its own PostHog project and BigQuery dataset `onquest_analytics_preview` (with its own batch export) and its own eraser credentials, set in Vercel **Preview** only. Steps: sign in two team test accounts, A then B, in one browser. Delete A on Preview, then check (1) the PostHog person is gone via the API, (2) `SELECT COUNT(*) … WHERE user_id = @keyA OR distinct_id = @keyA` is 0 after the next cron run, (3) `deleted_users` has A's key and `deleted_devices` the shared `anon_id`, (4) B's signed-in rows on that `anon_id` are all still there, (5) `account_deleted` for A is still in `events_clean`. Record the result in the runbook |
+| G5 | AN-04 merges | CTO + builder | Preview proof against the **shared** PostHog project and `onquest_analytics` dataset (CTO, 26 Nov), with team test accounts. It relies on the DELETE being scoped to the deleted `user_id` and its devices (§5.2): Preview accounts live in Preview's Supabase project, so their keys never match a Production person, and device ids are per origin. Steps: sign in two team test accounts, A then B, in one browser. Delete A on Preview, then check (1) the PostHog person is gone via the API, (2) `SELECT COUNT(*) … WHERE user_id = @keyA OR distinct_id = @keyA` is 0 after the next cron run, (3) `deleted_users` has A's key and `deleted_devices` the shared `anon_id`, (4) B's signed-in rows on that `anon_id` are all still there, (5) `account_deleted` for A is still in `events_clean_all` (`env = 'preview'`), (6) the Production row count outside A's key and devices is unchanged. Record the result in the runbook |
 | G6 | `ANALYTICS_USER_INFO=on` in Production | CTO | Same check in Production with a team test account. Record it in the runbook |
 
 **Order:** G1 → AN-01 → AN-02 (with G4) → G2 → AN-03 (cookie off, `user_info` `off` in Production and `team` on Preview) → AN-04 (G5) → AN-05 … AN-13 in number order → AN-14 → G3 → cookie on → G6 → `ANALYTICS_USER_INFO=on`.
@@ -536,8 +540,8 @@ Under "Add a new page or feature" step 5, change `lib/analytics.ts` to `lib/anal
 
 - **Page speed.** No new client library. No effect on LCP.
 - **`/ingest`.** Body parsing, plus at most one `getUser()` per access token per 60 s (bounded cache). Function time per ingest request rises slightly. That fits Hobby at friends-test volume.
-- **PostHog.** About 3× more events. Production at around 450k events a month fits the 1M free tier. The Preview project is a second free project.
-- **BigQuery.** Views and two tiny tables. Erasure runs one DML script per deleted account per day for 30 days, each under 10 MB billed, so pennies. The Preview dataset is free-tier size.
+- **PostHog.** About 3× more events. Production at around 450k events a month plus a little Preview traffic (one project) fits the 1M free tier.
+- **BigQuery.** Views and two tiny tables. Erasure runs one DML script per deleted account per day for 30 days, each under 10 MB billed, so pennies. Preview rows share the dataset and are filtered out of the default views.
 - No Supabase image transformations and no new paid service.
 
 ## 10. Analytics
@@ -594,6 +598,7 @@ AN-02 adds this row to `docs/analytics/change-log.csv`. "Tested" is filled in wh
   - no `x-forwarded-for` upstream;
   - v1 body keeps its v1 properties;
   - `is_internal_flg` set from the key with `ANALYTICS_USER_INFO` unset.
+  - `env` set from the server's `VERCEL_ENV`, overwriting the browser's value.
 - **Smaller modules**:
   - `userInfo.test.ts`: null when the session user ≠ the expected key; `off`/`team`/`on`; cache bound and expiry;
   - `internal.test.ts`;
@@ -619,7 +624,7 @@ AN-02 adds this row to `docs/analytics/change-log.csv`. "Tested" is filled in wh
   - `tests/e2e/analytics.spec.ts` runs the flow sign in → create → publish → open the Quest signed out → turn pages → leave, with `/ingest` requests captured.
   - It asserts that every captured browser payload is a known v2 event with valid properties, and that `quest_viewed`, `quest_page_turn` and `quest_view_ended` fire in order.
   - It asserts that **no browser payload contains the test account's email or handle**. The `@` check is dropped, because route templates contain `@`.
-  - It checks the Preview PostHog project through its API for the same run: `user_id` and `user_info` present on signed-in events (Preview is `team`, the test account is internal), null when signed out.
+  - It checks the shared PostHog project through its API for the same run, filtered on `env = preview`: `user_id` and `user_info` present on signed-in events (Preview is `team`, the test account is internal), null when signed out.
   - The bot guard lets headless browsers through only when `NEXT_PUBLIC_ANALYTICS_E2E=1`. That is set on **Preview only** and inert when `NEXT_PUBLIC_VERCEL_ENV=production`; a unit test asserts this. It is inlined at build time, so set it and **redeploy the preview** before the run.
   - The run and its result are recorded on the AN-14 issue, the same way as `blogs.spec.ts`.
 - **BigQuery:** gate G1.
@@ -657,7 +662,7 @@ AN-02 adds this row to `docs/analytics/change-log.csv`. "Tested" is filled in wh
 
 | ID | Owner | Task | Touches | Covers | Depends on | Done when |
 |---|---|---|---|---|---|---|
-| AN-01 | backend | v2 generator, validation, rules and BigQuery SQL (no call-site change) | `lib/analytics/{taxonomyFromCsv,generate,validate,renameMap}.ts`, generated `taxonomyV2.ts`; tests `taxonomy`, `taxonomyRules` (v2 part), `metricsSql`, `renameMap`, `validate`; `docs/analytics/bigquery/{events_clean,events_people,internal_users,deleted_users,deleted_devices}.sql`; `docs/analytics/README.md` | AC7, AC10, AC14 | G1 (before merge) | `npm run analytics` writes `taxonomyV2.ts` from v2. Validation removes bad properties but never drops an event. The SQL is committed and G1 has passed (CTO comment on the PR) |
+| AN-01 | backend | v2 generator, validation, rules and BigQuery SQL (no call-site change) | `lib/analytics/{taxonomyFromCsv,generate,validate,renameMap}.ts`, generated `taxonomyV2.ts`; tests `taxonomy`, `taxonomyRules` (v2 part), `metricsSql`, `renameMap`, `validate`; `docs/analytics/bigquery/{events_clean,events_people,events_clean_all,events_people_all,internal_users,deleted_users,deleted_devices}.sql`; `docs/analytics/README.md` | AC7, AC10, AC14 | G1 (before merge) | `npm run analytics` writes `taxonomyV2.ts` from v2. Validation removes bad properties but never drops an event. The SQL is committed and G1 has passed (CTO comment on the PR) |
 | AN-02 | backend | Rename the 14 live events | `taxonomyV2.ts` → `taxonomy.ts`; old file frozen as `taxonomyV1.ts`; v1 CSVs → `docs/analytics/v1/`; `lib/analytics/codes.ts` (AN-02 section); `features/shell/{CreateChooser.tsx,CreateChooser.test.ts}`; `features/blog-editor/{NewBlogView,LinkQuestRow,BlogComposer,actions,shouldTrackDraftSave}.ts(x)`, `deleteBlogDraft.test.ts`; `features/blogs/{actions,socialActions,blogEvents,blogEvents.test,readerEvents,blogReferrer,LiveBlogSocialProvider,LinkedQuestCard,BlogPageArticle,ManageBlogSheet}.ts(x)`; `features/legal/LegalViewed.tsx`; `tests/e2e/blogs.spec.ts`; `docs/analytics/change-log.csv` | AC8 | AN-01, G4 | All 14 send v2 names. Each required property is filled from the §4.1 "AN-02 fills these itself" table, or is a temporary override. The old-draft test passes. No v1 name is left in code. Change-log row added. G4 list is on the issue |
 | AN-03 | backend | Identity, common properties, screens, `user_info`, `app_opened` | `lib/analytics/{client,server,common,ids,screens,userAgent,internal,userInfo,src,routeTemplate,ingestProxy,ingestEnrich,codes}.ts`, `Pageviews.tsx` and tests; `app/ingest/[...path]/route.ts`; `features/editor/PublishSheet.tsx` (setScreen only); `.env.example`; removes the `from_screen` override | AC1–AC6, `app_opened` | AN-02, G2 | All §11 `ingestEnrich`, `userInfo`, `internal`, `screens` and `server` tests pass. The cookie is behind its flag. `user_info` is behind `off`/`team`/`on`. `app_opened` fires once per new session. E1 and E2 pass on Preview |
 | AN-04 | backend | Analytics erasure and `account_deleted` | `lib/analytics/erasure.ts` and test; `features/account/{accountDeletion,actions}.ts` (`account_deleted` + erasure); `app/api/cron/finish-deletions/route.ts`; `docs/runbooks/analytics-erasure.md`; `.env.example` | AC12, `account_deleted` | AN-03, G5 (before merge) | `account_deleted` is sent with a `deleted_` distinct id and null anon/session/`user_info`. Erasure runs from deletion and from the cron for 30 days. G5 proof recorded in the runbook |
@@ -684,13 +689,13 @@ AN-02 adds this row to `docs/analytics/change-log.csv`. "Tested" is filled in wh
 | D6 | Required properties | all required; none required; conditional + overrides | Conditional + permanent/temporary overrides, and **never drop an event** (revised) | Renamed and counted events can't silently disappear (review #2) | No |
 | D7 | `first_seen_ts`, `days_since_last_sign_in` | send; derive in `events_clean` | Derive | The previous sign-in time isn't available at the callback | **Yes** (deviates from the sheet) |
 | D8 | `click_loc` at publish | store in the draft; browser passes it | Browser passes it | No stored-shape change | No |
-| D9 | BigQuery erasure | automated DELETE; manual only; scheduled query | Automated + 30-day re-run + `deleted_users` anti-join, with a manual fallback | Deletion happens without a human. Backfills can't resurrect rows | **Yes** (GCP service accounts and keys, Preview and Production) |
+| D9 | BigQuery erasure | automated DELETE; manual only; scheduled query | Automated + 30-day re-run + `deleted_users` anti-join, with a manual fallback | Deletion happens without a human. Backfills can't resurrect rows | **Yes** (one GCP service account and key, used by Production and Preview) |
 | D10 | Raw IP to PostHog | keep; stop | Stop | "Never the raw IP" | No |
 | D11 | `user_info` on `notification_sent` | recipient's; null | Null | No request from the recipient; one copy fewer | No |
 | D12 | Session check in `/ingest` | per event; cached `getUser()`; `getClaims()` | Cached `getUser()`, LRU 1,000, 60 s | CLAUDE.md rule, bounded cost | No |
 | D13 | Old CSVs and old taxonomy | delete; move + freeze | Move to `docs/analytics/v1/`, freeze `taxonomyV1.ts` for 30 days | Old tabs and rollback keep their properties (review #9d) | No |
 | D14 | Top-level `country` | move into `user_info.geoip` only (common.csv); keep top-level too | Keep top-level too | Signed-out events would otherwise have no geo at all. Deliberate deviation from common.csv (review #15) | **Yes** (deviates from the sheet) |
-| D15 | Preview analytics | share the Production PostHog project; separate Preview project and dataset | Separate, with `ANALYTICS_USER_INFO=team` on Preview | Testers' emails never reach analytics before the policy, and erasure can be proved with Preview-scoped keys (review #5, #12) | **Yes** (new PostHog project, BigQuery dataset, credentials) |
+| D15 | Preview analytics | separate Preview project and dataset; one shared project and dataset with an `env` property | **Shared, with `env`** (CTO decision, 26 Nov 2026). `ANALYTICS_USER_INFO=team` on Preview; default views filter to `production` | One setup and one set of credentials. Testers' emails still never reach analytics (team-only), and G5 proves erasure on Preview through the key-scoped DELETE | Decided by the CTO |
 | D16 | Personal data in BigQuery views | one view; `events_clean` without email + founders-only `events_people` | Two views | Metrics readers never see emails (review #10d) | No |
 
 ## 14. Risks and open questions
@@ -698,8 +703,8 @@ AN-02 adds this row to `docs/analytics/change-log.csv`. "Tested" is filled in wh
 **Technical, for the CTO:**
 
 - Gates G1, G2, G4, G5 and G6 (§8.1).
-- Sign-off on D1, D2, D7, D9, D14 and D15.
-- Credentials: a PostHog personal API key with `person:write`, and a GCP service account `analytics-eraser`, **one set per environment**. Plus the Preview PostHog project and the `onquest_analytics_preview` dataset with its own batch export.
+- Sign-off on D1, D2, D7, D9 and D14 (D15 decided 26 Nov).
+- Credentials: one PostHog personal API key with `person:write` and one GCP service account `analytics-eraser`, set in Vercel Production and Preview. No Preview project, dataset or keys.
 - Change the DAU query in the sheet's Metrics tab to `COUNT(DISTINCT person_id)` and re-export `metrics.csv` (§5.3).
 - **PostHog's `bulk_delete` contract and deletion timing are unverified here.** AN-04 confirms them, and G5 proves them.
 - The BigQuery DELETE can collide with an export load job. The daily re-run covers it.
