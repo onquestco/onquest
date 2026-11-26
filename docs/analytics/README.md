@@ -1,6 +1,9 @@
-# Analytics taxonomy (export)
-
-> **v2 (26 Nov 2026):** `v2/{events,common,codes,metrics}.csv` are the export of the Google Sheet "OnQuest Taxonomy v2 (from code)" (https://docs.google.com/spreadsheets/d/1WMLkO5IG95Iv8VfuPKbTq8z1hlZmlLBDK-GcgK_iZLQ/edit), approved by the CTO. They become the source for `lib/analytics/taxonomy.ts` in AN-01 (`docs/specs/analytics-v2.md`), which also moves the v1 files below to `v1/`. Until AN-01 merges, the code still reads the v1 files.
+> **v2 (26 Nov 2026):** `v2/{events,common,codes,metrics}.csv` are the export of the Google Sheet "OnQuest Taxonomy v2 (from code)" (https://docs.google.com/spreadsheets/d/1WMLkO5IG95Iv8VfuPKbTq8z1hlZmlLBDK-GcgK_iZLQ/edit), approved by the CTO (`docs/specs/analytics-v2.md`).
+>
+> - `npm run analytics` writes `lib/analytics/taxonomyV2.ts` from `v2/events.csv` and `v2/common.csv` (AN-01), next to the v1 `taxonomy.ts`, which the app still sends. AN-02 switches the call sites to v2, renames `taxonomyV2.ts` to `taxonomy.ts`, freezes the old one as `taxonomyV1.ts` and moves the v1 files below to `v1/`.
+> - Re-export the sheet into `v2/` and run `npm run analytics` in the same PR; `taxonomy.test.ts` fails if the generated file is stale, and `taxonomyRules.test.ts` fails on a free-text STRING, a `_flg` that isn't BOOL or a code list missing from `codes.csv`.
+> - `bigquery/` holds the BigQuery tables and views (spec §5.3): `deleted_users`, `deleted_devices`, `events_people_all` (all the logic, with `user_info`; founders only), `events_clean_all` (without `user_info`), and the production-only `events_clean` (what the Metrics queries read) and `events_people`. `bigquery/apply-g1.sql` is the same six statements in order, with the CTO's dry-run checklist (gate G1), ready to paste; `metricsSql.test.ts` keeps it identical to the six files and checks the Metrics queries against the taxonomy.
+> - The v1 → v2 rename map is `lib/analytics/renameMap.ts`, mirrored in `events_people_all.sql` for history.
 
 Exported on 10 Nov 2026 from the OnQuest Taxonomy Google Sheet, which stays the source of truth:
 https://docs.google.com/spreadsheets/d/12Ers_nihMPy1hgzmNmvvDkXsFZA6RiNsKN9oTQdtHks/edit
