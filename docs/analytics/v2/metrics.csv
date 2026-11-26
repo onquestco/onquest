@@ -1,0 +1,64 @@
+Metric,"Target, first 30 days",How to compute,Events used,Can be measured today?,BigQuery SQL
+Users onboarded (primary),100,"Count of user_signed_up, team accounts excluded",user_signed_up,No: user_signed_up to build,"SELECT COUNT(DISTINCT user_id) AS users
+FROM `onquest_analytics.events_clean`
+WHERE name = 'user_signed_up'
+  AND user_id NOT IN (SELECT user_id FROM `onquest_analytics.internal_users`)"
+Daily / weekly active users,20 DAU by day 30,"Distinct people with any click or view event per day; report WAU too (trips are bursty). Until identify() is called, count anon_id",all click / view events,"Partly: only blog events + pageviews, anon_id only","SELECT DATE(ts) AS day, COUNT(DISTINCT COALESCE(user_id, anon_id)) AS dau
+FROM `onquest_analytics.events_clean`
+WHERE type IN ('click','view')
+GROUP BY day ORDER BY day"
+Viewers per published Quest,≥ 10,"Distinct anon_id on quest_viewed where is_owner_flg = false, per quest_id (bots never send)","quest_viewed, quest_creation_complete",No: quest_viewed to build,"SELECT JSON_VALUE(properties,'$.quest_id') AS quest_id, COUNT(DISTINCT anon_id) AS viewers
+FROM `onquest_analytics.events_clean`
+WHERE name = 'quest_viewed' AND JSON_VALUE(properties,'$.is_owner_flg') = 'false'
+GROUP BY quest_id ORDER BY viewers DESC"
+Viewer → creator,5% within 14 days,"anon_ids that saw a shared Quest (source 0, not owner) and published their own within 14 days ÷ those anon_ids","quest_viewed, user_signed_up, quest_creation_complete",No,"WITH v AS (SELECT anon_id, MIN(ts) AS first_view FROM `onquest_analytics.events_clean`
+  WHERE name='quest_viewed' AND JSON_VALUE(properties,'$.source')='0' AND JSON_VALUE(properties,'$.is_owner_flg')='false' GROUP BY anon_id),
+c AS (SELECT anon_id, MIN(ts) AS created FROM `onquest_analytics.events_clean` WHERE name='quest_creation_complete' GROUP BY anon_id)
+SELECT COUNTIF(c.created BETWEEN v.first_view AND TIMESTAMP_ADD(v.first_view, INTERVAL 14 DAY)) / COUNT(*) AS rate
+FROM v LEFT JOIN c USING (anon_id)"
+Time spent by viewers,Median ≥ 60 s,Median quest_view_ended.seconds where the viewer is not the owner,"quest_view_ended, quest_viewed",No,"SELECT APPROX_QUANTILES(SAFE_CAST(JSON_VALUE(properties,'$.seconds') AS INT64), 2)[OFFSET(1)] AS median_seconds
+FROM `onquest_analytics.events_clean` WHERE name = 'quest_view_ended'"
+Time to publish,Median ≤ 5 min,Median quest_creation_complete.minutes_since_start,quest_creation_complete,No,"SELECT APPROX_QUANTILES(SAFE_CAST(JSON_VALUE(properties,'$.minutes_since_start') AS FLOAT64), 2)[OFFSET(1)] AS median_min
+FROM `onquest_analytics.events_clean` WHERE name = 'quest_creation_complete'"
+Links shared per published Quest,≥ 2,(share_click content_type 0 + instagram_export action 1) ÷ published Quests,"share_click, instagram_export, quest_creation_complete",No,"SELECT COUNTIF((name='share_click' AND JSON_VALUE(properties,'$.content_type')='0') OR (name='instagram_export' AND JSON_VALUE(properties,'$.action')='1'))
+  / NULLIF(COUNTIF(name='quest_creation_complete'),0) AS shares_per_quest
+FROM `onquest_analytics.events_clean`"
+Creation completion (guardrail),≥ 60%,"quest_creation_complete ÷ quest_draft_created, by click_loc","quest_draft_created, quest_creation_complete",No,"SELECT JSON_VALUE(properties,'$.click_loc') AS click_loc,
+  COUNTIF(name='quest_creation_complete') / NULLIF(COUNTIF(name='quest_draft_created'),0) AS completion
+FROM `onquest_analytics.events_clean` WHERE name IN ('quest_draft_created','quest_creation_complete')
+GROUP BY click_loc"
+Create funnel drop-off,watch,create_quest_click → photos_selected → quest_arranged → template_select → quest_preview → preview_exit (1) → quest_creation_complete; where people stop from quest_create_abandoned.step,create flow events,No,"SELECT name, COUNT(DISTINCT COALESCE(JSON_VALUE(properties,'$.quest_id'), session_id)) AS quests
+FROM `onquest_analytics.events_clean`
+WHERE name IN ('create_quest_click','photos_selected','quest_arranged','template_select','quest_preview','quest_creation_complete')
+GROUP BY name"
+Arranging speed and quality,≤ 60 s on 4G,P50 / P90 quest_arranged.duration_ms; share failed_flg; share arrange_mode = 3; caption keep rate = captions_auto_kept ÷ captions_auto_count,"quest_arranged, quest_creation_complete","No (data reaches reportCreateProgress, not sent)","SELECT APPROX_QUANTILES(SAFE_CAST(JSON_VALUE(properties,'$.duration_ms') AS INT64), 10)[OFFSET(5)] AS p50,
+  APPROX_QUANTILES(SAFE_CAST(JSON_VALUE(properties,'$.duration_ms') AS INT64), 10)[OFFSET(9)] AS p90,
+  COUNTIF(JSON_VALUE(properties,'$.failed_flg')='true')/COUNT(*) AS failed_share
+FROM `onquest_analytics.events_clean` WHERE name = 'quest_arranged'"
+Likes and comments per Quest / blog,watch,"Net likes (likes minus unlikes) and comment_posted per content_id, split by content_type","content_liked, comment_posted","Blogs only, under old names (blog_liked, blog_comment_posted)","SELECT JSON_VALUE(properties,'$.content_type') AS content_type, JSON_VALUE(properties,'$.content_id') AS content_id,
+  COUNTIF(name='content_liked' AND JSON_VALUE(properties,'$.unlike_flg')='false') - COUNTIF(name='content_liked' AND JSON_VALUE(properties,'$.unlike_flg')='true') AS net_likes,
+  COUNTIF(name='comment_posted') AS comments
+FROM `onquest_analytics.events_clean` WHERE name IN ('content_liked','comment_posted')
+GROUP BY 1, 2"
+Return after notification,watch,notification_sent → notification_click (action 1) → any event within 24 h,"notification_sent, notification_click",No,"SELECT JSON_VALUE(properties,'$.channel') AS channel, COUNTIF(name='notification_click' AND JSON_VALUE(properties,'$.action')='1') / NULLIF(COUNTIF(name='notification_sent'),0) AS open_rate
+FROM `onquest_analytics.events_clean` WHERE name IN ('notification_sent','notification_click')
+GROUP BY channel"
+Sign-in wall cost,watch,sign_in_click by source vs user_signed_up + user_signed_in; error_shown error_type 0,"sign_in_click, user_signed_up, user_signed_in, error_shown",No,"SELECT JSON_VALUE(properties,'$.source') AS source, COUNTIF(name='sign_in_click') AS clicks,
+  COUNTIF(name IN ('user_signed_up','user_signed_in')) AS signed_in
+FROM `onquest_analytics.events_clean` WHERE name IN ('sign_in_click','user_signed_up','user_signed_in')
+GROUP BY source"
+Template mix,watch,quest_creation_complete by template; template_select switches per Quest,"template_select, quest_creation_complete",No,"SELECT JSON_VALUE(properties,'$.template') AS template, COUNT(*) AS quests
+FROM `onquest_analytics.events_clean` WHERE name = 'quest_creation_complete'
+GROUP BY template ORDER BY quests DESC"
+Blog adoption,watch,create_option_click option 1 (available_flg true) → blog_create_started → blog_published; 'Releasing soon' taps (available_flg false) measure demand,"create_option_click, blog_create_started, blog_published","Yes under old names (create_option_tapped, blog_create_started, blog_published)","SELECT COUNTIF(name='create_option_click' AND JSON_VALUE(properties,'$.option')='1') AS write_taps,
+  COUNTIF(name='blog_create_started') AS started,
+  COUNTIF(name='blog_published') AS posted
+FROM `onquest_analytics.events_clean`"
+Blog read-through,watch,blog_read_end ÷ blog_viewed per blog (joined on view_id); blog_quest_click ÷ blog_viewed where has_quest_flg,"blog_viewed, blog_read_end, blog_quest_click","Yes under old names (blog_viewed, blog_read_end, blog_quest_opened)","SELECT JSON_VALUE(properties,'$.blog_id') AS blog_id,
+  COUNT(DISTINCT IF(name='blog_read_end', JSON_VALUE(properties,'$.view_id'), NULL)) / NULLIF(COUNT(DISTINCT IF(name='blog_viewed', JSON_VALUE(properties,'$.view_id'), NULL)),0) AS read_through
+FROM `onquest_analytics.events_clean` WHERE name IN ('blog_viewed','blog_read_end')
+GROUP BY blog_id"
+Social graph,watch,Net follows per user (user_followed); share of home_viewed with feed_empty_flg,"user_followed, home_viewed",No,"SELECT COUNTIF(name='home_viewed' AND JSON_VALUE(properties,'$.feed_empty_flg')='true') / NULLIF(COUNTIF(name='home_viewed'),0) AS empty_feed_share
+FROM `onquest_analytics.events_clean` WHERE name IN ('home_viewed','user_followed')"
+Search success,watch,search sessions with a search_result_click ÷ search sessions; no_results_flg share,"search, search_result_click, explore_viewed",No,"SELECT COUNT(DISTINCT IF(name='search_result_click', session_id, NULL)) / NULLIF(COUNT(DISTINCT IF(name='search', session_id, NULL)),0) AS success
+FROM `onquest_analytics.events_clean` WHERE name IN ('search','search_result_click')"

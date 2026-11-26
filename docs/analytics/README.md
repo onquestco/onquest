@@ -1,5 +1,7 @@
 # Analytics taxonomy (export)
 
+> **v2 (26 Nov 2026):** `v2/{events,common,codes,metrics}.csv` are the export of the Google Sheet "OnQuest Taxonomy v2 (from code)" (https://docs.google.com/spreadsheets/d/1WMLkO5IG95Iv8VfuPKbTq8z1hlZmlLBDK-GcgK_iZLQ/edit), approved by the CTO. They become the source for `lib/analytics/taxonomy.ts` in AN-01 (`docs/specs/analytics-v2.md`), which also moves the v1 files below to `v1/`. Until AN-01 merges, the code still reads the v1 files.
+
 Exported on 10 Nov 2026 from the OnQuest Taxonomy Google Sheet, which stays the source of truth:
 https://docs.google.com/spreadsheets/d/12Ers_nihMPy1hgzmNmvvDkXsFZA6RiNsKN9oTQdtHks/edit
 
