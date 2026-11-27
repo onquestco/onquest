@@ -1,5 +1,6 @@
 import { unstable_cache } from 'next/cache';
 import { z } from 'zod';
+import { withPublicExcerpts } from '@/features/blogs/cardExcerpts';
 import { profileTag, profileUrlTag } from '@/lib/cacheTags';
 import { HANDLE_PATTERN } from '@/lib/handles';
 import { toBlogCards } from '@/lib/social/cardRows';
@@ -92,7 +93,10 @@ export type ProfileResult = { profile: ProfileView } | { movedTo: string } | nul
 async function fetchProfile(handle: string): Promise<ProfileView | null> {
   const { data, error } = await createPublicSupabase().rpc('get_profile', { p_handle: handle });
   if (error) throw new Error('Could not load profile'); // kept out of the cache
-  return data ? toProfileView(ProfileRowSchema.parse(data)) : null;
+  if (!data) return null;
+  const view = toProfileView(ProfileRowSchema.parse(data));
+  // Blog excerpts from the posted body, so they never show raw formatting (cardExcerpts.ts).
+  return { ...view, blogs: await withPublicExcerpts(view.blogs) };
 }
 
 /** Whose profile this URL is (cached by URL), or where an old handle moved to. */
@@ -117,8 +121,8 @@ export async function getProfile(rawHandle: string): Promise<ProfileResult> {
     tags: [profileUrlTag(handle)],
   })();
   if (!located || 'movedTo' in located) return located;
-  // 'with-blogs': profiles cached by the previous release have no blogs list.
-  const profile = await unstable_cache(() => fetchProfile(handle), ['profile', 'with-blogs', located.key, handle], {
+  // A new key for each new shape: 'with-blogs' entries have no blogs list or raw blog excerpts.
+  const profile = await unstable_cache(() => fetchProfile(handle), ['profile', 'blog-excerpts', located.key, handle], {
     tags: [profileTag(located.key), profileUrlTag(handle)],
   })();
   return profile ? { profile } : null;

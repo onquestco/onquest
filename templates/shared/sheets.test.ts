@@ -18,7 +18,16 @@ describe('buildSheets', () => {
     expect(Object.keys(sheets)).toHaveLength(goaTrip.places.length + goaTrip.days.length + 1);
   });
 
-  it('pads day numbers in the kicker', () => expect(sheets['day:0']?.kicker).toBe('Day 01'));
+  it('shows only the padded day number in the kicker, with "Day 01" for screen readers', () => {
+    expect(sheets['day:0']?.kicker).toBe('01');
+    expect(sheets['day:0']?.kickerLabel).toBe('Day 01');
+  });
+
+  it('keeps the other kickers as they were, with no screen-reader label', () => {
+    expect(sheets['place:0']?.kicker).toBe(`Stop 1 of ${goaTrip.places.length}`);
+    expect(sheets['place:0']?.kickerLabel).toBeUndefined();
+    expect(sheets.note?.kicker).toBe('A note from the traveler');
+  });
 
   it('leaves out the note sheet when there is no note', () => {
     expect(buildSheets({ ...goaTrip, note: undefined }).note).toBeUndefined();

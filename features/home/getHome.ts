@@ -1,3 +1,4 @@
+import { withPublicExcerpt } from '@/features/blogs/cardExcerpts';
 import { toHomeFeedItems, toQuestCards } from '@/lib/social/cardRows';
 import type { FeedPage } from '@/lib/social/schema';
 import { createServerSupabase } from '@/lib/supabase/server';
@@ -20,7 +21,10 @@ export async function getFeedPage(now: string, offset: number): Promise<FeedPage
     p_offset: offset,
   });
   if (error) throw new Error('Could not load the feed');
-  const items = toHomeFeedItems(data);
+  // Blog excerpts from the posted body, so they never show raw formatting (cardExcerpts.ts).
+  const items = await Promise.all(
+    toHomeFeedItems(data).map((item) => (item.type === 'blog' ? withPublicExcerpt(item) : item)),
+  );
   return { items, nextOffset: items.length === FEED_PAGE_SIZE ? offset + items.length : null, now };
 }
 

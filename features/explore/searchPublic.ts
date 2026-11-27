@@ -1,3 +1,4 @@
+import { withPublicExcerpts } from '@/features/blogs/cardExcerpts';
 import { publishedGuides, toGuideCard } from '@/features/guides/guides';
 import { searchGuides } from '@/features/guides/searchGuides';
 import { toBlogCards, toPeople, toQuestCards } from '@/lib/social/cardRows';
@@ -20,6 +21,6 @@ export async function searchPublic(text: string): Promise<SearchResults> {
     quests: toQuestCards(result.quests),
     people: toPeople(result.people),
     guides: searchGuides(publishedGuides(), query).map(toGuideCard),
-    blogs: toBlogCards(result.blogs ?? []),
+    blogs: await withPublicExcerpts(toBlogCards(result.blogs ?? [])),
   };
 }
