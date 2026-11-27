@@ -18,6 +18,8 @@ const { USER, mocks } = vi.hoisted(() => ({
     loadOwnTrip: vi.fn(),
     trackServer: vi.fn(),
     refreshQuestPages: vi.fn(),
+    /** Work handed to after(), so a test can wait for it as the response would. */
+    afterWork: [] as unknown[],
     /** What each table's reads answer: `head` is the count query. */
     tables: {} as Record<string, { row?: unknown; count?: number | null; error?: unknown }>,
   },
@@ -43,7 +45,14 @@ function fakeFrom(table: string) {
   return query;
 }
 
-vi.mock('next/server', () => ({ after: (work: () => unknown) => work() }));
+vi.mock('next/server', () => ({ after: (work: () => unknown) => void mocks.afterWork.push(work()) }));
+
+/** The action's result once everything it handed to after() has finished. */
+async function settled<T>(result: Promise<T>): Promise<T> {
+  const value = await result;
+  await Promise.all(mocks.afterWork);
+  return value;
+}
 vi.mock('next/font/google', () => import('@/templates/shared/nextFontStub'));
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabase: async () => ({
@@ -116,12 +125,13 @@ const publishInput = {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.tables = {};
+  mocks.afterWork = [];
 });
 
 describe('createQuest → quest_draft_created', () => {
   it('is sent once the draft row exists, with the source as click_loc', async () => {
     mocks.rpc.mockResolvedValue({ data: 'saved', error: null });
-    const result = await createQuest({ key: KEY, source: 'home_banner', startedAt: STARTED });
+    const result = await settled(createQuest({ key: KEY, source: 'home_banner', startedAt: STARTED }));
     expect(result).toMatchObject({ ok: true, data: { created: true } });
     expect(mocks.trackServer).toHaveBeenCalledExactlyOnceWith('quest_draft_created', USER, {
       quest_id: KEY,
@@ -131,13 +141,13 @@ describe('createQuest → quest_draft_created', () => {
 
   it('is not sent when the draft already existed or the write failed', async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { code: 'OQ410', message: 'exists' } });
-    expect(await createQuest({ key: KEY, source: 'create_menu', startedAt: STARTED })).toEqual({
+    expect(await settled(createQuest({ key: KEY, source: 'create_menu', startedAt: STARTED }))).toEqual({
       ok: true,
       data: { created: false, error: 'exists' },
     });
     mocks.rpc.mockResolvedValue({ data: null, error: { code: '57014', message: 'timeout' } });
     const quiet = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    expect(await createQuest({ key: KEY, source: 'create_menu', startedAt: STARTED })).toMatchObject({ ok: false });
+    expect(await settled(createQuest({ key: KEY, source: 'create_menu', startedAt: STARTED }))).toMatchObject({ ok: false });
     quiet.mockRestore();
     expect(mocks.trackServer).not.toHaveBeenCalled();
   });
@@ -148,7 +158,7 @@ describe('reportCreateProgress → quest_arranged', () => {
 
   it('is sent for an arranging report on your own draft', async () => {
     mocks.loadOwnTrip.mockResolvedValue(ownTrip(false));
-    expect(await reportCreateProgress({ key: KEY, arranged })).toEqual({ ok: true, data: { reported: true } });
+    expect(await settled(reportCreateProgress({ key: KEY, arranged }))).toEqual({ ok: true, data: { reported: true } });
     expect(mocks.trackServer).toHaveBeenCalledExactlyOnceWith(
       'quest_arranged',
       USER,
@@ -159,9 +169,9 @@ describe('reportCreateProgress → quest_arranged', () => {
   it('is not sent for an upload-only report or a draft that isn’t yours', async () => {
     mocks.loadOwnTrip.mockResolvedValue(ownTrip(false));
     const uploaded = { count: 3, failed: 0, heic: 1, bytesTotal: 1_000_000 };
-    expect(await reportCreateProgress({ key: KEY, uploaded })).toEqual({ ok: true, data: { reported: true } });
+    expect(await settled(reportCreateProgress({ key: KEY, uploaded }))).toEqual({ ok: true, data: { reported: true } });
     mocks.loadOwnTrip.mockResolvedValue(null);
-    expect(await reportCreateProgress({ key: KEY, arranged })).toEqual({
+    expect(await settled(reportCreateProgress({ key: KEY, arranged }))).toEqual({
       ok: true,
       data: { reported: false, error: 'not_found' },
     });
@@ -177,7 +187,7 @@ describe('publishQuest → quest_creation_complete / quest_updated', () => {
       profiles: { row: { settings: { defaultVisibility: 'private' } } },
     };
     mocks.rpc.mockResolvedValue({ data: { saved_at: 's2', slug: 'monsoon-in-goa', first_publish: true }, error: null });
-    const result = await publishQuest({ ...publishInput, analytics: { clickLoc: 5, editCount: 2 } });
+    const result = await settled(publishQuest({ ...publishInput, analytics: { clickLoc: 5, editCount: 2 } }));
     expect(result).toMatchObject({ ok: true, data: { published: true, firstPublish: true } });
     expect(mocks.trackServer).toHaveBeenCalledExactlyOnceWith(
       'quest_creation_complete',
@@ -199,7 +209,7 @@ describe('publishQuest → quest_creation_complete / quest_updated', () => {
     mocks.loadOwnTrip.mockResolvedValue(ownTrip(true));
     mocks.tables = { trips: { row: { template_id: 'alpine' } } };
     mocks.rpc.mockResolvedValue({ data: { saved_at: 's3', slug: 'goa', first_publish: false }, error: null });
-    await publishQuest({ ...publishInput, visibility: 'public', analytics: { changeTypes: [7, 1] } });
+    await settled(publishQuest({ ...publishInput, visibility: 'public', analytics: { changeTypes: [7, 1] } }));
     expect(mocks.trackServer).toHaveBeenCalledExactlyOnceWith(
       'quest_updated',
       USER,
@@ -210,7 +220,7 @@ describe('publishQuest → quest_creation_complete / quest_updated', () => {
   it('an old bundle (no analytics) still publishes and still sends the event', async () => {
     mocks.loadOwnTrip.mockResolvedValue(ownTrip(false));
     mocks.rpc.mockResolvedValue({ data: { saved_at: 's2', slug: 'goa', first_publish: true }, error: null });
-    expect(await publishQuest(publishInput)).toMatchObject({ ok: true, data: { published: true } });
+    expect(await settled(publishQuest(publishInput))).toMatchObject({ ok: true, data: { published: true } });
     expect(mocks.trackServer).toHaveBeenCalledOnce();
     expect(mocks.trackServer.mock.calls[0]?.[2]).not.toHaveProperty('click_loc', expect.anything());
   });
@@ -218,7 +228,7 @@ describe('publishQuest → quest_creation_complete / quest_updated', () => {
   it('malformed analytics never fail the publish', async () => {
     mocks.loadOwnTrip.mockResolvedValue(ownTrip(false));
     mocks.rpc.mockResolvedValue({ data: { saved_at: 's2', slug: 'goa', first_publish: true }, error: null });
-    const result = await publishQuest({ ...publishInput, analytics: { clickLoc: 99, changeTypes: [1, 1] } });
+    const result = await settled(publishQuest({ ...publishInput, analytics: { clickLoc: 99, changeTypes: [1, 1] } }));
     expect(result).toMatchObject({ ok: true, data: { published: true } });
     expect(mocks.trackServer.mock.calls[0]?.[2]).not.toHaveProperty('click_loc', expect.anything());
   });
@@ -226,7 +236,7 @@ describe('publishQuest → quest_creation_complete / quest_updated', () => {
   it('nothing is sent when the publish is refused', async () => {
     mocks.loadOwnTrip.mockResolvedValue(ownTrip(true));
     mocks.rpc.mockResolvedValue({ data: null, error: { code: 'OQ409', message: 'conflict' } });
-    expect(await publishQuest(publishInput)).toEqual({ ok: true, data: { published: false, error: 'conflict' } });
+    expect(await settled(publishQuest(publishInput))).toEqual({ ok: true, data: { published: false, error: 'conflict' } });
     expect(mocks.trackServer).not.toHaveBeenCalled();
   });
 });
