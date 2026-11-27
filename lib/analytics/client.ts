@@ -102,7 +102,7 @@ function send(event: string, type: 'click' | 'view' | 'client', properties: Reco
 
 /** A Supabase auth cookie is there. Only a hint: /ingest replaces signed_in_flg with the verified session. */
 function looksSignedIn(): boolean {
-  return /(^|;\s*)sb-[^=;]+-auth-token(\.0)?=/.test(document.cookie);
+  return /(^|;\s*)sb-(?:\w|-)+-auth-token(\.0)?=/.test(document.cookie);
 }
 
 function appOpened(firstOpen: boolean) {

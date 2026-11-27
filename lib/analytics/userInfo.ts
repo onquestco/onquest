@@ -80,9 +80,9 @@ export function buildUserInfo(
  * "base64-" encoded). Read directly so nothing here ever refreshes (and so rotates) a session.
  */
 export function accessTokenFromCookies(cookieList: CookieList): string | null {
-  const whole = cookieList.find(({ name }) => /^sb-[^.]+-auth-token$/.test(name));
+  const whole = cookieList.find(({ name }) => /^sb-(?:\w|-)+-auth-token$/.test(name));
   const chunks = cookieList
-    .filter(({ name }) => /^sb-[^.]+-auth-token\.\d+$/.test(name))
+    .filter(({ name }) => /^sb-(?:\w|-)+-auth-token\.\d+$/.test(name))
     .sort((a, b) => Number(a.name.split('.').pop()) - Number(b.name.split('.').pop()));
   const parts = whole ? [whole] : chunks;
   if (parts.length === 0) return null;
