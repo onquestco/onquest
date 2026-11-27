@@ -12,6 +12,7 @@ import { draftToTripData } from '@/lib/trip/toTripData';
 import { getTemplate } from '@/templates/registry';
 import { saveError } from './dbErrors';
 import { photosToSweep } from './photoSweep';
+import { publishedTemplateId, sendPublishEvent } from './publishEvents';
 import { firstPublishSlug } from './publishSlug';
 import { loadOwnTrip } from './questRows';
 import { refreshQuestPages, refreshQuestSocial } from './refreshTrip';
@@ -19,16 +20,36 @@ import { refreshQuestPages, refreshQuestSocial } from './refreshTrip';
 // Publishing and the ⋯ menu (spec A §4.2). Every change to the public row passes the saved_at it
 // was based on; a stale tab gets `conflict` ("This Quest changed on another device").
 
+// For quest_creation_complete and quest_updated (analytics v2 §4.3). Optional, so old bundles
+// still publish; anything malformed is dropped rather than failing the publish.
+const PublishAnalyticsSchema = z
+  .object({
+    clickLoc: z.number().int().min(0).max(10).optional(),
+    editCount: z.number().int().min(0).optional(),
+    changeTypes: z
+      .array(z.number().int().min(0).max(11))
+      .refine((codes) => new Set(codes).size === codes.length)
+      .optional(),
+  })
+  .optional()
+  .catch(undefined);
+
 const PublishSchema = z.object({
   key: z.uuid(),
   basedOnDraft: z.string().min(1),
   basedOnTrip: z.string().min(1),
   visibility: VisibilitySchema,
   title: z.string().trim().min(1).max(60),
+  analytics: PublishAnalyticsSchema,
 });
 
 export const publishQuest = action(PublishSchema, async (input, { user, db }) => {
-  const [own, profile] = await Promise.all([loadOwnTrip(db, input.key), getMyProfile(user.id)]);
+  // The template before this publish is only readable now: publish_trip replaces it.
+  const [own, profile, previousTemplateId] = await Promise.all([
+    loadOwnTrip(db, input.key),
+    getMyProfile(user.id),
+    publishedTemplateId(db, input.key),
+  ]);
   if (!own || !profile) return { published: false as const, error: 'not_found' as const };
   const { trip, draft } = own;
   const photoFolder = `${user.id}/${input.key}`;
@@ -73,6 +94,23 @@ export const publishQuest = action(PublishSchema, async (input, { user, db }) =>
     handles: [profile.handle],
     slugs: [result.slug],
   });
+
+  // Sent only now that the publish is saved; the extra reads happen after the response.
+  const publishedAt = new Date();
+  after(() =>
+    sendPublishEvent(db, {
+      user,
+      questKey: input.key,
+      firstPublish: result.first_publish,
+      document: draft.document,
+      title: input.title,
+      visibility: input.visibility,
+      analytics: input.analytics,
+      previousTemplateId,
+      firstPublishedAt: trip.published_at,
+      now: publishedAt,
+    }),
+  );
 
   // Removed photos keep their files until now, for Undo; sweep them once the response is sent.
   const keep = [...draft.document.photos.map((photo) => photo.id)];

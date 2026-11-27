@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  ARRANGE_MODE_CODE,
   BLOG_CLICK_LOC_CODE,
   BLOG_EDITOR_ACTION_CODE,
   BLOG_LIKE_SOURCE_CODE,
@@ -16,6 +17,7 @@ import {
   PAGE_TURN_DIRECTION_CODE,
   PAGE_TURN_VIA_CODE,
   PLATFORM_CODE,
+  QUEST_CLICK_LOC_CODE,
   QUEST_PHOTO_ACTION_CODE,
   QUEST_SOURCE_CODE,
   REFERRER_CODE,
@@ -145,6 +147,24 @@ const CASES: [string, Record<string, number>, Record<string, string>][] = [
     },
   ],
   ['unavailable reason', UNAVAILABLE_REASON_CODE, { private: 'Private', removed: 'Removed', not_found: 'Not found' }],
+  // AN-06
+  [
+    'click_loc',
+    QUEST_CLICK_LOC_CODE,
+    {
+      home_banner: "Home banner 'Create a Quest'",
+      create_menu: "Create (+) → 'Start a Quest'",
+      make_your_own: "'Make your own Quest' on someone's Quest",
+      make_your_own_unavailable: 'on a private / removed Quest page',
+      your_quests_tile: "'+ Create a Quest' tile in Your Quests on Home",
+      quests_tab_card: "'Create a Quest' card on the Quests tab",
+      empty_state: 'Empty-state button',
+      welcome: 'Welcome screen',
+      whats_a_quest: "What's a Quest? sheet",
+      blog_link_quest: 'Blog composer → Link a Quest',
+      feed_explore: 'Feed / Explore',
+    },
+  ],
 ];
 
 /** The "N = Meaning / …" list in an events.csv property description, as code → meaning. */
@@ -180,6 +200,19 @@ const DESCRIBED: [string, string, Record<string, number>, Record<string, string>
       in_app: 'Navigated in app',
       hidden: 'Tab hidden or closed',
       make_your_own: 'Make your own Quest',
+    },
+  ],
+  // AN-06
+  [
+    'quest_arranged',
+    'arrange_mode',
+    ARRANGE_MODE_CODE,
+    {
+      page_per_day: 'One page per day',
+      chapters: 'Chapters (trip > 5 days)',
+      day_split_by_time: 'Single day split by time',
+      pick_order: 'Pick order, no dates',
+      mixed: 'Mixed dated + undated',
     },
   ],
 ];
