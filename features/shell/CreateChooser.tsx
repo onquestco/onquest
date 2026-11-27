@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { buttonClassName } from '@/design-system/components/Button';
 import { CloseIcon, PencilIcon } from '@/design-system/components/icons';
 import { Toast } from '@/design-system/components/Toast';
+import { trackCreateClick } from '@/features/editor/trackCreateClick';
 import { currentFromScreen, track } from '@/lib/analytics/client';
 import { CREATE_OPTION_CODE } from '@/lib/analytics/codes';
 import { placeholderImage, type Scene } from '@/lib/demo/placeholderImages';
@@ -74,9 +75,11 @@ export function CreateChooser({ blogsEnabled = false, source = 'create' }: Props
         <h2 className="text-title text-ink">What do you want to make?</h2>
         <Link
           href="/quests/new?source=create_menu"
-          onClick={() =>
-            track('create_option_click', createOptionProperties('quest', blogsEnabled, currentFromScreen()))
-          }
+          onClick={() => {
+            track('create_option_click', createOptionProperties('quest', blogsEnabled, currentFromScreen()));
+            // This screen doesn't know whether the person has published: is_first_quest_flg is left out.
+            trackCreateClick({ source: 'create_menu' });
+          }}
           className="flex flex-col gap-3.5 rounded-lg border-2 border-brand-strong bg-brand-wash p-4.5 shadow-brand"
         >
           <span aria-hidden className="relative block h-37.5">

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Button, buttonClassName } from '@/design-system/components/Button';
 import { Contour } from '@/design-system/components/Contour';
+import { trackCreateClick } from '@/features/editor/trackCreateClick';
 import { placeholderImage, type Scene } from '@/lib/demo/placeholderImages';
 import { WhatIsAQuestSheet } from './WhatIsAQuestSheet';
 
@@ -15,7 +16,14 @@ const FAN: { scene: Scene; tilt: string }[] = [
 ];
 
 /** Screen 11's banner: the one thing to do on Home is make a Quest. */
-export function HomeBanner({ firstName }: { firstName?: string }) {
+export function HomeBanner({
+  firstName,
+  hasPublishedQuest,
+}: {
+  firstName?: string;
+  /** For create_quest_click.is_first_quest_flg; undefined when signed out. */
+  hasPublishedQuest?: boolean;
+}) {
   const [explaining, setExplaining] = useState(false);
   return (
     <section className="relative flex flex-col items-start gap-2.5 overflow-hidden rounded-lg bg-brand-wash px-4.5 pt-5 pb-3.5">
@@ -37,13 +45,19 @@ export function HomeBanner({ firstName }: { firstName?: string }) {
       <p className="relative max-w-56 text-label font-normal text-ink-muted">
         Pick 3 to 15 photos. We&apos;ll make the scrapbook in under a minute.
       </p>
-      <Link href="/quests/new?source=home_banner" className={`${buttonClassName()} relative`}>
+      <Link
+        href="/quests/new?source=home_banner"
+        onClick={() => trackCreateClick({ source: 'home_banner', hasPublishedQuest })}
+        className={`${buttonClassName()} relative`}
+      >
         Create a Quest
       </Link>
       <Button variant="quiet" className="relative -mt-1.5 pl-0" onClick={() => setExplaining(true)}>
         What&apos;s a Quest?
       </Button>
-      {explaining && <WhatIsAQuestSheet onClose={() => setExplaining(false)} />}
+      {explaining && (
+        <WhatIsAQuestSheet hasPublishedQuest={hasPublishedQuest} onClose={() => setExplaining(false)} />
+      )}
     </section>
   );
 }

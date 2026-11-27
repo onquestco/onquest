@@ -10,6 +10,10 @@ export const QuestCreateSourceSchema = z.enum([
   'make_your_own',
   'ftue',
   'whatis_sheet',
+  // Added with analytics v2 (AN-07): the blog composer's Link a Quest → Create a Quest (click_loc 9)
+  // and "Make your own Quest" on a private or removed Quest page (click_loc 3).
+  'blog_link',
+  'unavailable_quest',
 ]);
 
 export type QuestCreateSource = z.infer<typeof QuestCreateSourceSchema>;

@@ -16,7 +16,10 @@ type Props = {
 export function HomeView({ signedIn, name, yourQuests, feed, suggested }: Props) {
   return (
     <main className="mx-auto flex max-w-lg md:max-w-3xl flex-col gap-8 px-4 py-4">
-      <HomeBanner firstName={name?.split(' ')[0]} />
+      <HomeBanner
+        firstName={name?.split(' ')[0]}
+        hasPublishedQuest={signedIn ? yourQuests.some((quest) => quest.status === 'published') : undefined}
+      />
       {signedIn && <YourQuestsRow initial={yourQuests} />}
       <HomeFeed signedIn={signedIn} first={feed} suggested={suggested} />
     </main>

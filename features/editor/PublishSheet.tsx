@@ -9,6 +9,7 @@ import { setScreen } from '@/lib/analytics/client';
 import { routeTemplate } from '@/lib/analytics/routeTemplate';
 import { screenFor } from '@/lib/analytics/screens';
 import type { Visibility } from '@/lib/trip/schema';
+import { publishAnalytics } from './createFlowLaterProperties';
 import { saveDraftNow } from './draftSaver';
 import { useDraft } from './draftStore';
 import type { Creator } from './getCreator';
@@ -55,7 +56,7 @@ export function PublishSheet({ tripKey, onClose }: Props) {
     setPublishing(true);
     setError(undefined);
     const saved = await saveDraftNow();
-    const { savedAt, tripSavedAt } = useDraft.getState();
+    const { savedAt, tripSavedAt, clickLoc, editCount, changeTypes } = useDraft.getState();
     if (saved === 'conflict') return finish(CONFLICT);
     if (saved === 'failed' || !savedAt || !tripSavedAt) return finish(FAILED);
 
@@ -65,6 +66,8 @@ export function PublishSheet({ tripKey, onClose }: Props) {
       basedOnTrip: tripSavedAt,
       visibility,
       title: title.trim(),
+      // edit_count, click_loc and change_types for quest_creation_complete / quest_updated.
+      analytics: publishAnalytics(clickLoc, editCount, changeTypes),
     }).catch(() => null);
     if (!result?.ok) return finish(FAILED);
     if (!result.data.published) return finish(ERRORS[result.data.error] ?? FAILED);

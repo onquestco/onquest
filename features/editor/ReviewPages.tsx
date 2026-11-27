@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type ChangeEvent } from 'react';
+import { useRef, useState, type ChangeEvent } from 'react';
 import { buttonClassName } from '@/design-system/components/Button';
 import { Toast } from '@/design-system/components/Toast';
 import { TopBar } from '@/design-system/components/TopBar';
@@ -26,8 +26,12 @@ import {
 } from './pageEdits';
 import { PhotoSheet } from './PhotoSheet';
 import { readPhotos } from './readPhotos';
+import { reportEdit, reportPhotoLimit } from './reportEdit';
+import type { QuestEdit } from './createFlowProperties';
 
 type Notice = { message: string; undo?: boolean };
+/** Which edit a change is, for quest_edit. */
+type EditInfo = Pick<QuestEdit, 'action' | 'photoId' | 'pageIndex'> & { before?: QuestDocument };
 
 /** Screen 5. The draft is ready to publish as is; every edit here is optional and undoable. */
 export function ReviewPages({ tripKey }: { tripKey: string }) {
@@ -35,6 +39,8 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
   const [openPhoto, setOpenPhoto] = useState<string>();
   const [moving, setMoving] = useState<string>();
   const [notice, setNotice] = useState<Notice>();
+  // The title when its field got focus: quest_edit fires once on leaving the field, not per key.
+  const titleOnFocus = useRef<string | undefined>(undefined);
 
   if (key !== tripKey || !document || !photoFolder) {
     return <LostDraft />;
@@ -42,10 +48,29 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
   const current = document;
   const folder = photoFolder;
 
-  function change(result: EditResult | QuestDocument, message: string) {
-    if ('ok' in result && !result.ok) return setNotice({ message: result.reason });
-    apply('ok' in result ? result.document : result);
+  function change(result: EditResult | QuestDocument, message: string, edit: EditInfo) {
+    const before = edit.before ?? current;
+    if ('ok' in result && !result.ok) {
+      reportEdit({ ...edit, before }, result.reason);
+      return setNotice({ message: result.reason });
+    }
+    const after = 'ok' in result ? result.document : result;
+    apply(after);
+    reportEdit({ ...edit, before, after });
     setNotice({ message, undo: true });
+  }
+
+  /** An edit straight from a sheet or a page card (no notice): applied, then reported. */
+  function applyEdit(after: QuestDocument, edit: EditInfo) {
+    apply(after);
+    reportEdit({ ...edit, before: current, after });
+  }
+
+  function undoLast() {
+    const { document: before, history } = useDraft.getState();
+    if (!before || history.length === 0) return;
+    undo();
+    reportEdit({ action: 'undo', before, after: useDraft.getState().document ?? before });
   }
 
   async function add(event: ChangeEvent<HTMLInputElement>) {
@@ -59,10 +84,17 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
     // Uploading takes a while: add to the document as it is now, not as it was on tap.
     const latest = useDraft.getState().document ?? current;
     const result = addPhotos(latest, photos, () => crypto.randomUUID(), MAX_PHOTOS);
-    if (result.added < read.length)
+    if (result.added < read.length) {
       setNotice({ message: `A Quest holds ${MAX_PHOTOS} photos. Remove one to add another.` });
+      reportPhotoLimit();
+    }
     if (result.added > 0)
-      change(result.document, result.added === 1 ? 'Photo added.' : `${result.added} photos added.`);
+      change(result.document, result.added === 1 ? 'Photo added.' : `${result.added} photos added.`, {
+        action: 'add_photos',
+        photoId: photos[0]?.id,
+        before: latest,
+      });
+    else if (read.length > 0) reportEdit({ action: 'add_photos', before: latest });
   }
 
   async function replace(oldId: string, files: File[]) {
@@ -70,13 +102,11 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
     if (!photo) return setNotice({ message: "That photo couldn't be read." });
     addPreviews([photo]);
     setOpenPhoto(undefined);
+    const before = useDraft.getState().document ?? current;
     change(
-      replacePhoto(useDraft.getState().document ?? current, oldId, {
-        id: photo.id,
-        width: photo.width,
-        height: photo.height,
-      }),
+      replacePhoto(before, oldId, { id: photo.id, width: photo.width, height: photo.height }),
       'Photo replaced.',
+      { action: 'replace_photo', photoId: photo.id, before },
     );
   }
 
@@ -98,6 +128,15 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
             maxLength={60}
             value={current.title ?? ''}
             onChange={(event) => setDocument({ ...current, title: event.target.value })}
+            onFocus={() => {
+              titleOnFocus.current = current.title ?? '';
+            }}
+            onBlur={() => {
+              const before = titleOnFocus.current;
+              titleOnFocus.current = undefined;
+              if (before === undefined || before === (current.title ?? '')) return;
+              reportEdit({ action: 'title', before: { ...current, title: before }, after: current });
+            }}
             className="min-h-12 rounded-sm border border-line-control bg-surface px-3 text-body text-ink focus:border-brand-strong focus:outline-2 focus:outline-brand-strong"
           />
         </label>
@@ -115,7 +154,11 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
             previews={previews}
             captions={captions}
             undated={undated}
-            onRename={(title) => apply(renamePage(current, index, title))}
+            onRename={(title) =>
+              title === (page.title ?? '')
+                ? apply(renamePage(current, index, title))
+                : applyEdit(renamePage(current, index, title), { action: 'rename_page', pageIndex: index })
+            }
             onOpenPhoto={setOpenPhoto}
             onAddHere={() => window.document.getElementById('add-photos')?.click()}
           />
@@ -151,14 +194,18 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
             photo={photo}
             previewUrl={previews[photo.id]}
             onClose={() => setOpenPhoto(undefined)}
-            onCaption={(caption) => apply(setCaption(current, photo.id, caption))}
-            onDate={(date) => apply(setPhotoDate(current, photo.id, date))}
+            onCaption={(caption) =>
+              applyEdit(setCaption(current, photo.id, caption), { action: 'caption', photoId: photo.id })
+            }
+            onDate={(date) =>
+              applyEdit(setPhotoDate(current, photo.id, date), { action: 'date', photoId: photo.id })
+            }
             onMove={() => setMoving(photo.id)}
             onReplace={(files) => void replace(photo.id, files)}
             onRemove={() => {
               const result = removePhoto(current, photo.id);
               if (result.ok) setOpenPhoto(undefined);
-              change(result, 'Photo removed.');
+              change(result, 'Photo removed.', { action: 'remove_photo', photoId: photo.id });
             }}
           />
         )}
@@ -170,17 +217,27 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
             previews={previews}
             onClose={() => setMoving(undefined)}
             onMove={(pageIndex) => {
-              change(movePhoto(current, moving, pageIndex), 'Photo moved.');
+              change(movePhoto(current, moving, pageIndex), 'Photo moved.', {
+                action: 'move_photo',
+                photoId: moving,
+                pageIndex,
+              });
               setMoving(undefined);
               setOpenPhoto(undefined);
             }}
             onSwap={(otherId) => {
-              change(swapPhotos(current, moving, otherId), 'Photos swapped.');
+              change(swapPhotos(current, moving, otherId), 'Photos swapped.', {
+                action: 'swap_photos',
+                photoId: moving,
+              });
               setMoving(undefined);
               setOpenPhoto(undefined);
             }}
             onNewPage={() => {
-              change(startNewPage(current, moving, crypto.randomUUID()), 'New page started.');
+              change(startNewPage(current, moving, crypto.randomUUID()), 'New page started.', {
+                action: 'new_page',
+                photoId: moving,
+              });
               setMoving(undefined);
               setOpenPhoto(undefined);
             }}
@@ -191,7 +248,7 @@ export function ReviewPages({ tripKey }: { tripKey: string }) {
           <Toast
             message={notice.message}
             actionLabel={notice.undo ? 'Undo' : undefined}
-            onAction={undo}
+            onAction={undoLast}
             onDismiss={() => setNotice(undefined)}
           />
         )}

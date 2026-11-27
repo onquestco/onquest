@@ -52,6 +52,8 @@ describe('quest_draft_created', () => {
       ['make_your_own', 2],
       ['ftue', 7],
       ['whatis_sheet', 8],
+      ['blog_link', 9],
+      ['unavailable_quest', 3],
     ]);
     for (const source of QuestCreateSourceSchema.options) {
       expectNoProblems('quest_draft_created', draftCreatedProperties(KEY, source));

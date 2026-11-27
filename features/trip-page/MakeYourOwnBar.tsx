@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { buttonClassName } from '@/design-system/components/Button';
+import { trackCreateClick } from '@/features/editor/trackCreateClick';
 import { signInPath } from './socialActions';
 import { useQuestSocial } from './useQuestSocial';
 
@@ -24,7 +25,10 @@ export function MakeYourOwnBar() {
   }, []);
 
   if (viewer.isOwner) return null;
-  const href = viewer.signedIn ? '/quests/new' : signInPath('make_your_own', '/quests/new', tripKey);
+  // Tagged so the draft counts it as "Make your own Quest", not the Create menu.
+  const href = viewer.signedIn
+    ? '/quests/new?source=make_your_own'
+    : signInPath('make_your_own', '/quests/new', tripKey);
   return (
     <div
       className={`sticky bottom-0 z-30 border-t border-line bg-surface px-4 pt-3 pb-4 ${
@@ -32,7 +36,12 @@ export function MakeYourOwnBar() {
       }`}
     >
       <div className="mx-auto max-w-lg">
-        <Link href={href} className={buttonClassName({ block: true })}>
+        {/* Someone else's Quest: whether the viewer has published isn't known here. */}
+        <Link
+          href={href}
+          onClick={() => trackCreateClick({ source: 'make_your_own', contentId: tripKey })}
+          className={buttonClassName({ block: true })}
+        >
           Make your own Quest
         </Link>
       </div>

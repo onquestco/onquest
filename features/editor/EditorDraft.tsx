@@ -7,6 +7,7 @@ import { browserUploadDeps } from './browserUploadDeps';
 import { useDraft, type LoadedDraft } from './draftStore';
 import { createUploadQueue } from './upload';
 import { useAutosave } from './useAutosave';
+import { useCreateAbandon, type AbandonSnapshot } from './useCreateAbandon';
 
 // Wraps every editor screen after Arranging. Loads the draft from the server when this device
 // doesn't already hold it (a reload, "Edit Quest", another device), autosaves, finishes uploads
@@ -48,6 +49,7 @@ function useLoadDraft(initial: LoadedDraft): boolean {
 export function EditorDraft({ initial, children }: { initial: LoadedDraft; children: ReactNode }) {
   const ready = useLoadDraft(initial);
   useAutosave();
+  useCreateAbandon(abandonSnapshot);
   const saveStatus = useDraft((state) => state.saveStatus);
 
   return (
@@ -68,6 +70,17 @@ export function EditorDraft({ initial, children }: { initial: LoadedDraft; child
       </Sheet>
     </>
   );
+}
+
+/** quest_create_abandoned's values from the draft; nothing once the Quest is published. */
+function abandonSnapshot(): AbandonSnapshot {
+  const { key, document, published, startedAt } = useDraft.getState();
+  if (!key || published) return null;
+  return {
+    questKey: key,
+    photoCount: document?.photos.length ?? 0,
+    startedAtMs: startedAt ? Date.parse(startedAt) : undefined,
+  };
 }
 
 /** "Saved", "Saving…", "Couldn't save. Retrying." under the Review screen's title (spec A §6). */

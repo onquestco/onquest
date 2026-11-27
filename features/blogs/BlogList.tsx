@@ -25,7 +25,7 @@ export function managedFromCard(blog: BlogCard): ManagedBlog | null {
 /** What a never-posted blog's ⋯ menu needs, or null for a posted one. */
 export function draftFromCard(blog: BlogCard): ManagedDraft | null {
   if (blog.status !== 'draft') return null;
-  return { key: blog.key, title: blog.title, ownerKey: blog.owner.key };
+  return { key: blog.key, title: blog.title, ownerKey: blog.owner.key, savedAt: blog.savedAt };
 }
 
 type Props = {

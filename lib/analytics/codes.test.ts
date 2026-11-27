@@ -8,6 +8,8 @@ import {
   BLOG_LIKE_SOURCE_CODE,
   CONTENT_TYPE_CODE,
   CREATE_OPTION_CODE,
+  CREATE_STEP_CODE,
+  DRAFT_RESUMED_SOURCE_CODE,
   ENTRY_TYPE_CODE,
   FROM_SCREEN_CODE,
   FULLSCREEN_VIA_CODE,
@@ -16,8 +18,12 @@ import {
   LEGAL_SOURCE_CODE,
   PAGE_TURN_DIRECTION_CODE,
   PAGE_TURN_VIA_CODE,
+  PHOTO_LIMIT_CODE,
+  PHOTO_LIMIT_SCREEN_CODE,
   PLATFORM_CODE,
+  PREVIEW_EXIT_CODE,
   QUEST_CLICK_LOC_CODE,
+  QUEST_EDIT_ACTION_CODE,
   QUEST_PHOTO_ACTION_CODE,
   QUEST_SOURCE_CODE,
   REFERRER_CODE,
@@ -165,6 +171,37 @@ const CASES: [string, Record<string, number>, Record<string, string>][] = [
       feed_explore: 'Feed / Explore',
     },
   ],
+  // AN-07
+  [
+    'quest_edit action',
+    QUEST_EDIT_ACTION_CODE,
+    {
+      title: 'Title',
+      caption: 'Caption',
+      date: 'Date',
+      place: 'Place',
+      move_photo: 'Move photo',
+      swap_photos: 'Swap photos',
+      new_page: 'New page',
+      remove_photo: 'Remove photo',
+      replace_photo: 'Replace photo',
+      add_photos: 'Add photos',
+      rename_page: 'Rename page',
+      undo: 'Undo',
+    },
+  ],
+  [
+    'create step',
+    CREATE_STEP_CODE,
+    {
+      pick: 'Pick photos',
+      arranging: 'Arranging',
+      review: 'Review',
+      template: 'Template',
+      preview: 'Preview',
+      publish_sheet: 'Who can see it sheet',
+    },
+  ],
 ];
 
 /** The "N = Meaning / …" list in an events.csv property description, as code → meaning. */
@@ -214,6 +251,16 @@ const DESCRIBED: [string, string, Record<string, number>, Record<string, string>
       pick_order: 'Pick order, no dates',
       mixed: 'Mixed dated + undated',
     },
+  ],
+  // AN-07
+  ['photo_limit_hit', 'limit', PHOTO_LIMIT_CODE, { max: 'Max 15', min: 'Min 3' }],
+  ['photo_limit_hit', 'screen', PHOTO_LIMIT_SCREEN_CODE, { pick: 'Pick photos', review: 'Review' }],
+  ['preview_exit', 'action', PREVIEW_EXIT_CODE, { back_to_edit: 'Back to edit', publish: 'Publish' }],
+  [
+    'draft_resumed',
+    'source',
+    DRAFT_RESUMED_SOURCE_CODE,
+    { home: 'Home (Your Quests)', quests_tab: 'Quests tab', manage_menu: '⋯ menu' },
   ],
 ];
 

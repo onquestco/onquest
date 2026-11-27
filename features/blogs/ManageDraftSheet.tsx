@@ -7,10 +7,18 @@ import { ConfirmDialog } from '@/design-system/components/ConfirmDialog';
 import { Sheet } from '@/design-system/components/Sheet';
 import { deleteBlogDraft } from '@/features/blog-editor/actions';
 import { browserStorage } from '@/features/blog-editor/localDraft';
+import { draftResumedProperties } from '@/features/editor/createFlowLaterProperties';
+import { track } from '@/lib/analytics/client';
 import { draftDeleteOutcome, forgetDeletedDraft } from './draftDelete';
 
 /** A never-posted blog as its ⋯ menu needs it. */
-export type ManagedDraft = { key: string; title: string; ownerKey: string };
+export type ManagedDraft = {
+  key: string;
+  title: string;
+  ownerKey: string;
+  /** The draft's saved_at, for draft_resumed.days_since_last_edit. */
+  savedAt?: string;
+};
 
 const FAILED = "Couldn't delete the draft. Try again.";
 
@@ -48,7 +56,22 @@ export function ManageDraftSheet({ draft, onClose, onDeleted, onPosted }: Props)
   return (
     <>
       <Sheet open={!confirming} title={draft.title || 'Untitled blog'} onClose={onClose}>
-        <Link href={`/blogs/${draft.key}/edit`} className={buttonClassName({ variant: 'secondary', block: true })}>
+        <Link
+          href={`/blogs/${draft.key}/edit`}
+          onClick={() =>
+            track(
+              'draft_resumed',
+              draftResumedProperties({
+                contentType: 'blog',
+                key: draft.key,
+                source: 'manage_menu',
+                savedAt: draft.savedAt,
+                now: new Date(),
+              }),
+            )
+          }
+          className={buttonClassName({ variant: 'secondary', block: true })}
+        >
           Continue editing
         </Link>
         {message && (
