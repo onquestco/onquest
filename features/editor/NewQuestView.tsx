@@ -23,7 +23,8 @@ export function NewQuestView({ userId, source }: Props) {
   const photoFolder = `${userId}/${tripKey}`;
   const [deps] = useState(() => () => browserUploadDeps(photoFolder));
 
-  async function next(tiles: Tile[]) {
+  async function next(tiles: Tile[]): Promise<boolean> {
+    setProblem(undefined);
     // A photo that failed to upload stays behind: Retry or Remove it first.
     const picked = tiles.flatMap((tile) =>
       tile.photo && tile.status !== 'failed' ? [{ ...tile.photo, previewUrl: tile.previewUrl }] : [],
@@ -31,15 +32,16 @@ export function NewQuestView({ userId, source }: Props) {
     const result = await createQuest({ key: tripKey, source, startedAt }).catch(() => null);
     if (!result?.ok || !result.data.created) {
       setProblem("Couldn't start your Quest. Check your connection and tap Next again.");
-      return;
+      return false;
     }
     start({ key: tripKey, photoFolder, savedAt: result.data.savedAt, startedAt }, picked);
     router.push(`/quests/${tripKey}/arrange`);
+    return true;
   }
 
   return (
     <>
-      <PickPhotos tripKey={tripKey} deps={deps} onNext={(tiles) => void next(tiles)} />
+      <PickPhotos tripKey={tripKey} deps={deps} onNext={next} />
       {problem && <Toast message={problem} onDismiss={() => setProblem(undefined)} />}
     </>
   );

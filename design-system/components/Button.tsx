@@ -1,7 +1,8 @@
 import type { ButtonHTMLAttributes } from 'react';
 
 // Pill buttons. One `primary` per screen; `quiet` for text-weight actions like "Skip";
-// `danger` for deletes. Loading keeps the width and changes the label ("Saving…"), never a bare spinner.
+// `danger` for deletes. Loading keeps the width and changes the label ("Saving…"), never a bare spinner:
+// `loading` disables the button, sets aria-busy and adds a small spinner before the label.
 
 export type ButtonVariant = 'primary' | 'secondary' | 'quiet' | 'danger';
 
@@ -25,9 +26,46 @@ export function buttonClassName({ variant = 'primary', block = false }: ButtonSt
   return [base, variants[variant], block ? 'flex w-full' : ''].filter(Boolean).join(' ');
 }
 
-type Props = ButtonHTMLAttributes<HTMLButtonElement> & ButtonStyle;
+type Props = ButtonHTMLAttributes<HTMLButtonElement> & ButtonStyle & { loading?: boolean };
 
-export function Button({ variant, block, className, type = 'button', ...rest }: Props) {
+export function Button({
+  variant,
+  block,
+  className,
+  type = 'button',
+  loading = false,
+  disabled,
+  children,
+  ...rest
+}: Props) {
   const classes = [buttonClassName({ variant, block }), className].filter(Boolean).join(' ');
-  return <button type={type} className={classes} {...rest} />;
+  return (
+    <button
+      type={type}
+      className={classes}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      {...rest}
+    >
+      {loading && <Spinner />}
+      {children}
+    </button>
+  );
+}
+
+// With reduced motion it stays still: the changed label already says something is happening.
+function Spinner() {
+  return (
+    <svg
+      aria-hidden
+      width={16}
+      height={16}
+      viewBox="0 0 16 16"
+      fill="none"
+      className="shrink-0 animate-spin motion-reduce:animate-none"
+    >
+      <circle cx={8} cy={8} r={6} strokeWidth={2} className="stroke-current opacity-25" />
+      <path d="M8 2a6 6 0 0 1 6 6" strokeWidth={2} strokeLinecap="round" className="stroke-current" />
+    </svg>
+  );
 }
