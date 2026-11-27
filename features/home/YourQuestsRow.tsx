@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { ManageQuestSheet } from '@/features/quests/ManageQuestSheet';
 import { CreateTile, QuestTile, tileMeta } from '@/features/quests/QuestTile';
+import { QUEST_SOURCE_CODE } from '@/lib/analytics/codes';
 import type { QuestCard } from '@/lib/trip/cards';
 
 /** Home's "Your Quests": the latest four as tiles, drafts to continue and published ones with ⋯. */
@@ -30,6 +31,7 @@ export function YourQuestsRow({ initial }: { initial: QuestCard[] }) {
               quest={quest}
               meta={tileMeta(quest, 'place')}
               onManage={() => setManaging(quest.key)}
+              src={QUEST_SOURCE_CODE.your_quests_home}
             />
           </li>
         ))}

@@ -81,3 +81,50 @@ export const LANDING_PAGE_CODE = {
 
 /** app_opened.entry_type (3 is unused in the sheet). */
 export const ENTRY_TYPE_CODE = { default: 0, shared_link: 1, email: 2, other: 4 } as const;
+
+// AN-05 -----------------------------------------------------------------------------------------
+
+/** template (quest_viewed; AN-07 imports it for template_select), by template id. */
+export const TEMPLATE_CODE = {
+  coastal: 0,
+  alpine: 1,
+  roadtrip: 2,
+  winter: 3,
+  monsoon: 4,
+  desert: 5,
+  beach: 6,
+  mountain: 7,
+} as const;
+
+/** quest_viewed source: the ?src=<code> on in-app Quest links (withSrc in src.ts). */
+export const QUEST_SOURCE_CODE = {
+  shared_link: 0,
+  home_feed: 1,
+  suggested: 2,
+  explore_trending: 3,
+  search: 4,
+  profile: 5,
+  blog_or_guide: 6,
+  notification: 7,
+  quests_tab: 8,
+  example: 9,
+  your_quests_home: 10,
+} as const;
+
+/** unavailable reason (quest_unavailable; blog_unavailable in AN-13) */
+export const UNAVAILABLE_REASON_CODE = { private: 0, removed: 1, not_found: 2 } as const;
+
+/** quest_page_turn.direction (events.csv) */
+export const PAGE_TURN_DIRECTION_CODE = { next: 0, previous: 1 } as const;
+
+/** quest_page_turn.via (events.csv) */
+export const PAGE_TURN_VIA_CODE = { tap: 0, swipe: 1, key: 2 } as const;
+
+/** quest_fullscreen.via (events.csv) */
+export const FULLSCREEN_VIA_CODE = { button: 0, escape: 1 } as const;
+
+/** quest_photo_click.action (events.csv) */
+export const QUEST_PHOTO_ACTION_CODE = { open: 0, next: 1, previous: 2, map: 3 } as const;
+
+/** quest_view_ended.exit_type (events.csv) */
+export const VIEW_EXIT_CODE = { back: 0, in_app: 1, hidden: 2, make_your_own: 3 } as const;

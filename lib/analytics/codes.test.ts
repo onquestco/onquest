@@ -9,11 +9,19 @@ import {
   CREATE_OPTION_CODE,
   ENTRY_TYPE_CODE,
   FROM_SCREEN_CODE,
+  FULLSCREEN_VIA_CODE,
   LANDING_PAGE_CODE,
   LEGAL_PAGE_CODE,
   LEGAL_SOURCE_CODE,
+  PAGE_TURN_DIRECTION_CODE,
+  PAGE_TURN_VIA_CODE,
   PLATFORM_CODE,
+  QUEST_PHOTO_ACTION_CODE,
+  QUEST_SOURCE_CODE,
   REFERRER_CODE,
+  TEMPLATE_CODE,
+  UNAVAILABLE_REASON_CODE,
+  VIEW_EXIT_CODE,
   VISIBILITY_CODE,
 } from './codes';
 import { parseCsv, readEventRows } from './taxonomyFromCsv';
@@ -104,6 +112,76 @@ const CASES: [string, Record<string, number>, Record<string, string>][] = [
     },
   ],
   ['entry_type', ENTRY_TYPE_CODE, { default: 'Default', shared_link: 'Shared link', email: 'Email', other: 'Other' }],
+  // AN-05
+  [
+    'template',
+    TEMPLATE_CODE,
+    {
+      coastal: 'id coastal',
+      alpine: 'id alpine',
+      roadtrip: 'Roadtrip',
+      winter: 'Winter',
+      monsoon: 'Monsoon',
+      desert: 'Desert',
+      beach: 'id beach',
+      mountain: 'id mountain',
+    },
+  ],
+  [
+    'quest_viewed source',
+    QUEST_SOURCE_CODE,
+    {
+      shared_link: 'Shared link',
+      home_feed: 'Home feed',
+      suggested: 'Suggested for you',
+      explore_trending: 'Explore Trending Quests',
+      search: 'Search',
+      profile: 'Profile',
+      blog_or_guide: "Blog 'View Quest' or guide",
+      notification: 'Notification',
+      quests_tab: 'Quests tab',
+      example: "'See an example'",
+      your_quests_home: 'Your Quests on Home',
+    },
+  ],
+  ['unavailable reason', UNAVAILABLE_REASON_CODE, { private: 'Private', removed: 'Removed', not_found: 'Not found' }],
+];
+
+/** The "N = Meaning / …" list in an events.csv property description, as code → meaning. */
+function describedCodes(event: string, property: string): Map<number, string> {
+  const row = readEventRows(read('events')).find(
+    (candidate) => candidate.event === event && candidate.property === property,
+  );
+  const codes = new Map<number, string>();
+  for (const item of (row?.description ?? '').split(' / ')) {
+    const match = /^(\d+) = (.+)$/.exec(item.trim());
+    if (match?.[1] && match[2]) codes.set(Number(match[1]), match[2]);
+  }
+  return codes;
+}
+
+/** [event, property, our mapping, the sheet's exact meaning for each of our values] */
+const DESCRIBED: [string, string, Record<string, number>, Record<string, string>][] = [
+  ['quest_page_turn', 'direction', PAGE_TURN_DIRECTION_CODE, { next: 'Next', previous: 'Previous' }],
+  ['quest_page_turn', 'via', PAGE_TURN_VIA_CODE, { tap: 'Tap', swipe: 'Swipe', key: 'Arrow key' }],
+  ['quest_fullscreen', 'via', FULLSCREEN_VIA_CODE, { button: 'Button', escape: 'Escape key' }],
+  [
+    'quest_photo_click',
+    'action',
+    QUEST_PHOTO_ACTION_CODE,
+    { open: 'Photo opened', next: 'Next photo', previous: 'Previous photo', map: "'See it on the map'" },
+  ],
+  [
+    'quest_view_ended',
+    'exit_type',
+    VIEW_EXIT_CODE,
+    {
+      back: 'Back button',
+      in_app: 'Navigated in app',
+      hidden: 'Tab hidden or closed',
+      make_your_own: 'Make your own Quest',
+    },
+  ],
 ];
 
 describe('codes.ts', () => {
@@ -114,6 +192,14 @@ describe('codes.ts', () => {
         name,
         meaning: expect.stringContaining(words[name] ?? '?'),
       });
+    }
+  });
+
+  it.each(DESCRIBED)('%s.%s follows the sheet’s description (it has no code list)', (event, property, codes, words) => {
+    const sheet = describedCodes(event, property);
+    expect(sheet.size).toBe(Object.keys(codes).length);
+    for (const [name, code] of Object.entries(codes)) {
+      expect({ name, meaning: sheet.get(code) }).toEqual({ name, meaning: words[name] });
     }
   });
 

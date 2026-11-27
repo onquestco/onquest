@@ -42,8 +42,11 @@ export default async function TripPage({ params }: Props) {
   const social = (await getQuestSocial(result.trip.key)) ?? EMPTY_SOCIAL;
   return (
     <>
-      <TripView trip={result.trip} social={{ mode: 'live', initial: social, ownerKey: result.ownerKey }} />
-      <SiteFooter reportUrl={result.trip.url} />
+      <TripView
+        trip={result.trip}
+        social={{ mode: 'live', initial: social, ownerKey: result.ownerKey, unlisted: result.unlisted }}
+      />
+      <SiteFooter reportUrl={result.trip.url} reportKey={result.trip.key} />
     </>
   );
 }

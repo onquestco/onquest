@@ -1,4 +1,5 @@
 import { serializeJsonLd } from '@/features/trip-page/jsonLd';
+import { QUEST_SOURCE_CODE } from '@/lib/analytics/codes';
 import { absoluteUrl, SITE_NAME } from '@/lib/site';
 import type { QuestCard } from '@/lib/trip/cards';
 import type { Guide } from './guideSchema';
@@ -47,7 +48,7 @@ export function GuideView({ guide, quests }: { guide: Guide; quests: QuestCard[]
         {quests.length > 0 && (
           <section aria-label="Quests from this guide" className="flex flex-col gap-4 pt-4">
             <h2 className="text-lead font-semibold text-ink">Quests from this guide</h2>
-            <QuestGrid quests={quests} />
+            <QuestGrid quests={quests} src={QUEST_SOURCE_CODE.blog_or_guide} />
           </section>
         )}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />

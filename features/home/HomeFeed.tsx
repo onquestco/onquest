@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/design-system/components/Button';
 import { FeedPageSchema, type FeedPage } from '@/lib/social/schema';
+import { QUEST_SOURCE_CODE } from '@/lib/analytics/codes';
 import type { QuestCard } from '@/lib/trip/cards';
 import { BlogFeedCard } from './BlogFeedCard';
 import { FeedCard } from './FeedCard';
@@ -50,7 +51,7 @@ export function HomeFeed({ signedIn, first, suggested }: Props) {
           {/* Two columns on a desktop (OQ-5); one on phones. */}
           <div className="grid gap-4 md:grid-cols-2">
             {items.map((item) =>
-              item.type === 'blog' ? <BlogFeedCard key={item.key} blog={item} /> : <FeedCard key={item.key} quest={item} />,
+              item.type === 'blog' ? <BlogFeedCard key={item.key} blog={item} /> : <FeedCard key={item.key} quest={item} src={QUEST_SOURCE_CODE.home_feed} />,
             )}
           </div>
           {failed && (
@@ -70,7 +71,7 @@ export function HomeFeed({ signedIn, first, suggested }: Props) {
           <h2 className="text-lead font-semibold text-ink">{suggestedTitle}</h2>
           <div className="grid gap-4 md:grid-cols-2">
             {suggested.map((quest) => (
-              <FeedCard key={quest.key} quest={quest} signedIn={signedIn} />
+              <FeedCard key={quest.key} quest={quest} signedIn={signedIn} src={QUEST_SOURCE_CODE.suggested} />
             ))}
           </div>
         </section>

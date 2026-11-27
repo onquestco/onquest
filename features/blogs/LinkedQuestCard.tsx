@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { questCardMeta } from '@/design-system/components/QuestCardView';
 import { HIDDEN_QUEST_NOTE } from '@/features/blog-editor/BlogPreview';
 import { track } from '@/lib/analytics/client';
+import { QUEST_SOURCE_CODE } from '@/lib/analytics/codes';
+import { withSrc } from '@/lib/analytics/src';
 import type { QuestCard } from '@/lib/trip/cards';
 import { linkedQuestView } from './linkedQuest';
 import { useBlogPage } from './LiveBlogSocialProvider';
@@ -30,7 +32,7 @@ export function LinkedQuestCard({ readerQuest }: { readerQuest: QuestCard | null
       )}
       {quest?.path && (
         <Link
-          href={quest.path}
+          href={withSrc(quest.path, QUEST_SOURCE_CODE.blog_or_guide)}
           onClick={() => {
             if (countsAsReader) track('blog_quest_click', questClickProperties({ blogKey, viewId }));
           }}

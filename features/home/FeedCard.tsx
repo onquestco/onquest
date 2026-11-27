@@ -8,6 +8,7 @@ import { askToSignIn } from '@/features/account/signInPrompt';
 import { timeAgo } from '@/features/notifications/notificationText';
 import { setLike } from '@/features/trip-page/actions';
 import { toggledLike } from '@/features/trip-page/likeCopy';
+import { withSrc } from '@/lib/analytics/src';
 import type { FeedItem } from '@/lib/social/schema';
 import type { QuestCard } from '@/lib/trip/cards';
 
@@ -29,12 +30,22 @@ export async function shareQuest(title: string, path: string) {
  * A Quest in the feed (M21): like it from here; comments open the Quest at its comments. Signed
  * out, Like opens the sign-in popup, which comes back on the Quest with the like done (OQ-16).
  */
-export function FeedCard({ quest, signedIn = true }: { quest: FeedItem | QuestCard; signedIn?: boolean }) {
+export function FeedCard({
+  quest,
+  signedIn = true,
+  src,
+}: {
+  quest: FeedItem | QuestCard;
+  signedIn?: boolean;
+  /** quest_viewed's source code for the card's links (QUEST_SOURCE_CODE); never on the shared link. */
+  src?: number;
+}) {
   const [like, setLikeState] = useState({
     liked: 'likedByMe' in quest ? quest.likedByMe : false,
     likeCount: quest.likeCount,
   });
   const path = quest.path ?? '/home';
+  const tagged = (href: string) => (src === undefined || !quest.path ? href : withSrc(href, src));
 
   function toggle() {
     if (!signedIn) return askToSignIn({ intent: 'like', next: path, ref: quest.key });
@@ -54,7 +65,7 @@ export function FeedCard({ quest, signedIn = true }: { quest: FeedItem | QuestCa
 
   return (
     <QuestCardView
-      href={path}
+      href={tagged(path)}
       title={quest.title}
       coverUrl={quest.coverThumb}
       places={quest.places}
@@ -74,7 +85,7 @@ export function FeedCard({ quest, signedIn = true }: { quest: FeedItem | QuestCa
             <HeartIcon size={20} filled={like.liked} />
             {like.likeCount > 0 && like.likeCount}
           </button>
-          <Link href={`${path}#comments`} className={pill} aria-label="Comments">
+          <Link href={tagged(`${path}#comments`)} className={pill} aria-label="Comments">
             <ChatIcon />
             {quest.commentCount}
           </Link>

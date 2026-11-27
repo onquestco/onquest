@@ -91,7 +91,9 @@ const render = (change: Partial<Profile> = {}) =>
 describe('ProfileView', () => {
   it('a profile without blogs renders exactly as before blogs (no switch)', () => {
     const before = readFileSync(new URL('./profileBeforeBlogs.html', import.meta.url), 'utf8');
-    expect(render()).toBe(before);
+    // Analytics v2 (AN-05) tags the Quest links with ?src=5 (Profile); nothing else may differ.
+    expect(render().replaceAll('?src=5"', '"')).toBe(before);
+    expect(render()).toContain('href="/@riya/quest-1?src=5"');
   });
 
   it('with public blogs: the Quests · Blogs switch, Quests first, the blogs one column', () => {

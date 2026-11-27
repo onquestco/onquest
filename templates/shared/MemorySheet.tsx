@@ -1,25 +1,59 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { parseSheetKey, type Sheet } from './sheets';
 import styles from './scrapbook.module.css';
 
 type Open = { sheet: Sheet; photoIndex: number };
 
+/** What the reader did in the sheet, in plain words, for the app's analytics (spec analytics-v2 §6.2). */
+export type MemorySheetAction = 'open' | 'next' | 'previous' | 'map';
+type ActionHandler = (action: MemorySheetAction) => void;
+
+// ScrapbookPage renders the sheet inside every template, so the app sets the callback once around
+// the template instead of through each one; a prop, when given, wins. Nothing is rendered for it.
+const ActionContext = createContext<ActionHandler | undefined>(undefined);
+
+/** Gives every MemorySheet inside it an onAction callback (features/trip-page uses it). */
+export function MemorySheetCallbacks({
+  onAction,
+  children,
+}: {
+  onAction: ActionHandler;
+  children?: ReactNode;
+}) {
+  return <ActionContext.Provider value={onAction}>{children}</ActionContext.Provider>;
+}
+
 /**
  * Bottom sheet with photos + story. Opens when any element with data-opens="<key>" is
  * clicked (or a focused one gets Enter/Space). One listener for the whole page.
  */
-export function MemorySheet({ sheets }: { sheets: Record<string, Sheet> }) {
+export function MemorySheet({
+  sheets,
+  onAction,
+}: {
+  sheets: Record<string, Sheet>;
+  /** Told when the sheet opens and when a button in it is used. Optional: without it nothing changes. */
+  onAction?: ActionHandler;
+}) {
   const [open, setOpen] = useState<Open | null>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
   const touchStartX = useRef(0);
+  const onActionFromApp = useContext(ActionContext);
+  // A ref, so a new callback never re-runs the effects below (they move focus and lock scroll).
+  const report = useRef(onAction ?? onActionFromApp);
+  useEffect(() => {
+    report.current = onAction ?? onActionFromApp;
+  }, [onAction, onActionFromApp]);
 
   const openKey = useCallback(
     (key: string) => {
       const { id, photoIndex } = parseSheetKey(key);
       const sheet = sheets[id];
-      if (sheet) setOpen({ sheet, photoIndex: Math.min(photoIndex, Math.max(0, sheet.photos.length - 1)) });
+      if (!sheet) return;
+      setOpen({ sheet, photoIndex: Math.min(photoIndex, Math.max(0, sheet.photos.length - 1)) });
+      report.current?.('open');
     },
     [sheets],
   );
@@ -68,10 +102,17 @@ export function MemorySheet({ sheets }: { sheets: Record<string, Sheet> }) {
     document.body.style.overflow = 'hidden';
     closeButton.current?.focus();
 
+    const turns = open.sheet.photos.length > 1;
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') close();
-      if (event.key === 'ArrowRight') step(1);
-      if (event.key === 'ArrowLeft') step(-1);
+      if (event.key === 'ArrowRight') {
+        step(1);
+        if (turns) report.current?.('next');
+      }
+      if (event.key === 'ArrowLeft') {
+        step(-1);
+        if (turns) report.current?.('previous');
+      }
     };
     document.addEventListener('keydown', onKey);
     return () => {
@@ -87,7 +128,14 @@ export function MemorySheet({ sheets }: { sheets: Record<string, Sheet> }) {
   const photo = sheet.photos[photoIndex];
   const many = sheet.photos.length > 1;
 
+  /** Next or previous photo from a button or a swipe (only shown when there are several). */
+  const turnPhoto = (by: 1 | -1) => {
+    step(by);
+    if (many) report.current?.(by > 0 ? 'next' : 'previous');
+  };
+
   const goToMap = () => {
+    report.current?.('map');
     close();
     document.getElementById('map')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -111,7 +159,7 @@ export function MemorySheet({ sheets }: { sheets: Record<string, Sheet> }) {
             onTouchStart={(event) => (touchStartX.current = event.touches[0]?.clientX ?? 0)}
             onTouchEnd={(event) => {
               const distance = (event.changedTouches[0]?.clientX ?? 0) - touchStartX.current;
-              if (Math.abs(distance) > 50) step(distance < 0 ? 1 : -1);
+              if (Math.abs(distance) > 50) turnPhoto(distance < 0 ? 1 : -1);
             }}
           >
             <img src={photo.src} alt={photo.caption ?? ''} />
@@ -122,7 +170,7 @@ export function MemorySheet({ sheets }: { sheets: Record<string, Sheet> }) {
                   type="button"
                   className={`${styles.sheetNav} ${styles.sheetPrev}`}
                   aria-label="Previous photo"
-                  onClick={() => step(-1)}
+                  onClick={() => turnPhoto(-1)}
                 >
                   &#8249;
                 </button>
@@ -130,7 +178,7 @@ export function MemorySheet({ sheets }: { sheets: Record<string, Sheet> }) {
                   type="button"
                   className={`${styles.sheetNav} ${styles.sheetNext}`}
                   aria-label="Next photo"
-                  onClick={() => step(1)}
+                  onClick={() => turnPhoto(1)}
                 >
                   &#8250;
                 </button>

@@ -6,6 +6,7 @@ import { questCardMeta } from '@/design-system/components/QuestCardView';
 import { loadQuestToManage } from '@/features/quests/actions';
 import { ManageQuestSheet } from '@/features/quests/ManageQuestSheet';
 import { QuestTile } from '@/features/quests/QuestTile';
+import { QUEST_SOURCE_CODE } from '@/lib/analytics/codes';
 import type { QuestCard } from '@/lib/trip/cards';
 import { PublishedAgo } from './PublishedAgo';
 import { useViewer } from './ProfileViewerContext';
@@ -42,6 +43,7 @@ export function ProfileQuestGrid({ initial }: { initial: QuestCard[] }) {
                 )
               }
               onManage={viewer?.isSelf ? () => void manage(quest.key) : undefined}
+              src={QUEST_SOURCE_CODE.profile}
             />
           </li>
         ))}

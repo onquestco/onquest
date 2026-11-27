@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { MoreIcon } from '@/design-system/components/icons';
+import { withSrc } from '@/lib/analytics/src';
 import type { QuestCard } from '@/lib/trip/cards';
 import { questTag } from './questFilters';
 
@@ -19,16 +20,23 @@ export function tileMeta(quest: QuestCard, kind: 'place' | 'counts'): string {
   return [quest.places[0], when].filter(Boolean).join(' · ');
 }
 
-type Props = { quest: QuestCard; meta: ReactNode; onManage?: () => void };
+type Props = {
+  quest: QuestCard;
+  meta: ReactNode;
+  onManage?: () => void;
+  /** quest_viewed's source code for a published Quest's link (QUEST_SOURCE_CODE). */
+  src?: number;
+};
 
 /** The prototype's Quest tile (.qcard): cover, tag top-left, ⋯ top-right, title and meta on the photo. */
-export function QuestTile({ quest, meta, onManage }: Props) {
+export function QuestTile({ quest, meta, onManage, src }: Props) {
   const draft = quest.status === 'draft';
+  const published = quest.path && src !== undefined ? withSrc(quest.path, src) : quest.path;
   const tag = questTag(quest);
   return (
     <div className="relative">
       <Link
-        href={draft ? `/quests/${quest.key}/review` : (quest.path ?? `/quests/${quest.key}/review`)}
+        href={draft ? `/quests/${quest.key}/review` : (published ?? `/quests/${quest.key}/review`)}
         className="relative block aspect-4/5 overflow-hidden rounded-lg bg-night-band"
       >
         {quest.coverThumb && <img src={quest.coverThumb} alt="" className="h-full w-full object-cover" />}

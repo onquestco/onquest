@@ -19,6 +19,36 @@ import styles from './scrapbook.module.css';
 const SWIPE_PX = 40;
 const NEXT_ZONE = 0.4; // taps on the right 60 % go forward
 
+/**
+ * One page turn, in plain words, for the app's analytics (spec analytics-v2 §6.2). The template
+ * only reports it; features/trip-page decides what to send. `to` is the page landed on.
+ */
+export type PageTurn = {
+  from: number;
+  to: number;
+  count: number;
+  direction: 'next' | 'previous';
+  via: 'tap' | 'swipe' | 'key';
+  fullscreen: boolean;
+};
+type PageChangeHandler = (turn: PageTurn) => void;
+
+// Templates render QuestPlayer themselves, so the app can't pass it a prop without every template
+// passing one through. The app sets the same callback once around the template instead; a prop,
+// when given, wins. Nothing is rendered for it, so the markup stays the same.
+const PageChangeContext = createContext<PageChangeHandler | undefined>(undefined);
+
+/** Gives every QuestPlayer inside it an onPageChange callback (features/trip-page uses it). */
+export function QuestPlayerCallbacks({
+  onPageChange,
+  children,
+}: {
+  onPageChange: PageChangeHandler;
+  children?: ReactNode;
+}) {
+  return <PageChangeContext.Provider value={onPageChange}>{children}</PageChangeContext.Provider>;
+}
+
 type Player = {
   page: number;
   count: number;
@@ -43,9 +73,13 @@ type Props = {
   pages: { key: string; label: string; content: ReactNode }[];
   /** Controls placed outside the pages (full screen, like), which can call useQuestPlayer(). */
   children?: ReactNode;
+  /** Told after each tap, swipe or arrow-key turn. Optional: without it nothing changes. */
+  onPageChange?: PageChangeHandler;
 };
 
-export function QuestPlayer({ pages, children }: Props) {
+export function QuestPlayer({ pages, children, onPageChange }: Props) {
+  const onPageChangeFromApp = useContext(PageChangeContext);
+  const reportTurn = onPageChange ?? onPageChangeFromApp;
   const [page, setPage] = useState(0);
   const count = pages.length;
   const [fullscreen, setFullscreenState] = useState(false);
@@ -94,19 +128,27 @@ export function QuestPlayer({ pages, children }: Props) {
     return () => cancelAnimationFrame(frame);
   }, [page]);
 
+  /** A turn by the reader: the same as next()/previous(), and reported to onPageChange. */
+  function turn(direction: PageTurn['direction'], via: PageTurn['via']) {
+    if (direction === 'next') player.next();
+    else player.previous();
+    const to = (((page + (direction === 'next' ? 1 : -1)) % count) + count) % count;
+    // A one-page Quest doesn't turn.
+    if (reportTurn && to !== page) reportTurn({ from: page, to, count, direction, via, fullscreen });
+  }
+
   function onPointerUp(event: PointerEvent<HTMLDivElement>) {
     const from = start.current;
     start.current = null;
     if (!from) return;
     const dx = event.clientX - from.x;
     if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(event.clientY - from.y)) {
-      return dx < 0 ? player.next() : player.previous();
+      return turn(dx < 0 ? 'next' : 'previous', 'swipe');
     }
     // A tap on a photo or button keeps its own meaning.
     if ((event.target as HTMLElement).closest('button, a, [data-draggable]')) return;
     const box = event.currentTarget.getBoundingClientRect();
-    if (event.clientX - box.left > box.width * NEXT_ZONE) player.next();
-    else player.previous();
+    turn(event.clientX - box.left > box.width * NEXT_ZONE ? 'next' : 'previous', 'tap');
   }
 
   return (
@@ -120,8 +162,8 @@ export function QuestPlayer({ pages, children }: Props) {
         aria-label={`Page ${page + 1} of ${count}`}
         tabIndex={0}
         onKeyDown={(event) => {
-          if (event.key === 'ArrowRight') player.next();
-          if (event.key === 'ArrowLeft') player.previous();
+          if (event.key === 'ArrowRight') turn('next', 'key');
+          if (event.key === 'ArrowLeft') turn('previous', 'key');
           if (event.key === 'Escape' && fullscreen) setFullscreen(false);
         }}
         onPointerDown={(event) => {

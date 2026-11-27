@@ -1,18 +1,28 @@
 import Link from 'next/link';
 import { HeartIcon } from '@/design-system/components/icons';
+import { withSrc } from '@/lib/analytics/src';
 import type { QuestCard } from '@/lib/trip/cards';
 
 /**
  * Two columns of Quests: trending (with like counts, screen 13) and search results. The title and
  * maker sit on the cover, like the cards everywhere else in the app.
  */
-export function QuestGrid({ quests, showLikes = false }: { quests: QuestCard[]; showLikes?: boolean }) {
+export function QuestGrid({
+  quests,
+  showLikes = false,
+  src,
+}: {
+  quests: QuestCard[];
+  showLikes?: boolean;
+  /** quest_viewed's source code for the links (QUEST_SOURCE_CODE). */
+  src?: number;
+}) {
   return (
     <ul className="grid grid-cols-2 gap-3 md:grid-cols-3">
       {quests.map((quest) => (
         <li key={quest.key}>
           <Link
-            href={quest.path ?? '#'}
+            href={quest.path && src !== undefined ? withSrc(quest.path, src) : (quest.path ?? '#')}
             className="relative block aspect-4/5 overflow-hidden rounded-lg bg-night-band"
           >
             {quest.coverThumb && <img src={quest.coverThumb} alt="" className="h-full w-full object-cover" />}
