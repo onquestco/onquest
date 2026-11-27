@@ -1,11 +1,11 @@
 'use client';
 
 import { TopBar } from '@/design-system/components/TopBar';
-import { useEffect, useRef, useState, useSyncExternalStore, type ChangeEvent } from 'react';
+import { useRef, useState, useSyncExternalStore, type ChangeEvent } from 'react';
 import { Button } from '@/design-system/components/Button';
 import { Toast } from '@/design-system/components/Toast';
 import { MAX_PHOTOS } from '@/lib/trip/limits';
-import { nextButton, oneAtATime } from './nextButton';
+import { nextButton } from './nextButton';
 import { PhotoTile } from './PhotoTile';
 import type { UploadDeps } from './upload';
 import { usePickPhotos, type Tile } from './usePickPhotos';
@@ -31,19 +31,19 @@ export function PickPhotos({ tripKey, deps, onNext }: Props) {
   const iPhone = useSyncExternalStore(noSubscribe, isIPhone, () => false);
   const [submitting, setSubmitting] = useState(false);
   const button = nextButton(tiles.map((tile) => tile.status), submitting);
-  const latestOnNext = useRef(onNext);
-  useEffect(() => {
-    latestOnNext.current = onNext;
-  }, [onNext]);
-  // Locks on the tap itself, before React re-renders the button as disabled.
-  const [submitOnce] = useState(() =>
-    oneAtATime(async (picked: Tile[]) => {
-      setSubmitting(true);
-      const movedOn = await latestOnNext.current(picked).catch(() => false);
-      if (!movedOn) setSubmitting(false);
-      return movedOn;
-    }),
-  );
+  // Locks on the tap itself, before React re-renders the button as disabled. Stays locked once
+  // the screen is moving on; unlocks on failure so Next can be tapped again.
+  const running = useRef(false);
+
+  async function tapNext() {
+    if (running.current) return;
+    running.current = true;
+    setSubmitting(true);
+    const movedOn = await onNext(tiles).catch(() => false);
+    if (movedOn) return;
+    running.current = false;
+    setSubmitting(false);
+  }
 
   function choose(event: ChangeEvent<HTMLInputElement>) {
     add(Array.from(event.target.files ?? []));
@@ -107,7 +107,7 @@ export function PickPhotos({ tripKey, deps, onNext }: Props) {
               block
               disabled={button.disabled}
               loading={button.loading}
-              onClick={() => void submitOnce(tiles)}
+              onClick={() => void tapNext()}
             >
               {button.label}
             </Button>

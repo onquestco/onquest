@@ -26,18 +26,3 @@ export function nextButton(statuses: TileStatus[], submitting: boolean): NextBut
   }
   return { label: 'Next', disabled: false, loading: false };
 }
-
-/**
- * Runs `task` once at a time: taps while it runs do nothing. It unlocks when the task fails (so
- * Next can be tapped again) but stays locked once it succeeds, because the screen is moving on.
- */
-export function oneAtATime<Args extends unknown[]>(task: (...args: Args) => Promise<boolean>) {
-  let running = false;
-  return async (...args: Args): Promise<boolean | 'ignored'> => {
-    if (running) return 'ignored';
-    running = true;
-    const succeeded = await task(...args).catch(() => false);
-    if (!succeeded) running = false;
-    return succeeded;
-  };
-}
