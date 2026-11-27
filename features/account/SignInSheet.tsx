@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { Logo } from '@/design-system/components/Logo';
 import { Sheet } from '@/design-system/components/Sheet';
+import { signInSource, type SignInReturn, type SignInSource } from '@/lib/auth/next';
 import { LoginForm } from './LoginForm';
 import { signInTitle } from './signInCopy';
 import {
@@ -14,6 +15,16 @@ import {
   signInReturnFromHref,
   useSignInPrompt,
 } from './signInPrompt';
+
+/**
+ * sign_in source for a link the popup caught: Make your own Quest or Blog, else "other" (Like,
+ * Comment, Follow, a tab or the bell). Only askToSignIn() with nothing, the top-right Sign in
+ * button, counts as the button.
+ */
+function caughtLinkSource(caught: Pick<SignInReturn, 'next' | 'intent'>): SignInSource {
+  const derived = signInSource(caught);
+  return derived === 'button' ? 'other' : derived;
+}
 
 /**
  * The sign-in popup (OQ-16), mounted once in the root layout. Opens three ways: askToSignIn(); a
@@ -34,12 +45,13 @@ export function SignInSheet() {
       if (!(link instanceof HTMLAnchorElement) || link.origin !== window.location.origin) return;
       if (link.pathname === '/login') {
         event.preventDefault();
-        const { intent, next, ref } = signInReturnFromHref(link.href);
-        askToSignIn({ intent, next, ref });
+        const caught = signInReturnFromHref(link.href);
+        askToSignIn({ ...caught, source: caught.source ?? caughtLinkSource(caught) });
       } else if (needsAccount(link.pathname) && !looksSignedIn()) {
         event.preventDefault();
         const next = `${link.pathname}${link.search}`;
-        askToSignIn({ next, intent: link.pathname.startsWith('/quests/new') ? 'make_your_own' : undefined });
+        const intent = link.pathname.startsWith('/quests/new') ? 'make_your_own' : undefined;
+        askToSignIn({ next, intent, source: caughtLinkSource({ next, intent }) });
       }
     }
     // Capture, so it runs before Next's own link handling.

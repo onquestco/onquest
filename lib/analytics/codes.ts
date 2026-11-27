@@ -194,3 +194,22 @@ export const PREVIEW_EXIT_CODE = { back_to_edit: 0, publish: 1 } as const;
 
 /** draft_resumed.source (events.csv) */
 export const DRAFT_RESUMED_SOURCE_CODE = { home: 0, quests_tab: 1, manage_menu: 2 } as const;
+
+// AN-08 -----------------------------------------------------------------------------------------
+
+/** sign_in source (sign_in_click, user_signed_up, user_signed_in), from signInSource() in lib/auth/next.ts. */
+export const SIGN_IN_SOURCE_CODE = {
+  button: 0,
+  make_your_own_quest: 1,
+  make_your_own_blog: 2,
+  other: 3,
+} as const;
+
+/** username_rejected.reason (events.csv) */
+export const USERNAME_REJECTED_REASON_CODE = { taken: 0, invalid: 1, reserved: 2 } as const;
+
+/** username_rejected.source (events.csv) */
+export const USERNAME_FORM_CODE = { onboarding: 0, edit_profile: 1 } as const;
+
+/** welcome_click.action (events.csv) */
+export const WELCOME_ACTION_CODE = { skip: 0, next: 1, get_started: 2 } as const;

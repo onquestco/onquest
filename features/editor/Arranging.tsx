@@ -10,6 +10,7 @@ import { buildCollage } from './collage';
 import { saveDraftNow } from './draftSaver';
 import { useDraft } from './draftStore';
 import { LostDraft } from './LostDraft';
+import { useCreateAbandon } from './useCreateAbandon';
 
 // Screen 4. One line changes as work happens; never a bare spinner. Any failure still ends on
 // Review with the photos in pick order and the fallback message.
@@ -31,6 +32,13 @@ export function Arranging({ tripKey, arrangedBefore }: Props) {
   const [step, setStep] = useState<ArrangeStep>('sorting');
   const [failed, setFailed] = useState(false);
   const started = useRef(false);
+  // quest_create_abandoned step 1: closing the tab or leaving while the Quest is being arranged.
+  useCreateAbandon(() => {
+    const { key, picked, startedAt } = useDraft.getState();
+    if (key !== tripKey) return null;
+    const startedAtMs = startedAt ? Date.parse(startedAt) : undefined;
+    return { questKey: tripKey, photoCount: picked.length, startedAtMs };
+  });
 
   useEffect(() => {
     // A reload here after the draft was arranged: carry on editing it.

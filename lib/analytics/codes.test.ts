@@ -27,10 +27,14 @@ import {
   QUEST_PHOTO_ACTION_CODE,
   QUEST_SOURCE_CODE,
   REFERRER_CODE,
+  SIGN_IN_SOURCE_CODE,
   TEMPLATE_CODE,
   UNAVAILABLE_REASON_CODE,
+  USERNAME_FORM_CODE,
+  USERNAME_REJECTED_REASON_CODE,
   VIEW_EXIT_CODE,
   VISIBILITY_CODE,
+  WELCOME_ACTION_CODE,
 } from './codes';
 import { parseCsv, readEventRows } from './taxonomyFromCsv';
 
@@ -201,6 +205,16 @@ const CASES: [string, Record<string, number>, Record<string, string>][] = [
       preview: 'Preview',
       publish_sheet: 'Who can see it sheet',
     },
+  ],  // AN-08
+  [
+    'sign_in source',
+    SIGN_IN_SOURCE_CODE,
+    {
+      button: 'Sign in button',
+      make_your_own_quest: 'Make your own Quest',
+      make_your_own_blog: 'Make your own Blog',
+      other: 'Other interactions',
+    },
   ],
 ];
 
@@ -261,7 +275,19 @@ const DESCRIBED: [string, string, Record<string, number>, Record<string, string>
     'source',
     DRAFT_RESUMED_SOURCE_CODE,
     { home: 'Home (Your Quests)', quests_tab: 'Quests tab', manage_menu: '⋯ menu' },
+  ],  // AN-08
+  [
+    'username_rejected',
+    'reason',
+    USERNAME_REJECTED_REASON_CODE,
+    {
+      taken: "Taken ('That handle is taken')",
+      invalid: "Invalid format or length ('Use 3–20 letters, numbers or underscores')",
+      reserved: 'Reserved',
+    },
   ],
+  ['username_rejected', 'source', USERNAME_FORM_CODE, { onboarding: 'Sign-up (onboarding)', edit_profile: 'Edit profile' }],
+  ['welcome_click', 'action', WELCOME_ACTION_CODE, { skip: 'Skip', next: 'Next', get_started: 'Get started' }],
 ];
 
 describe('codes.ts', () => {

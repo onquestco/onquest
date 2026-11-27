@@ -6,10 +6,12 @@ import { Avatar } from '@/design-system/components/Avatar';
 import { Button } from '@/design-system/components/Button';
 import { TextField } from '@/design-system/components/TextField';
 import { processInTurn } from '@/features/editor/browserUploadDeps';
+import { track } from '@/lib/analytics/client';
 import { HandleSchema } from '@/lib/handles';
 import { uploadAvatar } from '@/lib/storage';
 import { createBrowserSupabase } from '@/lib/supabase/browser';
 import { checkHandle, saveProfile } from './actions';
+import { usernameRejectedProperties, usernameRejection, type UsernameRejection } from './onboardingProperties';
 
 type Initial = {
   userId: string;
@@ -22,6 +24,9 @@ type Initial = {
 };
 
 type Photo = { kind: 'keep' } | { kind: 'remove' } | { kind: 'new'; id: string; previewUrl: string };
+
+/** username_rejected waits for a pause in typing, so one refusal is one event (events.csv). */
+const REJECTION_PAUSE_MS = 500;
 
 const ERRORS: Record<string, string> = {
   conflict: 'Your profile changed on another device. Reload to see the latest.',
@@ -75,6 +80,27 @@ export function EditProfileForm({ initial }: { initial: Initial }) {
       : undefined;
   const canSave = changed && !nameError && !handleError && (!handleChanged || available === true) && !saving;
 
+  // username_rejected, once per refusal the field shows after a pause; counted for username_set.
+  const rejectedAttempts = useRef(0);
+  const lastRejection = useRef<string | undefined>(undefined);
+  const reportRejection = (reason: UsernameRejection, forHandle: string) => {
+    const shown = `${reason}:${forHandle}`;
+    if (lastRejection.current === shown) return;
+    lastRejection.current = shown;
+    rejectedAttempts.current += 1;
+    track('username_rejected', usernameRejectedProperties(reason, 'edit_profile'));
+  };
+  const liveRejection = handleChanged && handleError ? usernameRejection(cleanHandle, available) : undefined;
+  const reportLatest = useRef(reportRejection);
+  useEffect(() => {
+    reportLatest.current = reportRejection;
+  });
+  useEffect(() => {
+    if (!liveRejection) return;
+    const timer = setTimeout(() => reportLatest.current(liveRejection, cleanHandle), REJECTION_PAUSE_MS);
+    return () => clearTimeout(timer);
+  }, [liveRejection, cleanHandle]);
+
   function pickPhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -99,9 +125,14 @@ export function EditProfileForm({ initial }: { initial: Initial }) {
         bio: bio.trim(),
         homeCity: homeCity.trim(),
         avatarPhotoId,
+        analytics: { rejectedAttempts: rejectedAttempts.current },
       });
       if (!result.ok) throw new Error(result.error);
-      if (!result.data.saved) return setError(ERRORS[result.data.error] ?? "Couldn't save. Try again.");
+      if (!result.data.saved) {
+        if (result.data.error === 'handle_taken') reportRejection('taken', cleanHandle);
+        if (result.data.error === 'handle_reserved') reportRejection('reserved', cleanHandle);
+        return setError(ERRORS[result.data.error] ?? "Couldn't save. Try again.");
+      }
       // saveProfile's updateTag clears the browser's cached pages, so a client navigation shows the
       // new name, photo and handle at once; refresh also redraws the bottom bar's link. Faster than
       // the full page load OQ-4 first used (Alok, 23 Nov: "the speed is lil too slow").

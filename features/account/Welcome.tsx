@@ -1,22 +1,35 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, buttonClassName } from '@/design-system/components/Button';
 import { PhotoFan } from '@/features/home/PhotoFan';
 import { WELCOME_STEPS } from '@/features/home/welcomeSteps';
+import { track } from '@/lib/analytics/client';
+import { welcomeClickProperties, welcomeStepViewedProperties } from './onboardingProperties';
 
 /** Screen 10: three skippable steps after picking a username (first sign-in only). */
 export function Welcome() {
   const [step, setStep] = useState(0);
   const current = WELCOME_STEPS[step] ?? WELCOME_STEPS[0];
   const last = step === WELCOME_STEPS.length - 1;
+  // welcome_step_viewed once per step (React's dev double effects or going back don't repeat it).
+  const viewed = useRef(new Set<number>());
+  useEffect(() => {
+    if (viewed.current.has(step)) return;
+    viewed.current.add(step);
+    track('welcome_step_viewed', welcomeStepViewedProperties(step));
+  }, [step]);
   if (!current) return null;
 
   return (
     <main className="mx-auto flex min-h-svh max-w-lg flex-col gap-8 bg-surface px-4 pt-4 pb-10">
       <div className="flex justify-end">
-        <Link href="/home" className={buttonClassName({ variant: 'quiet' })}>
+        <Link
+          href="/home"
+          onClick={() => track('welcome_click', welcomeClickProperties('skip', step))}
+          className={buttonClassName({ variant: 'quiet' })}
+        >
           Skip
         </Link>
       </div>
@@ -36,11 +49,21 @@ export function Welcome() {
       {last ? (
         // Founder, 11 Nov: the last step goes to Home and the feed; creating starts from Home's
         // banner or the Create button, not straight from here.
-        <Link href="/home" className={buttonClassName({ block: true })}>
+        <Link
+          href="/home"
+          onClick={() => track('welcome_click', welcomeClickProperties('get_started', step))}
+          className={buttonClassName({ block: true })}
+        >
           Get started
         </Link>
       ) : (
-        <Button block onClick={() => setStep(step + 1)}>
+        <Button
+          block
+          onClick={() => {
+            track('welcome_click', welcomeClickProperties('next', step));
+            setStep(step + 1);
+          }}
+        >
           Next
         </Button>
       )}
