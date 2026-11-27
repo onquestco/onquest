@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/design-system/components/Button';
 import { Chip } from '@/design-system/components/Chip';
 import { SearchIcon } from '@/design-system/components/icons';
+import { QUEST_SOURCE_CODE } from '@/lib/analytics/codes';
 import type { BlogCard } from '@/lib/blog/cards';
 import { SearchResultsSchema, type GuideCard, type Person, type SearchResults } from '@/lib/social/schema';
 import type { QuestCard } from '@/lib/trip/cards';
@@ -117,7 +118,7 @@ export function ExploreView({ signedIn, chips: placeChips, trending, guides, blo
           )}
           {results && results.quests.length > 0 && (
             <Section title="Quests">
-              <QuestGrid quests={results.quests} />
+              <QuestGrid quests={results.quests} src={QUEST_SOURCE_CODE.search} />
             </Section>
           )}
           {results && results.people.length > 0 && (
@@ -146,7 +147,7 @@ export function ExploreView({ signedIn, chips: placeChips, trending, guides, blo
           )}
           {trending.length > 0 && (
             <Section title="Trending Quests">
-              <QuestGrid quests={trending} showLikes />
+              <QuestGrid quests={trending} showLikes src={QUEST_SOURCE_CODE.explore_trending} />
             </Section>
           )}
           {guides.length + blogs.length > 0 && (

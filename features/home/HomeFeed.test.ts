@@ -52,4 +52,14 @@ describe('HomeFeed (blogs spec S2, PRD B7)', () => {
     expect(html).toContain('Goa on 15k, part 1');
     expect(html).not.toContain('Follow travellers to see their Quests here.');
   });
+
+  it("a Quest card's links carry ?src= for quest_viewed (analytics-v2 AN-05): 1 in the feed, 2 in suggestions", () => {
+    const html = render([feedQuest(1)]);
+    expect(html).toContain('href="/@riya/quest-1?src=1"');
+    expect(html).toContain('href="/@riya/quest-1?src=1#comments"');
+    const suggested = renderToStaticMarkup(
+      createElement(HomeFeed, { signedIn: false, first: null, suggested: [feedQuest(2)] }),
+    );
+    expect(suggested).toContain('href="/@riya/quest-2?src=2"');
+  });
 });

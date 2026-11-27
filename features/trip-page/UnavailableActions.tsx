@@ -1,22 +1,34 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { buttonClassName } from '@/design-system/components/Button';
+import { track } from '@/lib/analytics/client';
+import { questUnavailableProperties } from './questProperties';
+import { looksSignedIn } from './signedInHint';
 
 const AnswerSchema = z.object({ ownerQuestKey: z.uuid().nullable() });
 
 type Props = {
   /** Set on private links: asks whether the person looking owns the Quest. */
   checkOwner?: { handle: string; slug: string };
+  /** Sends quest_unavailable once with this reason. The page is cached, so only the browser knows it was seen. */
+  viewedReason?: 'private' | 'removed';
 };
 
 /** "Make your own Quest", or "Open your Quest" for the owner of a private one. */
-export function UnavailableActions({ checkOwner }: Props) {
+export function UnavailableActions({ checkOwner, viewedReason }: Props) {
   const [ownerQuestKey, setOwnerQuestKey] = useState<string | null>(null);
   const handle = checkOwner?.handle;
   const slug = checkOwner?.slug;
+  const sent = useRef(false);
+
+  useEffect(() => {
+    if (!viewedReason || sent.current) return;
+    sent.current = true;
+    track('quest_unavailable', questUnavailableProperties(viewedReason, looksSignedIn()));
+  }, [viewedReason]);
 
   useEffect(() => {
     if (!handle || !slug) return;

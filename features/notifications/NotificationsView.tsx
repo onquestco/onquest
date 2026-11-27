@@ -3,8 +3,16 @@ import { Avatar } from '@/design-system/components/Avatar';
 import { buttonClassName } from '@/design-system/components/Button';
 import { HeartIcon } from '@/design-system/components/icons';
 import { TopBar } from '@/design-system/components/TopBar';
+import { QUEST_SOURCE_CODE } from '@/lib/analytics/codes';
+import { withSrc } from '@/lib/analytics/src';
 import type { NotificationItem } from '@/lib/social/schema';
 import { notificationHref, notificationText, timeAgo } from './notificationText';
+
+/** A Quest link carries quest_viewed's source (Notification); blog and profile links stay as they are. */
+const itemHref = (item: NotificationItem) =>
+  item.kind !== 'follow' && item.quest
+    ? withSrc(notificationHref(item), QUEST_SOURCE_CODE.notification)
+    : notificationHref(item);
 
 type Props = {
   items: NotificationItem[];
@@ -30,7 +38,7 @@ export function NotificationsView({ items, now, olderHref }: Props) {
           {items.map((item) => (
             <li key={item.key}>
               <Link
-                href={notificationHref(item)}
+                href={itemHref(item)}
                 className={`flex min-h-16 items-start gap-3 border-b border-line px-4 py-3 ${item.unread ? 'bg-brand-wash' : 'bg-surface'}`}
               >
                 {item.kind === 'like' || !item.actor ? (

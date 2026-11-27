@@ -6,6 +6,7 @@ import { PlusIcon } from '@/design-system/components/icons';
 import { placeholderImage } from '@/lib/demo/placeholderImages';
 import { Segmented } from '@/design-system/components/Segmented';
 import { Toast } from '@/design-system/components/Toast';
+import { QUEST_SOURCE_CODE } from '@/lib/analytics/codes';
 import type { BlogCard } from '@/lib/blog/cards';
 import type { QuestCard } from '@/lib/trip/cards';
 import { ManageQuestSheet } from './ManageQuestSheet';
@@ -125,6 +126,7 @@ function YourQuests({ initial, manage }: { initial: QuestCard[]; manage?: string
                 quest={quest}
                 meta={tileMeta(quest, 'counts')}
                 onManage={() => setManaging(quest.key)}
+                src={QUEST_SOURCE_CODE.quests_tab}
               />
             </li>
           ))}

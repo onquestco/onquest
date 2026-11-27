@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import { SUPPORT_EMAIL } from '@/lib/site';
+import { ReportLink } from './ReportLink';
 
 /**
  * Privacy · Terms · support address, at the end of public pages (legal PRD, P5). On a Quest page
  * it also carries Report, which used to live in the template's own footer.
  */
-export function SiteFooter({ reportUrl }: { reportUrl?: string }) {
+export function SiteFooter({ reportUrl, reportKey }: { reportUrl?: string; reportKey?: string }) {
   const link = 'inline-flex min-h-11 items-center underline';
   return (
     <footer className="mx-auto flex max-w-lg flex-wrap items-center justify-center gap-x-2 px-4 pb-6 text-caption text-ink-muted">
@@ -19,12 +20,12 @@ export function SiteFooter({ reportUrl }: { reportUrl?: string }) {
       <span aria-hidden>·</span>
       {reportUrl && (
         <>
-          <a
+          {/* reportKey: the Quest's key, for report_click (only Quest pages have Report today). */}
+          <ReportLink
             href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Report: ${reportUrl}`)}`}
             className={link}
-          >
-            Report
-          </a>
+            questKey={reportKey}
+          />
           <span aria-hidden>·</span>
         </>
       )}
