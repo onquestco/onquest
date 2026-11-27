@@ -44,7 +44,7 @@ export function QuestPlayerCallbacks({
   children,
 }: {
   onPageChange: PageChangeHandler;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   return <PageChangeContext.Provider value={onPageChange}>{children}</PageChangeContext.Provider>;
 }

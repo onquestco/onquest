@@ -18,10 +18,11 @@ describe('QuestPlayer and MemorySheet callbacks', () => {
     const template = templates[id as keyof typeof templates];
     const trip = { ...goaTrip, templateId: id };
     const page = () => createElement(template.TripPage, { trip });
-    const withCallbacks = createElement(QuestPlayerCallbacks, {
-      onPageChange: () => undefined,
-      children: createElement(MemorySheetCallbacks, { onAction: () => undefined, children: page() }),
-    });
+    const withCallbacks = createElement(
+      QuestPlayerCallbacks,
+      { onPageChange: () => undefined },
+      createElement(MemorySheetCallbacks, { onAction: () => undefined }, page()),
+    );
     expect(renderToStaticMarkup(withCallbacks)).toBe(renderToStaticMarkup(page()));
   });
 });

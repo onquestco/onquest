@@ -20,7 +20,7 @@ export function MemorySheetCallbacks({
   children,
 }: {
   onAction: ActionHandler;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   return <ActionContext.Provider value={onAction}>{children}</ActionContext.Provider>;
 }
