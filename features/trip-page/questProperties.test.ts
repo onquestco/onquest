@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { QUEST_SOURCE_CODE, TEMPLATE_CODE } from '@/lib/analytics/codes';
 import { expectNoProblems } from '@/lib/analytics/validate';
 import { templates } from '@/templates/registry';
@@ -18,6 +18,9 @@ import {
 } from './questProperties';
 import { looksSignedIn } from './signedInHint';
 import { templateCode } from './templateCode';
+
+// The registry loads every template, and with it next/font.
+vi.mock('next/font/google', () => import('@/templates/shared/nextFontStub'));
 
 const questKey = '00000000-0000-4000-8000-0000000000aa';
 const ownerKey = '00000000-0000-4000-8000-0000000000bb';
