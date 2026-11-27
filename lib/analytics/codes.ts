@@ -42,3 +42,42 @@ export const LEGAL_PAGE_CODE = { privacy: 0, terms: 1 } as const;
 
 /** legal page / source: legal_page_viewed.source, from ?from= (else direct) */
 export const LEGAL_SOURCE_CODE = { sign_in: 0, settings: 1, footer: 2, direct: 3 } as const;
+
+// AN-03 -----------------------------------------------------------------------------------------
+
+/** platform (common.csv): pointer: coarse, or "Mobi" in the user agent, is mobile. */
+export const PLATFORM_CODE = { mobile: 0, desktop: 1 } as const;
+
+/** from_screen, by route (docs/specs/analytics-v2.md §6.1; screens.ts maps routes to these). */
+export const FROM_SCREEN_CODE = {
+  home: 0,
+  explore: 1,
+  quests_tab: 2,
+  profile: 3,
+  quest_page: 4,
+  blog_page: 5,
+  settings: 6,
+  notifications: 7,
+  create_flow: 8,
+  other: 9,
+  create_page: 10,
+  blog_composer: 11,
+  guide_page: 12,
+  sign_in: 13,
+  welcome: 14,
+  legal: 15,
+} as const;
+
+/** app_opened.landing_page. events.csv allows 0–6 only; codes.csv's "7 = Other" isn't sent (§14). */
+export const LANDING_PAGE_CODE = {
+  home: 0,
+  quest_page: 1,
+  blog_page: 2,
+  profile: 3,
+  explore: 4,
+  quests: 5,
+  create: 6,
+} as const;
+
+/** app_opened.entry_type (3 is unused in the sheet). */
+export const ENTRY_TYPE_CODE = { default: 0, shared_link: 1, email: 2, other: 4 } as const;

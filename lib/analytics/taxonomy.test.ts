@@ -122,7 +122,6 @@ describe('taxonomy.ts', () => {
       'content_deleted.like_count': 'temporary',
       'content_deleted.photo_count': 'temporary',
       'content_liked.owner_user_id': 'temporary',
-      'create_option_click.from_screen': 'temporary',
       'create_quest_click.content_id': sheet,
       'error_shown.attempt': 'permanent',
       'error_shown.content_id': sheet,

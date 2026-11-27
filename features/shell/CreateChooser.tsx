@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { buttonClassName } from '@/design-system/components/Button';
 import { CloseIcon, PencilIcon } from '@/design-system/components/icons';
 import { Toast } from '@/design-system/components/Toast';
-import { track } from '@/lib/analytics/client';
+import { currentFromScreen, track } from '@/lib/analytics/client';
 import { CREATE_OPTION_CODE } from '@/lib/analytics/codes';
 import { placeholderImage, type Scene } from '@/lib/demo/placeholderImages';
 
@@ -26,8 +26,12 @@ type Props = {
 };
 
 /** create_option_click: `available_flg` is false for the "Releasing soon" blog tap. */
-export function createOptionProperties(option: 'quest' | 'blog', blogsEnabled: boolean) {
-  return { option: CREATE_OPTION_CODE[option], available_flg: option === 'quest' || blogsEnabled };
+export function createOptionProperties(option: 'quest' | 'blog', blogsEnabled: boolean, fromScreen: number) {
+  return {
+    option: CREATE_OPTION_CODE[option],
+    available_flg: option === 'quest' || blogsEnabled,
+    from_screen: fromScreen,
+  };
 }
 
 const blogCopy = (
@@ -70,7 +74,9 @@ export function CreateChooser({ blogsEnabled = false, source = 'create' }: Props
         <h2 className="text-title text-ink">What do you want to make?</h2>
         <Link
           href="/quests/new?source=create_menu"
-          onClick={() => track('create_option_click', createOptionProperties('quest', blogsEnabled))}
+          onClick={() =>
+            track('create_option_click', createOptionProperties('quest', blogsEnabled, currentFromScreen()))
+          }
           className="flex flex-col gap-3.5 rounded-lg border-2 border-brand-strong bg-brand-wash p-4.5 shadow-brand"
         >
           <span aria-hidden className="relative block h-37.5">
@@ -94,7 +100,9 @@ export function CreateChooser({ blogsEnabled = false, source = 'create' }: Props
         {blogsEnabled ? (
           <Link
             href={`/blogs/new?source=${source}`}
-            onClick={() => track('create_option_click', createOptionProperties('blog', true))}
+            onClick={() =>
+              track('create_option_click', createOptionProperties('blog', true, currentFromScreen()))
+            }
             className="flex items-center gap-3 rounded-md border border-line-control bg-surface p-3.5 text-left focus-visible:outline-2 focus-visible:outline-brand-strong"
           >
             <span className="flex size-11 shrink-0 items-center justify-center rounded-pill bg-brand-wash text-brand-strong">
@@ -106,7 +114,7 @@ export function CreateChooser({ blogsEnabled = false, source = 'create' }: Props
           <button
             type="button"
             onClick={() => {
-              track('create_option_click', createOptionProperties('blog', false));
+              track('create_option_click', createOptionProperties('blog', false, currentFromScreen()));
               setBlogNote(true);
             }}
             className="flex items-center gap-3 rounded-md border border-dashed border-line-control bg-surface p-3.5 text-left"
