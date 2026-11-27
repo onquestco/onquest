@@ -3,11 +3,18 @@
 import Link from 'next/link';
 import { buttonClassName } from '@/design-system/components/Button';
 import { Sheet } from '@/design-system/components/Sheet';
+import { trackCreateClick } from '@/features/editor/trackCreateClick';
 import { EXAMPLE_QUEST_PATH } from '@/lib/site';
 import { WELCOME_STEPS } from './welcomeSteps';
 
 /** "What's a Quest?" from the Home banner: the same three steps as the welcome screens. */
-export function WhatIsAQuestSheet({ onClose }: { onClose: () => void }) {
+export function WhatIsAQuestSheet({
+  onClose,
+  hasPublishedQuest,
+}: {
+  onClose: () => void;
+  hasPublishedQuest?: boolean;
+}) {
   return (
     <Sheet open title="What's a Quest?" onClose={onClose}>
       <ol className="flex flex-col gap-3">
@@ -23,7 +30,12 @@ export function WhatIsAQuestSheet({ onClose }: { onClose: () => void }) {
           </li>
         ))}
       </ol>
-      <Link href="/quests/new" className={buttonClassName({ block: true })}>
+      {/* Tagged so the draft counts it as the What's a Quest? sheet, not the Create menu. */}
+      <Link
+        href="/quests/new?source=whatis_sheet"
+        onClick={() => trackCreateClick({ source: 'whatis_sheet', hasPublishedQuest })}
+        className={buttonClassName({ block: true })}
+      >
         Create a Quest
       </Link>
       <Link href={EXAMPLE_QUEST_PATH} className={buttonClassName({ variant: 'quiet', block: true })}>

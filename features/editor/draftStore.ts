@@ -50,10 +50,18 @@ type DraftState = {
   version: number;
   savedVersion: number;
   saveStatus: SaveStatus;
+  /**
+   * For publishQuest's analytics (quest_creation_complete, quest_updated): the entry point of
+   * this creation, and the quest_edit actions applied since the draft was opened here or last
+   * published. Kept in memory only: a reload or another device starts them again.
+   */
+  clickLoc?: number;
+  editCount: number;
+  changeTypes: number[];
 
   /** "Next" on Pick photos: the draft row exists, nothing is arranged yet. */
   start: (
-    draft: { key: string; photoFolder: string; savedAt: string; startedAt: string },
+    draft: { key: string; photoFolder: string; savedAt: string; startedAt: string; clickLoc?: number },
     picked: PickedForDraft[],
   ) => void;
   load: (draft: LoadedDraft) => void;
@@ -67,6 +75,8 @@ type DraftState = {
   markSaved: (savedAt: string, version: number) => void;
   setSaveStatus: (status: SaveStatus) => void;
   setPublished: (published: Published, tripSavedAt: string) => void;
+  /** A quest_edit that changed the Quest (refused edits aren't counted). */
+  recordEdit: (action: number) => void;
 };
 
 function storedPreviews(folder: string, document: QuestDocument): Record<string, string> {
@@ -81,7 +91,9 @@ export const useDraft = create<DraftState>()((set) => ({
   version: 0,
   savedVersion: 0,
   saveStatus: 'saved',
-  start: ({ key, photoFolder, savedAt, startedAt }, picked) =>
+  editCount: 0,
+  changeTypes: [],
+  start: ({ key, photoFolder, savedAt, startedAt, clickLoc }, picked) =>
     set({
       key,
       photoFolder,
@@ -97,6 +109,9 @@ export const useDraft = create<DraftState>()((set) => ({
       version: 0,
       savedVersion: 0,
       saveStatus: 'saved',
+      clickLoc,
+      editCount: 0,
+      changeTypes: [],
     }),
   load: (draft) =>
     set((state) => ({
@@ -123,6 +138,10 @@ export const useDraft = create<DraftState>()((set) => ({
       version: 0,
       savedVersion: 0,
       saveStatus: 'saved',
+      // Loaded from the server: the entry point isn't known on this device.
+      clickLoc: undefined,
+      editCount: 0,
+      changeTypes: [],
     })),
   setDocument: (document) => set((state) => ({ document, version: state.version + 1 })),
   apply: (document) =>
@@ -152,5 +171,12 @@ export const useDraft = create<DraftState>()((set) => ({
       saveStatus: 'saved',
     })),
   setSaveStatus: (saveStatus) => set({ saveStatus }),
-  setPublished: (published, tripSavedAt) => set({ published, tripSavedAt, visibility: published.visibility }),
+  // Edits after a publish belong to the next one (quest_updated.change_types).
+  setPublished: (published, tripSavedAt) =>
+    set({ published, tripSavedAt, visibility: published.visibility, editCount: 0, changeTypes: [] }),
+  recordEdit: (action) =>
+    set((state) => ({
+      editCount: state.editCount + 1,
+      changeTypes: state.changeTypes.includes(action) ? state.changeTypes : [...state.changeTypes, action],
+    })),
 }));

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { buttonClassName } from '@/design-system/components/Button';
+import { trackCreateClick } from '@/features/editor/trackCreateClick';
 import { track } from '@/lib/analytics/client';
 import { questUnavailableProperties } from './questProperties';
 import { looksSignedIn } from './signedInHint';
@@ -51,7 +52,12 @@ export function UnavailableActions({ checkOwner, viewedReason }: Props) {
           Open your Quest
         </Link>
       ) : (
-        <Link href="/quests/new" className={buttonClassName({ block: true })}>
+        // A private or removed Quest's key isn't given out, so content_id is left out.
+        <Link
+          href="/quests/new?source=unavailable_quest"
+          onClick={() => trackCreateClick({ source: 'unavailable_quest' })}
+          className={buttonClassName({ block: true })}
+        >
           Make your own Quest
         </Link>
       )}

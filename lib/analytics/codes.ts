@@ -154,3 +154,43 @@ export const ARRANGE_MODE_CODE = {
   pick_order: 3,
   mixed: 4,
 } as const;
+
+// AN-07 -----------------------------------------------------------------------------------------
+
+/** quest_edit action */
+export const QUEST_EDIT_ACTION_CODE = {
+  title: 0,
+  caption: 1,
+  date: 2,
+  place: 3,
+  move_photo: 4,
+  swap_photos: 5,
+  new_page: 6,
+  remove_photo: 7,
+  replace_photo: 8,
+  add_photos: 9,
+  rename_page: 10,
+  undo: 11,
+} as const;
+
+/** create step (quest_create_abandoned) */
+export const CREATE_STEP_CODE = {
+  pick: 0,
+  arranging: 1,
+  review: 2,
+  template: 3,
+  preview: 4,
+  publish_sheet: 5,
+} as const;
+
+/** photo_limit_hit.limit (events.csv) */
+export const PHOTO_LIMIT_CODE = { max: 0, min: 1 } as const;
+
+/** photo_limit_hit.screen (events.csv) */
+export const PHOTO_LIMIT_SCREEN_CODE = { pick: 0, review: 1 } as const;
+
+/** preview_exit.action (events.csv) */
+export const PREVIEW_EXIT_CODE = { back_to_edit: 0, publish: 1 } as const;
+
+/** draft_resumed.source (events.csv) */
+export const DRAFT_RESUMED_SOURCE_CODE = { home: 0, quests_tab: 1, manage_menu: 2 } as const;

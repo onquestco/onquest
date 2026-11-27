@@ -8,7 +8,9 @@ import { ConfirmDialog } from '@/design-system/components/ConfirmDialog';
 import { Segmented } from '@/design-system/components/Segmented';
 import { Sheet } from '@/design-system/components/Sheet';
 import { Switch } from '@/design-system/components/Switch';
+import { draftResumedProperties } from '@/features/editor/createFlowLaterProperties';
 import { deleteQuest, setQuestComments, setQuestVisibility } from '@/features/editor/publishActions';
+import { track } from '@/lib/analytics/client';
 import type { QuestCard } from '@/lib/trip/cards';
 import type { Visibility } from '@/lib/trip/schema';
 
@@ -107,6 +109,18 @@ export function ManageQuestSheet({ quest, onClose, onChange, onDeleted }: Props)
         <Sheet open={!confirming} title={quest.title} onClose={onClose}>
           <Link
             href={`/quests/${quest.key}/review`}
+            onClick={() =>
+              track(
+                'draft_resumed',
+                draftResumedProperties({
+                  contentType: 'quest',
+                  key: quest.key,
+                  source: 'manage_menu',
+                  savedAt: quest.savedAt,
+                  now: new Date(),
+                }),
+              )
+            }
             className={buttonClassName({ variant: 'secondary', block: true })}
           >
             Continue editing

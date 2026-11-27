@@ -1,8 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { track } from '@/lib/analytics/client';
 import { MAX_PHOTOS } from '@/lib/trip/limits';
+import { photoLimitProperties } from './createFlowProperties';
 import { createUploadQueue, type PickedPhoto, type UploadDeps, type UploadFailure } from './upload';
+import { useCreateAbandon } from './useCreateAbandon';
 
 export type TileStatus = 'processing' | 'uploading' | 'done' | 'failed';
 export type Tile = {
@@ -22,6 +25,13 @@ export function usePickPhotos(tripKey: string, deps: () => UploadDeps) {
   const [tiles, setTiles] = useState<Tile[]>([]);
   const [message, setMessage] = useState<string>();
   const [online, setOnline] = useState(true);
+  // quest_create_abandoned on Pick photos: no draft yet, so no key (events.csv).
+  const [openedAt] = useState(() => Date.now());
+  const tileCount = useRef(0);
+  useEffect(() => {
+    tileCount.current = tiles.length;
+  }, [tiles.length]);
+  useCreateAbandon(() => ({ photoCount: tileCount.current, startedAtMs: openedAt }));
 
   const patch = useCallback(
     (uploadId: string, change: Partial<Tile>) =>
@@ -59,7 +69,10 @@ export function usePickPhotos(tripKey: string, deps: () => UploadDeps) {
 
   function add(files: File[]) {
     const room = MAX_PHOTOS - tiles.length;
-    if (files.length > room) setMessage(LIMIT_MESSAGE);
+    if (files.length > room) {
+      setMessage(LIMIT_MESSAGE);
+      track('photo_limit_hit', photoLimitProperties('max', 'pick'));
+    }
     if (room > 0) queue().add(files.slice(0, room));
   }
 

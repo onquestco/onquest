@@ -6,6 +6,7 @@ import { PlusIcon } from '@/design-system/components/icons';
 import { placeholderImage } from '@/lib/demo/placeholderImages';
 import { Segmented } from '@/design-system/components/Segmented';
 import { Toast } from '@/design-system/components/Toast';
+import { trackCreateClick } from '@/features/editor/trackCreateClick';
 import { QUEST_SOURCE_CODE } from '@/lib/analytics/codes';
 import type { BlogCard } from '@/lib/blog/cards';
 import type { QuestCard } from '@/lib/trip/cards';
@@ -84,6 +85,12 @@ function YourQuests({ initial, manage }: { initial: QuestCard[]; manage?: string
     <>
       <Link
         href="/quests/new?source=quests_tab"
+        onClick={() =>
+          trackCreateClick({
+            source: 'quests_tab',
+            hasPublishedQuest: quests.some((quest) => quest.status === 'published'),
+          })
+        }
         className="flex items-center gap-4 rounded-lg border-2 border-dashed border-brand-strong bg-brand-wash p-4"
       >
         <span className="flex size-12 shrink-0 items-center justify-center rounded-pill bg-brand-strong text-on-brand shadow-brand">

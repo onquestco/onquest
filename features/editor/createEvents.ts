@@ -23,6 +23,8 @@ const SOURCE_CLICK_LOC: Record<QuestCreateSource, number> = {
   quests_empty: QUEST_CLICK_LOC_CODE.empty_state,
   ftue: QUEST_CLICK_LOC_CODE.welcome,
   whatis_sheet: QUEST_CLICK_LOC_CODE.whats_a_quest,
+  blog_link: QUEST_CLICK_LOC_CODE.blog_link_quest,
+  unavailable_quest: QUEST_CLICK_LOC_CODE.make_your_own_unavailable,
 };
 
 export function clickLocForSource(source: QuestCreateSource): number {

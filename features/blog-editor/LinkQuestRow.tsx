@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useStore } from 'zustand';
 import { QuestsIcon } from '@/design-system/components/icons';
 import { editorActionProperties } from '@/features/blogs/blogEvents';
+import { trackCreateClick } from '@/features/editor/trackCreateClick';
 import { track } from '@/lib/analytics/client';
 import type { QuestCard } from '@/lib/trip/cards';
 import type { BlogDraftSaver } from './blogDraftSaver';
@@ -46,6 +47,8 @@ export function LinkQuestRow({
 
   async function createQuest() {
     setCreating(true);
+    // `quests` is the writer's own published Quests, so none means this is their first.
+    trackCreateClick({ source: 'blog_link', hasPublishedQuest: quests.length > 0 });
     // The blog is kept before leaving for the Quest flow (PRD B3). An empty composer has nothing
     // to keep, so it leaves no "Untitled blog" behind.
     await saver.saveNow();

@@ -1,6 +1,10 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { MoreIcon } from '@/design-system/components/icons';
+import { draftResumedProperties, resumedSourceForTile } from '@/features/editor/createFlowLaterProperties';
+import { trackCreateClick } from '@/features/editor/trackCreateClick';
+import { track } from '@/lib/analytics/client';
+import type { QuestCreateSource } from '@/lib/analytics/sources';
 import { withSrc } from '@/lib/analytics/src';
 import type { QuestCard } from '@/lib/trip/cards';
 import { questTag } from './questFilters';
@@ -33,10 +37,25 @@ export function QuestTile({ quest, meta, onManage, src }: Props) {
   const draft = quest.status === 'draft';
   const published = quest.path && src !== undefined ? withSrc(quest.path, src) : quest.path;
   const tag = questTag(quest);
+  const resumedFrom = draft ? resumedSourceForTile(src) : undefined;
+  const resume = () => {
+    if (!resumedFrom) return;
+    track(
+      'draft_resumed',
+      draftResumedProperties({
+        contentType: 'quest',
+        key: quest.key,
+        source: resumedFrom,
+        savedAt: quest.savedAt,
+        now: new Date(),
+      }),
+    );
+  };
   return (
     <div className="relative">
       <Link
         href={draft ? `/quests/${quest.key}/review` : (published ?? `/quests/${quest.key}/review`)}
+        onClick={resume}
         className="relative block aspect-4/5 overflow-hidden rounded-lg bg-night-band"
       >
         {quest.coverThumb && <img src={quest.coverThumb} alt="" className="h-full w-full object-cover" />}
@@ -67,11 +86,15 @@ export function QuestTile({ quest, meta, onManage, src }: Props) {
   );
 }
 
-/** The dashed "+ Create a Quest" tile that sits in the grid. */
-export function CreateTile({ source }: { source: string }) {
+/**
+ * The dashed "+ Create a Quest" tile that sits in the grid. It shows only until something is
+ * published (YourQuestsRow), so a tap on it is always towards a first Quest.
+ */
+export function CreateTile({ source }: { source: QuestCreateSource }) {
   return (
     <Link
       href={`/quests/new?source=${source}`}
+      onClick={() => trackCreateClick({ source, hasPublishedQuest: false })}
       className="flex aspect-4/5 items-center justify-center rounded-lg border-2 border-dashed border-line-control bg-surface text-body font-semibold text-brand-strong"
     >
       + Create a Quest

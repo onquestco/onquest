@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { buttonClassName } from '@/design-system/components/Button';
 import { TopBar } from '@/design-system/components/TopBar';
+import { track } from '@/lib/analytics/client';
 import { goaTrip } from '@/lib/demo/goaTrip';
 import { getTemplate, pickableTemplates } from '@/templates/registry';
 import type { Template } from '@/templates/types';
+import { templateSelectProperties } from './createFlowLaterProperties';
 import { useDraft } from './draftStore';
 import { LostDraft } from './LostDraft';
 import { ScaledFrame } from './ScaledFrame';
@@ -44,7 +46,10 @@ export function ChooseTemplate({ tripKey }: { tripKey: string }) {
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                onClick={() => setDocument({ ...document, templateId: template.id })}
+                onClick={() => {
+                  track('template_select', templateSelectProperties(tripKey, template.id, document.templateId));
+                  setDocument({ ...document, templateId: template.id });
+                }}
                 className={`flex flex-col gap-2 rounded-lg border-2 p-2 text-left ${
                   selected ? 'border-brand-strong bg-brand-wash' : 'border-line bg-surface'
                 } focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-strong`}
