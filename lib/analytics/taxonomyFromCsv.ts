@@ -83,7 +83,6 @@ export const OPTIONAL_OVERRIDES: Record<string, Override> = {
   'guide_viewed.source': { kind: 'permanent', why: 'Untagged in-app links' },
   first_seen_ts: { kind: 'permanent', why: 'Derived in BigQuery (events_clean), never sent' },
   days_since_last_sign_in: { kind: 'permanent', why: 'Derived in BigQuery (events_clean), never sent' },
-  'create_option_click.from_screen': { kind: 'temporary', filledBy: 'AN-03' },
   'blog_viewed.read_time_min': { kind: 'temporary', filledBy: 'AN-13' },
   'content_liked.owner_user_id': { kind: 'temporary', filledBy: 'AN-09' },
   'comment_posted.owner_user_id': { kind: 'temporary', filledBy: 'AN-09' },

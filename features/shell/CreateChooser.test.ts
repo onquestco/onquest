@@ -44,11 +44,10 @@ describe('CreateChooser', () => {
   });
 
   it('create_option_click: a Quest is always available, a blog only with access', () => {
-    expect(createOptionProperties('quest', false)).toEqual({ option: 0, available_flg: true });
-    expect(createOptionProperties('blog', false)).toEqual({ option: 1, available_flg: false });
-    expect(createOptionProperties('blog', true)).toEqual({ option: 1, available_flg: true });
-    // from_screen is AN-03's (a temporary optional property until then).
-    expectNoProblems('create_option_click', createOptionProperties('quest', false));
-    expectNoProblems('create_option_click', createOptionProperties('blog', false));
+    expect(createOptionProperties('quest', false, 10)).toEqual({ option: 0, available_flg: true, from_screen: 10 });
+    expect(createOptionProperties('blog', false, 10)).toEqual({ option: 1, available_flg: false, from_screen: 10 });
+    expect(createOptionProperties('blog', true, 10)).toEqual({ option: 1, available_flg: true, from_screen: 10 });
+    expectNoProblems('create_option_click', createOptionProperties('quest', false, 10));
+    expectNoProblems('create_option_click', createOptionProperties('blog', false, 10));
   });
 });

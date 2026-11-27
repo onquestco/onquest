@@ -557,7 +557,7 @@ export const EVENTS = {
       },
       "from_screen": {
         "type": "INT64",
-        "required": false,
+        "required": true,
         "min": 0,
         "max": 15
       }

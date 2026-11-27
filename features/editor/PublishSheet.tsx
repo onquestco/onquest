@@ -1,10 +1,13 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/design-system/components/Button';
 import { Sheet } from '@/design-system/components/Sheet';
 import { TextField } from '@/design-system/components/TextField';
+import { setScreen } from '@/lib/analytics/client';
+import { routeTemplate } from '@/lib/analytics/routeTemplate';
+import { screenFor } from '@/lib/analytics/screens';
 import type { Visibility } from '@/lib/trip/schema';
 import { saveDraftNow } from './draftSaver';
 import { useDraft } from './draftStore';
@@ -39,6 +42,11 @@ export function PublishSheet({ tripKey, onClose }: Props) {
   const [visibility, setVisibility] = useState<Visibility>(published?.visibility ?? current);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string>();
+  // Events while the sheet is open are on the "publish" screen (spec §6.1), then back to the page's.
+  useEffect(() => {
+    setScreen('publish');
+    return () => setScreen(screenFor(routeTemplate(window.location.pathname)));
+  }, []);
   if (!document) return null;
   const title = document.title ?? '';
 

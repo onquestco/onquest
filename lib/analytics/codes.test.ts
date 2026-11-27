@@ -7,8 +7,12 @@ import {
   BLOG_LIKE_SOURCE_CODE,
   CONTENT_TYPE_CODE,
   CREATE_OPTION_CODE,
+  ENTRY_TYPE_CODE,
+  FROM_SCREEN_CODE,
+  LANDING_PAGE_CODE,
   LEGAL_PAGE_CODE,
   LEGAL_SOURCE_CODE,
+  PLATFORM_CODE,
   REFERRER_CODE,
   VISIBILITY_CODE,
 } from './codes';
@@ -63,6 +67,43 @@ const CASES: [string, Record<string, number>, Record<string, string>][] = [
       direct: 'source: Direct',
     },
   ],
+  // AN-03
+  [
+    'from_screen',
+    FROM_SCREEN_CODE,
+    {
+      home: 'Home',
+      explore: 'Explore',
+      quests_tab: 'Quests tab',
+      profile: 'Profile',
+      quest_page: 'Quest page',
+      blog_page: 'Blog page',
+      settings: 'Settings',
+      notifications: 'Notifications',
+      create_flow: 'Create flow',
+      other: 'Other',
+      create_page: 'Create page',
+      blog_composer: 'Blog composer',
+      guide_page: 'Guide page',
+      sign_in: 'Sign-in',
+      welcome: 'Welcome screens',
+      legal: 'Privacy / Terms',
+    },
+  ],
+  [
+    'landing_page',
+    LANDING_PAGE_CODE,
+    {
+      home: 'Home',
+      quest_page: 'Quest page',
+      blog_page: 'Blog page',
+      profile: 'Profile',
+      explore: 'Explore',
+      quests: 'Quests',
+      create: 'Create',
+    },
+  ],
+  ['entry_type', ENTRY_TYPE_CODE, { default: 'Default', shared_link: 'Shared link', email: 'Email', other: 'Other' }],
 ];
 
 describe('codes.ts', () => {
@@ -74,6 +115,12 @@ describe('codes.ts', () => {
         meaning: expect.stringContaining(words[name] ?? '?'),
       });
     }
+  });
+
+  it('platform follows common.csv (it has no code list)', () => {
+    const [, ...rows] = parseCsv(read('common'));
+    const row = rows.find(([name]) => name === 'platform');
+    expect(row?.[3]).toBe(`${PLATFORM_CODE.mobile} = Mobile web / ${PLATFORM_CODE.desktop} = Desktop web`);
   });
 
   it('create_option_click.option follows the sheet’s description (it has no code list)', () => {
