@@ -1,7 +1,9 @@
 'use server';
 
+import { after } from 'next/server';
 import { z } from 'zod';
 import { action } from '@/lib/action';
+import { trackServer } from '@/lib/analytics/server';
 import { writeCaptions as askModel } from '@/lib/captions';
 import { geocoderFor } from '@/lib/geoServer';
 import { describePhotos } from '@/lib/photoCaptions';
@@ -9,6 +11,7 @@ import type { QuestDocument } from '@/lib/trip/schema';
 import { applyPlaces } from './applyPlaces';
 import { saveError } from './dbErrors';
 import { captionTargets, withCaptions } from './captionTargets';
+import { arrangedProperties } from './createEvents';
 import { loadOwnTrip } from './questRows';
 
 // The server half of "Arranging your Quest" (spec A §3.2–3.5): town names and captions.
@@ -145,11 +148,16 @@ const ProgressSchema = z.object({
 });
 
 /**
- * Upload and arranging results for the photos_uploaded and quest_arranged server events. The
- * events are sent once the analytics plumbing exists (A-07, A-14); until then this only checks
- * ownership, so the client can already call it.
+ * Upload and arranging results. `arranged` sends quest_arranged (analytics v2): the counts are the
+ * client's, the arrange mode and places come from the stored draft. `uploaded` has no v2 event and
+ * is only accepted, so older bundles keep working.
  */
-export const reportCreateProgress = action(ProgressSchema, async ({ key }, { db }) => {
-  if (!(await loadOwnTrip(db, key))) return { reported: false as const, error: 'not_found' as const };
+export const reportCreateProgress = action(ProgressSchema, async ({ key, arranged }, { user, db }) => {
+  const own = await loadOwnTrip(db, key);
+  if (!own) return { reported: false as const, error: 'not_found' as const };
+  if (arranged) {
+    const properties = arrangedProperties(key, arranged, own.draft.document);
+    after(() => trackServer('quest_arranged', user.id, properties));
+  }
   return { reported: true as const };
 });

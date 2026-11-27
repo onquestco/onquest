@@ -128,3 +128,29 @@ export const QUEST_PHOTO_ACTION_CODE = { open: 0, next: 1, previous: 2, map: 3 }
 
 /** quest_view_ended.exit_type (events.csv) */
 export const VIEW_EXIT_CODE = { back: 0, in_app: 1, hidden: 2, make_your_own: 3 } as const;
+
+// AN-06 -----------------------------------------------------------------------------------------
+
+/** click_loc (create_quest_click, quest_draft_created, quest_creation_complete). AN-07 imports it. */
+export const QUEST_CLICK_LOC_CODE = {
+  home_banner: 0,
+  create_menu: 1,
+  make_your_own: 2,
+  make_your_own_unavailable: 3,
+  your_quests_tile: 4,
+  quests_tab_card: 5,
+  empty_state: 6,
+  welcome: 7,
+  whats_a_quest: 8,
+  blog_link_quest: 9,
+  feed_explore: 10,
+} as const;
+
+/** quest_arranged.arrange_mode (events.csv) */
+export const ARRANGE_MODE_CODE = {
+  page_per_day: 0,
+  chapters: 1,
+  day_split_by_time: 2,
+  pick_order: 3,
+  mixed: 4,
+} as const;
