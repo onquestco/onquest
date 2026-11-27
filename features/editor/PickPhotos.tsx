@@ -1,10 +1,11 @@
 'use client';
 
 import { TopBar } from '@/design-system/components/TopBar';
-import { useSyncExternalStore, type ChangeEvent } from 'react';
+import { useRef, useState, useSyncExternalStore, type ChangeEvent } from 'react';
 import { Button } from '@/design-system/components/Button';
 import { Toast } from '@/design-system/components/Toast';
-import { MAX_PHOTOS, MIN_PHOTOS_TO_PUBLISH } from '@/lib/trip/limits';
+import { MAX_PHOTOS } from '@/lib/trip/limits';
+import { nextButton } from './nextButton';
 import { PhotoTile } from './PhotoTile';
 import type { UploadDeps } from './upload';
 import { usePickPhotos, type Tile } from './usePickPhotos';
@@ -12,8 +13,11 @@ import { usePickPhotos, type Tile } from './usePickPhotos';
 type Props = {
   tripKey: string;
   deps: () => UploadDeps;
-  /** Called with the picked photos, in pick order, when Next is tapped. */
-  onNext: (tiles: Tile[]) => void;
+  /**
+   * Called with the picked photos, in pick order, when Next is tapped. Resolves true when the
+   * screen is moving on; false (after showing its own error) puts the button back to Next.
+   */
+  onNext: (tiles: Tile[]) => Promise<boolean>;
 };
 
 // iPhones hand websites photos without their location unless the person turns it on in the
@@ -24,9 +28,22 @@ const noSubscribe = () => () => undefined;
 /** Screen 3: pick 3 to 15 photos. Uploading starts the moment a photo is picked. */
 export function PickPhotos({ tripKey, deps, onNext }: Props) {
   const { tiles, add, retry, remove, online, message, clearMessage } = usePickPhotos(tripKey, deps);
-  const enough = tiles.length >= MIN_PHOTOS_TO_PUBLISH;
-  const waiting = tiles.some((tile) => tile.status === 'processing');
   const iPhone = useSyncExternalStore(noSubscribe, isIPhone, () => false);
+  const [submitting, setSubmitting] = useState(false);
+  const button = nextButton(tiles.map((tile) => tile.status), submitting);
+  // Locks on the tap itself, before React re-renders the button as disabled. Stays locked once
+  // the screen is moving on; unlocks on failure so Next can be tapped again.
+  const running = useRef(false);
+
+  async function tapNext() {
+    if (running.current) return;
+    running.current = true;
+    setSubmitting(true);
+    const movedOn = await onNext(tiles).catch(() => false);
+    if (movedOn) return;
+    running.current = false;
+    setSubmitting(false);
+  }
 
   function choose(event: ChangeEvent<HTMLInputElement>) {
     add(Array.from(event.target.files ?? []));
@@ -86,9 +103,17 @@ export function PickPhotos({ tripKey, deps, onNext }: Props) {
 
         <div className="fixed inset-x-0 bottom-0 border-t border-line bg-surface px-4 py-4">
           <div className="mx-auto max-w-lg">
-            <Button block disabled={!enough || waiting} onClick={() => onNext(tiles)}>
-              {enough ? 'Next' : `Pick at least ${MIN_PHOTOS_TO_PUBLISH} photos`}
+            <Button
+              block
+              disabled={button.disabled}
+              loading={button.loading}
+              onClick={() => void tapNext()}
+            >
+              {button.label}
             </Button>
+            <p role="status" className="sr-only">
+              {button.loading ? button.label : ''}
+            </p>
           </div>
         </div>
 

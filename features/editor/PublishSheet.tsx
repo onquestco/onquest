@@ -43,6 +43,7 @@ export function PublishSheet({ tripKey, onClose }: Props) {
   const title = document.title ?? '';
 
   async function publish() {
+    if (publishing) return; // a second tap before the re-render
     setPublishing(true);
     setError(undefined);
     const saved = await saveDraftNow();
@@ -108,7 +109,7 @@ export function PublishSheet({ tripKey, onClose }: Props) {
           {error}
         </p>
       )}
-      <Button block disabled={publishing || !title.trim()} onClick={() => void publish()}>
+      <Button block disabled={!title.trim()} loading={publishing} onClick={() => void publish()}>
         {publishing ? 'Publishing…' : 'Publish'}
       </Button>
     </Sheet>
