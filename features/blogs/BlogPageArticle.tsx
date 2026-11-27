@@ -6,6 +6,7 @@ import type { BlogData } from '@/lib/blog/schema';
 import { BlogArticle } from './BlogArticle';
 import { BlogPhotoViewer } from './BlogPhotoViewer';
 import { useBlogPage } from './LiveBlogSocialProvider';
+import { readEndProperties } from './readerEvents';
 import { useReadEnd } from './useReadEnd';
 import { WriterRow } from './WriterRow';
 
@@ -24,7 +25,7 @@ export function BlogPageArticle({ writer, publishedAt, readMinutes, ...article }
   const [openAt, setOpenAt] = useState<number | null>(null);
   const marker = useRef<HTMLDivElement>(null);
   const onReadEnd = useCallback(
-    (seconds: number) => track('blog_read_end', { blog_id: blogKey, view_id: viewId, seconds }),
+    (seconds: number) => track('blog_read_end', readEndProperties({ blogKey, viewId }, seconds)),
     [blogKey, viewId],
   );
   // Stops (and never fires) once the viewer turns out to be the writer (review S2).

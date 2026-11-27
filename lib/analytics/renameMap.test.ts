@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { V1_RENAMES, renameV1Event, type V1Properties } from './renameMap';
-import { CLIENT_EVENTS, SERVER_EVENTS } from './taxonomy';
+import { CLIENT_EVENTS, SERVER_EVENTS } from './taxonomyV1';
 import { readEventRows, type PropertyRule } from './taxonomyFromCsv';
 import { validateEvent } from './validate';
 

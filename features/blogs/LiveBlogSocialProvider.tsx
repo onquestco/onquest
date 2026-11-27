@@ -8,13 +8,13 @@ import { track } from '@/lib/analytics/client';
 import type { BlogViewer, QuestSocial } from '@/lib/social/schema';
 import type { QuestCard } from '@/lib/trip/cards';
 import { blogReferrer } from './blogReferrer';
-import { countsAsReader } from './readerEvents';
+import { blogViewedProperties, countsAsReader } from './readerEvents';
 import { deleteBlogComment, postBlogComment, setBlogLike, type BlogLikeSource } from './socialActions';
 import { useBlogViewer } from './useBlogViewer';
 
 // The blog page's likes and comments: the Quest page's provider with subject "blog" and the blog
 // actions (spec §6.2), plus what only a blog page has: the viewer's writer-only fields, and the
-// view_id that joins blog_viewed, blog_read_end and blog_quest_opened for one page view (§10).
+// view_id that joins blog_viewed, blog_read_end and blog_quest_click for one page view (§10).
 
 /** The Quest components' like sources in blog words: the page's own like is blog_page. */
 function blogLikeSource(source: LikeSource): BlogLikeSource {
@@ -47,7 +47,7 @@ function liveActions(blogKey: string): SocialActions {
 
 type BlogPage = {
   blogKey: string;
-  /** One uuid per page view (blog_viewed, blog_read_end, blog_quest_opened). */
+  /** One uuid per page view (blog_viewed, blog_read_end, blog_quest_click). */
   viewId: string;
   /** null until /api/blogs/{key}/me answers. */
   viewer: BlogViewer | null;
@@ -72,7 +72,7 @@ function FinishIntent() {
 }
 
 /** blog_viewed once per page view, as soon as we know whether the reader is signed in. */
-function useBlogViewed(page: BlogPage, readerQuest: QuestCard | null) {
+function useBlogViewed(page: BlogPage, ownerKey: string, readerQuest: QuestCard | null) {
   const sent = useRef(false);
   const { viewer, trackReading, blogKey, viewId } = page;
   useEffect(() => {
@@ -80,14 +80,18 @@ function useBlogViewed(page: BlogPage, readerQuest: QuestCard | null) {
     sent.current = true;
     // The writer reading their own blog isn't a read (review S2).
     if (!countsAsReader(trackReading, viewer)) return;
-    track('blog_viewed', {
-      blog_id: blogKey,
-      view_id: viewId,
-      signed_in: viewer.signedIn,
-      referrer: blogReferrer(document.referrer, window.location.origin),
-      has_quest: readerQuest !== null || (viewer.isOwner && viewer.ownLinkedQuest !== undefined),
-    });
-  }, [viewer, trackReading, blogKey, viewId, readerQuest]);
+    track(
+      'blog_viewed',
+      blogViewedProperties({
+        blogKey,
+        viewId,
+        authorKey: ownerKey,
+        signedIn: viewer.signedIn,
+        referrer: blogReferrer(document.referrer, window.location.origin),
+        hasQuest: readerQuest !== null || (viewer.isOwner && viewer.ownLinkedQuest !== undefined),
+      }),
+    );
+  }, [viewer, trackReading, blogKey, viewId, ownerKey, readerQuest]);
 }
 
 type Props = {
@@ -96,7 +100,7 @@ type Props = {
   path: string;
   ownerKey: string;
   initial: QuestSocial;
-  /** The card readers get (get_blog_quest), for blog_viewed.has_quest. */
+  /** The card readers get (get_blog_quest), for blog_viewed.has_quest_flg. */
   readerQuest: QuestCard | null;
   trackReading: boolean;
   children: ReactNode;
@@ -124,7 +128,7 @@ export function LiveBlogSocialProvider({
     trackReading,
     countsAsReader: countsAsReader(trackReading, viewer),
   };
-  useBlogViewed(page, readerQuest);
+  useBlogViewed(page, ownerKey, readerQuest);
 
   return (
     <BlogPageContext.Provider value={page}>

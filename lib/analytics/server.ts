@@ -1,6 +1,6 @@
 import 'server-only';
-import { SERVER_EVENTS, type ServerEventName } from './taxonomy';
-import { keepAllowed, propertyProblems, type EventProperties } from './validate';
+import type { EventProps, ServerEventName } from './taxonomy';
+import { validateEvent, warnProblems } from './validate';
 
 // Server events (spec A §3.9): the source of truth for anything the database also counts. Sent
 // straight to PostHog, inside after() by callers, so they never slow or fail an action. Nothing
@@ -16,19 +16,19 @@ type Context = {
   screen?: string;
 };
 
-export async function trackServer(
-  event: ServerEventName,
+/**
+ * One server event from the v2 taxonomy (docs/specs/analytics-v2.md §4.2). Never dropped for a
+ * property: unknown ones and bad values are removed, and problems are warned in dev by name only.
+ */
+export async function trackServer<Name extends ServerEventName>(
+  event: Name,
   userKey: string,
-  properties: EventProperties = {},
+  properties: EventProps<Name>,
   context: Context = {},
 ): Promise<void> {
   if (!KEY) return;
-  const rules = SERVER_EVENTS[event];
-  const problems = propertyProblems(rules, properties);
-  if (problems.length > 0) {
-    console.warn(`Analytics: ${event} dropped`, problems);
-    return;
-  }
+  const { properties: allowed, problems } = validateEvent(event, properties);
+  warnProblems(event, problems);
   try {
     await fetch(`https://${HOST}/i/v0/e/`, {
       method: 'POST',
@@ -39,7 +39,7 @@ export async function trackServer(
         distinct_id: userKey,
         timestamp: new Date().toISOString(),
         properties: {
-          ...keepAllowed(rules, properties),
+          ...allowed,
           event_id: crypto.randomUUID(),
           type: 'server',
           server_ts: new Date().toISOString(),

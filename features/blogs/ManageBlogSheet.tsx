@@ -43,7 +43,7 @@ type Props = {
 /**
  * ⋯ on your own posted blog (PRD notify-and-manage flow 2): Edit, Share link, Who can see it,
  * Comments on/off, Delete. Each change passes the savedAt it was based on (decision 0001); the
- * server fires blog_managed.
+ * server fires visibility_changed, comments_toggled or content_deleted.
  */
 export function ManageBlogSheet({ blog, onClose, onChange, onConflict, onDeleted }: Props) {
   const [busy, setBusy] = useState(false);

@@ -57,26 +57,20 @@ beforeEach(() => {
 });
 
 describe('deleteBlogDraft', () => {
-  it('deletes the files before the rows, with no cache tags, and fires blog_deleted', async () => {
+  it('deletes the files before the rows, with no cache tags, and fires content_deleted (draft)', async () => {
     mocks.loadOwnBlog.mockResolvedValue(ownBlog('draft'));
     expect(await deleteBlogDraft({ key: KEY })).toEqual({ ok: true, data: { deleted: true } });
     expect(mocks.calls).toEqual(['files', 'delete_blog']);
     expect(mocks.deleteQuestFiles).toHaveBeenCalledWith(expect.anything(), `${USER}/${KEY}`);
     expect(mocks.rpc).toHaveBeenCalledWith('delete_blog', { p_key: KEY });
     expect(mocks.refreshBlogPages).not.toHaveBeenCalled();
-    expect(mocks.trackServer).toHaveBeenCalledWith('blog_deleted', USER, {
-      blog_id: KEY,
-      status: 'draft',
-      photos: 1,
-      chars_bucket: '1-500',
-      has_quest: false,
+    expect(mocks.trackServer).toHaveBeenCalledTimes(1);
+    expect(mocks.trackServer).toHaveBeenCalledWith('content_deleted', USER, {
+      content_type: 1,
+      content_id: KEY,
+      was_published_flg: false,
+      photo_count: 1,
     });
-  });
-
-  it('says whether a Quest was linked', async () => {
-    mocks.loadOwnBlog.mockResolvedValue(ownBlog('draft', '00000000-0000-4000-8000-000000000201'));
-    await deleteBlogDraft({ key: KEY });
-    expect(mocks.trackServer).toHaveBeenCalledWith('blog_deleted', USER, expect.objectContaining({ has_quest: true }));
   });
 
   it('refuses a posted blog and touches nothing', async () => {
@@ -97,7 +91,7 @@ describe('deleteBlogDraft', () => {
     expect(mocks.trackServer).not.toHaveBeenCalled();
   });
 
-  it('treats a draft posted elsewhere meanwhile as a posted delete: tags and blog_managed', async () => {
+  it('treats a draft posted elsewhere meanwhile as a posted delete: tags and content_deleted', async () => {
     mocks.loadOwnBlog.mockResolvedValue(ownBlog('draft'));
     mocks.rpc.mockResolvedValue({ data: { handles: ['riya', 'riya_k'], slug: 'goa-on-15k' }, error: null });
     expect(await deleteBlogDraft({ key: KEY })).toEqual({ ok: true, data: { deleted: true } });
@@ -107,12 +101,12 @@ describe('deleteBlogDraft', () => {
       handles: ['riya', 'riya_k'],
       slugs: ['goa-on-15k'],
     });
-    expect(mocks.trackServer).toHaveBeenCalledWith('blog_managed', USER, {
-      blog_id: KEY,
-      action: 'delete',
-      value: 'none',
+    expect(mocks.trackServer).toHaveBeenCalledTimes(1);
+    expect(mocks.trackServer).toHaveBeenCalledWith('content_deleted', USER, {
+      content_type: 1,
+      content_id: KEY,
+      was_published_flg: true,
     });
-    expect(mocks.trackServer).not.toHaveBeenCalledWith('blog_deleted', expect.anything(), expect.anything());
   });
 
   it('fails without detail when the database errors', async () => {

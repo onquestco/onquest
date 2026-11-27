@@ -1,6 +1,7 @@
 import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import { expectNoProblems } from '@/lib/analytics/validate';
 import { CreateChooser, createOptionProperties } from './CreateChooser';
 
 // vi.mock is hoisted above the imports. Rendered outside Next.js, so a plain router and a
@@ -42,9 +43,12 @@ describe('CreateChooser', () => {
     expect(html).toContain('border-2 border-brand-strong bg-brand-wash');
   });
 
-  it('create_option_tapped: a Quest is always available, a blog only with access', () => {
-    expect(createOptionProperties('quest', false)).toEqual({ option: 'quest', available: true });
-    expect(createOptionProperties('blog', false)).toEqual({ option: 'blog', available: false });
-    expect(createOptionProperties('blog', true)).toEqual({ option: 'blog', available: true });
+  it('create_option_click: a Quest is always available, a blog only with access', () => {
+    expect(createOptionProperties('quest', false)).toEqual({ option: 0, available_flg: true });
+    expect(createOptionProperties('blog', false)).toEqual({ option: 1, available_flg: false });
+    expect(createOptionProperties('blog', true)).toEqual({ option: 1, available_flg: true });
+    // from_screen is AN-03's (a temporary optional property until then).
+    expectNoProblems('create_option_click', createOptionProperties('quest', false));
+    expectNoProblems('create_option_click', createOptionProperties('blog', false));
   });
 });

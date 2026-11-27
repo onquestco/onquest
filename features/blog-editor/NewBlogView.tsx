@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { createStartedProperties } from '@/features/blogs/blogEvents';
 import type { BlogCreateSource } from '@/features/shell/CreateChooser';
 import { track } from '@/lib/analytics/client';
 import type { QuestCard } from '@/lib/trip/cards';
@@ -46,7 +47,7 @@ export function NewBlogView({ userId, source, defaultVisibility, quests, writer 
       router.replace(`/blogs/${start.key}/edit`);
       return;
     }
-    if (start.kind === 'new') track('blog_create_started', { blog_id: start.key, source });
+    if (start.kind === 'new') track('blog_create_started', createStartedProperties(start.key, source));
     // The key and any unsent draft exist only in this browser, so they're read once after load.
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-off read of browser storage
     setInitial({

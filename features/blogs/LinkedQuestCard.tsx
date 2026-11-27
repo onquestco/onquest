@@ -7,6 +7,7 @@ import { track } from '@/lib/analytics/client';
 import type { QuestCard } from '@/lib/trip/cards';
 import { linkedQuestView } from './linkedQuest';
 import { useBlogPage } from './LiveBlogSocialProvider';
+import { questClickProperties } from './readerEvents';
 
 /**
  * "From this trip" at the end of the blog (PRD B5, B9): cover, title, "5 pages · 15 photos" and
@@ -31,7 +32,7 @@ export function LinkedQuestCard({ readerQuest }: { readerQuest: QuestCard | null
         <Link
           href={quest.path}
           onClick={() => {
-            if (countsAsReader) track('blog_quest_opened', { blog_id: blogKey, view_id: viewId });
+            if (countsAsReader) track('blog_quest_click', questClickProperties({ blogKey, viewId }));
           }}
           className="flex flex-col overflow-hidden rounded-lg border border-line bg-surface focus-visible:outline-2 focus-visible:outline-brand-strong"
         >

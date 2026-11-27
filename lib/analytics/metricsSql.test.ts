@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { SCRATCH_DATASET, VIEW_FILES, renderApplyG1, renderFixtureCheck } from './bigqueryG1';
 import { parseCsv, type EventRule } from './taxonomyFromCsv';
-import { COMMON_PROPERTIES, EVENTS } from './taxonomyV2';
+import { COMMON_PROPERTIES, EVENTS } from './taxonomy';
 
 // The Metrics tab's BigQuery queries (docs/analytics/v2/metrics.csv) must stay valid against the
 // v2 taxonomy and the events_clean view (spec AC14). The CTO's dry run at G1 checks the SQL itself.
