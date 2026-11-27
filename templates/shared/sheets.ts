@@ -10,6 +10,8 @@ export type SheetPhoto = { src: string; caption?: string };
 
 export type Sheet = {
   kicker: string;
+  /** What screen readers hear instead of the kicker, when the kicker alone says too little ("01"). */
+  kickerLabel?: string;
   title: string;
   text?: string;
   tags: string[];
@@ -50,8 +52,11 @@ export function buildSheets(trip: TripData): Record<string, Sheet> {
   });
 
   trip.days.forEach((day, i) => {
+    const dayNumber = String(day.number).padStart(2, '0');
     sheets[`day:${i}`] = {
-      kicker: `Day ${String(day.number).padStart(2, '0')}`,
+      // Just the number on screen (CTO, 27 Nov), "Day 01" for screen readers.
+      kicker: dayNumber,
+      kickerLabel: `Day ${dayNumber}`,
       title: day.title,
       text: day.story,
       tags: day.places.map((place) => place.name),

@@ -145,7 +145,16 @@ export function MemorySheet({ sheets }: { sheets: Record<string, Sheet> }) {
         )}
 
         <div className={styles.sheetBody}>
-          <p className={styles.kicker}>{sheet.kicker}</p>
+          <p className={styles.kicker}>
+            {sheet.kickerLabel ? (
+              <>
+                <span aria-hidden="true">{sheet.kicker}</span>
+                <span className={styles.visuallyHidden}>{sheet.kickerLabel}</span>
+              </>
+            ) : (
+              sheet.kicker
+            )}
+          </p>
           <h3 id="sheet-title">{sheet.title}</h3>
           {sheet.text && <p>{sheet.text}</p>}
           {sheet.tags.length > 0 && (

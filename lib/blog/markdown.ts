@@ -92,6 +92,30 @@ export function blogPlainText(text: string, options: { cut?: boolean } = {}): st
   return out.join('').replace(/\s+/g, ' ').trim();
 }
 
+/**
+ * Parsed blocks as one line of plain text, as blogPlainText() reads a whole body: markers gone,
+ * spoilers "(spoiler)". The blocks are a whole body, never a cut excerpt, so a `>!` that never
+ * closed is literal text, as it is on the page. Used by link previews and card excerpts.
+ */
+export function blogBlocksPlainText(blocks: BlogBlock[]): string {
+  const out: string[] = [];
+  const visit = (nodes: BlogInline[]) => {
+    for (const node of nodes) {
+      if (node.kind === 'text' || node.kind === 'code') out.push(node.text);
+      else if (node.kind === 'spoiler') out.push(` ${SPOILER_TEXT} `);
+      else visit(node.children);
+    }
+  };
+  for (const block of blocks) {
+    const lines = block.kind === 'heading' ? [block.line] : block.kind === 'list' ? block.items : block.lines;
+    for (const line of lines) {
+      visit(line);
+      out.push(' ');
+    }
+  }
+  return out.join('').replace(/\s+/g, ' ').trim();
+}
+
 /** Where a `>!` that never closed starts (its secret may be what got cut off), or -1. */
 function unclosedSpoiler(text: string): number {
   for (let at = text.indexOf('>!'); at !== -1; at = text.indexOf('>!', at + 1)) {

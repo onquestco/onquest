@@ -1,4 +1,5 @@
 import { unstable_cache } from 'next/cache';
+import { withPublicExcerpts } from '@/features/blogs/cardExcerpts';
 import { publishedGuides, toGuideCard } from '@/features/guides/guides';
 import { EXPLORE_TAG } from '@/lib/cacheTags';
 import { toBlogCards, toPeople, toQuestCards } from '@/lib/social/cardRows';
@@ -22,11 +23,11 @@ const getPublicExplore = unstable_cache(
       trending: toQuestCards(trending.data),
       chips: (chips.data as string[] | null) ?? [],
       // Blogs are extra: if they can't load, Explore still shows everything else (BL-02 review).
-      blogs: blogs.error ? [] : toBlogCards(blogs.data),
+      blogs: blogs.error ? [] : await withPublicExcerpts(toBlogCards(blogs.data)),
     };
   },
-  // A new key for the new shape: entries cached by the previous release have no blogs.
-  ['explore', 'with-blogs'],
+  // A new key for each new shape: earlier entries have no blogs, or blog excerpts with raw formatting.
+  ['explore', 'blog-excerpts'],
   { tags: [EXPLORE_TAG], revalidate: FIVE_MINUTES },
 );
 

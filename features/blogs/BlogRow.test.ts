@@ -1,6 +1,7 @@
 import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import { blogExcerpt } from '@/lib/blog/excerpt';
 import { blogCardFixture as blog } from './blogCardFixture';
 import { blogRowHref, blogRowMeta, BlogRow } from './BlogRow';
 import { firstLetter } from './LetterTile';
@@ -56,6 +57,12 @@ describe('BlogRow', () => {
   it('with a cover: the thumbnail, sized and lazy', () => {
     const html = render({ blog: blog(1, { coverThumb: 'https://photos.example/1/thumb.webp' }) });
     expect(html).toMatch(/src="https:\/\/photos.example\/1\/thumb.webp"[^>]*width="76" height="76" loading="lazy"/);
+  });
+
+  it('a formatted body shows as plain text, never its markers', () => {
+    const html = render({ blog: blog(1, { excerpt: blogExcerpt('Text\n## Text\nHello im alok') }) });
+    expect(html).toContain('>Text Text Hello im alok</span>');
+    expect(html).not.toContain('##');
   });
 
   it('no excerpt (photos only): no empty line', () => {
