@@ -1,4 +1,4 @@
-import type { EventName } from './taxonomyV2';
+import type { EventName } from './taxonomy';
 
 // The 14 live v1 events and what each becomes in v2 (docs/specs/analytics-v2.md §5.3). The same
 // mapping is written in SQL for history in docs/analytics/bigquery/events_people_all.sql (read

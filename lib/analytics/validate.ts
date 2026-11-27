@@ -1,5 +1,5 @@
 import type { PropertyRule } from './taxonomyFromCsv';
-import { EVENTS, type EventName, type EventProps } from './taxonomyV2';
+import { EVENTS, type EventName, type EventProps } from './taxonomy';
 
 export type EventProperties = Record<string, string | number | boolean | undefined>;
 

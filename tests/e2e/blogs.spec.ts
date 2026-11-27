@@ -326,6 +326,14 @@ test.describe('blog_read_end at every viewport (spec §3.8)', () => {
     const [readEnd] = readEnds(events);
     expect(readEnd?.properties.view_id).toBe(viewed?.properties.view_id);
     expect(Number(readEnd?.properties.seconds)).toBeGreaterThanOrEqual(5);
+    // Analytics v2 (AN-02): flags and codes, not the v1 words.
+    expect(viewed?.properties).toMatchObject({
+      signed_in_flg: expect.any(Boolean),
+      has_quest_flg: expect.any(Boolean),
+    });
+    expect([0, 1, 2, 3]).toContain(viewed?.properties.referrer);
+    expect(typeof viewed?.properties.author_user_id).toBe('string');
+    expect(viewed?.properties).not.toHaveProperty('signed_in');
   });
 
   test('a long blog counts once, only when its end is on screen', async ({ page }) => {

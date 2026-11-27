@@ -8,13 +8,14 @@ import { action } from '@/lib/action';
 import { trackServer } from '@/lib/analytics/server';
 import { notifyBlogOwner } from '@/lib/email/notifyServer';
 import { COMMENT_MAX, type Comment } from '@/lib/social/schema';
+import { commentPostedProperties, likedProperties } from './blogEvents';
 import { refreshBlogSocial } from './refreshBlog';
 
 // Likes and comments on a blog (blogs spec §4.2), the same rules as on a Quest: each refreshes
 // only the blog's social tag, so a like never rebuilds the page. Domain errors come back in
 // `data`, never thrown. Email and analytics run after the response (after()).
 
-/** Where a like was tapped (blog_liked.source). */
+/** Where a like was tapped (content_liked.source, as BLOG_LIKE_SOURCE_CODE). */
 export type BlogLikeSource = 'blog_page' | 'feed' | 'after_sign_in';
 
 const LikeSchema = z.object({
@@ -32,7 +33,7 @@ export const setBlogLike = action(LikeSchema, async ({ blogKey, liked, source },
   after(async () => {
     // Only a person's first like ever on this blog notifies (the bell did, so the email does too).
     if (result.notified) await notifyBlogOwner({ kind: 'like', blogKey, actorKey: user.id });
-    await trackServer('blog_liked', user.id, { blog_id: blogKey, unlike: !liked, source });
+    await trackServer('content_liked', user.id, likedProperties(blogKey, liked, source, result.like_count));
   });
   return { saved: true as const, liked: result.liked, likeCount: result.like_count };
 });
@@ -52,7 +53,7 @@ export const postBlogComment = action(CommentSchema, async ({ blogKey, body }, {
   after(async () => {
     // The writer's own comments notify nobody: notifyBlogOwner checks.
     await notifyBlogOwner({ kind: 'comment', blogKey, actorKey: user.id, commentBody: body });
-    await trackServer('blog_comment_posted', user.id, { blog_id: blogKey, length: [...body].length });
+    await trackServer('comment_posted', user.id, commentPostedProperties(blogKey, body));
   });
   const comment: Comment = {
     key: saved.key,

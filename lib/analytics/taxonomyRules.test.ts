@@ -1,12 +1,12 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { V1_RENAMES } from './renameMap';
+import { COMMON_PROPERTIES, EVENTS } from './taxonomy';
 import { OPTIONAL_OVERRIDES, parseCsv, readEventRows, type EventRule, type PropertyRule } from './taxonomyFromCsv';
-import { COMMON_PROPERTIES, EVENTS } from './taxonomyV2';
+import { CLIENT_EVENTS, SERVER_EVENTS } from './taxonomyV1';
 
-// The taxonomy check (docs/specs/analytics-v2.md §11), v2 part. AN-02 adds the call-site checks
-// (every name passed to track/trackServer is in the taxonomy; no v1 name left in code) when it
-// switches the app to v2.
+// The taxonomy check (docs/specs/analytics-v2.md §11): the v2 rules, and the call sites.
 
 const csv = (name: string) => readFileSync(join(process.cwd(), 'docs', 'analytics', 'v2', `${name}.csv`), 'utf8');
 const events: Record<string, EventRule> = EVENTS;
@@ -92,5 +92,58 @@ describe('v2 taxonomy rules', () => {
     const common: readonly string[] = COMMON_PROPERTIES;
     expect(common.filter((name) => personal.includes(name) && name !== 'user_info')).toEqual([]);
     expect(properties.filter(({ property }) => personal.includes(property))).toEqual([]);
+  });
+});
+
+/** Every .ts/.tsx source file (not tests) under these folders, as [repo-relative path, text]. */
+function sources(...folders: string[]): [string, string][] {
+  const root = process.cwd();
+  const walk = (folder: string): string[] =>
+    readdirSync(folder, { withFileTypes: true }).flatMap((entry) => {
+      const path = join(folder, entry.name);
+      if (entry.isDirectory()) return walk(path);
+      return /\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name) ? [path] : [];
+    });
+  return folders
+    .flatMap((folder) => walk(join(root, folder)))
+    .map((path): [string, string] => [relative(root, path), readFileSync(path, 'utf8')]);
+}
+
+describe('call sites (AN-02)', () => {
+  const code = sources('app', 'features', 'lib');
+
+  it('sends only v2 names, each with its own sender', () => {
+    const calls = code.flatMap(([path, text]) =>
+      [...text.matchAll(/\b(track|trackServer)\(\s*['"`]([^'"`]+)['"`]/g)].map(([, sender, name]) => ({
+        path,
+        sender,
+        name,
+      })),
+    );
+    expect(calls.length).toBeGreaterThan(0);
+    const wrong = calls.filter(({ sender, name }) => {
+      const type = name ? events[name]?.type : undefined;
+      if (!type) return true;
+      return sender === 'trackServer' ? type !== 'server' : type === 'server';
+    });
+    expect(wrong).toEqual([]);
+  });
+
+  it('leaves no v1-only event name in code, outside the frozen v1 files', () => {
+    const v1Names = [...Object.keys(CLIENT_EVENTS), ...Object.keys(SERVER_EVENTS)];
+    const v1Only = v1Names.filter((name) => !events[name]);
+    // The renamed live events are among them (blog_viewed etc. kept their names).
+    expect(v1Only).toEqual(expect.arrayContaining(Object.keys(V1_RENAMES).filter((name) => !events[name])));
+    const allowed = [
+      'lib/analytics/taxonomyV1.ts',
+      'lib/analytics/renameMap.ts',
+      'lib/analytics/ingestEnrich.ts',
+    ];
+    const found = code
+      .filter(([path]) => !allowed.includes(path.split('\\').join('/')))
+      .flatMap(([path, text]) =>
+        v1Only.filter((name) => new RegExp(`['"\`]${name}['"\`]`).test(text)).map((name) => ({ path, name })),
+      );
+    expect(found).toEqual([]);
   });
 });

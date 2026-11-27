@@ -1,8 +1,8 @@
 import { isBot } from './bots';
 import { anonId, sessionId } from './ids';
 import { routeTemplate } from './routeTemplate';
-import { CLIENT_EVENTS, type ClientEventName } from './taxonomy';
-import { keepAllowed, propertyProblems, type EventProperties } from './validate';
+import type { BrowserEventName, EventProps } from './taxonomy';
+import { validateEvent, warnProblems } from './validate';
 
 // Browser analytics (spec A §3.9), sent to PostHog through our own /ingest proxy. Not posthog-js:
 // a plain sender has no autocapture, replay, surveys or cookies to switch off, and nothing it
@@ -58,16 +58,15 @@ export function setScreen(name: string) {
   screen = name;
 }
 
-/** One event from the taxonomy. A wrong name, property or value is dropped (and warned in dev). */
-export function track(event: ClientEventName, properties: EventProperties = {}) {
+/**
+ * One browser event from the v2 taxonomy (docs/specs/analytics-v2.md §4.2). It is always sent:
+ * unknown properties and bad values are removed, and problems are warned in dev by name only.
+ */
+export function track<Name extends BrowserEventName>(event: Name, properties: EventProps<Name>) {
   if (!enabled()) return;
-  const rules = CLIENT_EVENTS[event];
-  const problems = propertyProblems(rules, properties);
-  if (problems.length > 0) {
-    if (process.env.NODE_ENV !== 'production') console.warn(`Analytics: ${event} dropped`, problems);
-    return;
-  }
-  send(event, { ...keepAllowed(rules, properties), ...common() });
+  const { properties: allowed, problems } = validateEvent(event, properties);
+  warnProblems(event, problems);
+  send(event, { ...allowed, ...common() });
 }
 
 /** After sign-in: the user key only, never a name, handle or email. Joins the anon_id's events. */

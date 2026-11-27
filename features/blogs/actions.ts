@@ -9,7 +9,13 @@ import { trackServer } from '@/lib/analytics/server';
 import { deletePhotoFiles, deleteQuestFiles, listPhotoIds, photoUploadedAt } from '@/lib/storage';
 import { VisibilitySchema } from '@/lib/trip/schema';
 import { blogSaveError } from './blogErrors';
-import { managedProperties, publishedProperties } from './blogEvents';
+import {
+  commentsToggledProperties,
+  postedDeletedProperties,
+  publishedProperties,
+  updatedProperties,
+  visibilityChangedProperties,
+} from './blogEvents';
 import { loadOwnBlog } from './blogRows';
 import { firstBlogSlug } from './blogSlug';
 import { refreshBlogPages, refreshBlogSocial } from './refreshBlog';
@@ -53,12 +59,12 @@ export const publishBlog = action(PublishSchema, async (input, { user, db }) => 
   const result = z.object({ saved_at: z.string(), slug: z.string(), first_publish: z.boolean() }).parse(data);
   refreshBlogPages({ ownerKey: user.id, blogKey: input.key, handles: [profile.handle], slugs: [result.slug] });
   const visibility = input.visibility ?? blog.visibility;
-  // blog_published on the first Post; an update is "edit" from the ⋯ menu's point of view (spec §10).
+  // blog_published on the first Post, blog_updated on every later one.
   const postedAt = new Date();
   after(() =>
     result.first_publish
       ? trackServer('blog_published', user.id, publishedProperties(input.key, draft.document, visibility, postedAt))
-      : trackServer('blog_managed', user.id, managedProperties(input.key, { action: 'edit' })),
+      : trackServer('blog_updated', user.id, updatedProperties(input.key)),
   );
 
   // Removed photos keep their files until now; sweep them once the response is sent. Publishing
@@ -109,7 +115,7 @@ export const setBlogVisibility = action(
       return { saved: false as const, error: failure };
     }
     if (error) throw new Error('Could not change visibility');
-    after(() => trackServer('blog_managed', user.id, managedProperties(key, { action: 'visibility', visibility })));
+    after(() => trackServer('visibility_changed', user.id, visibilityChangedProperties(key, visibility)));
     refreshBlogPages({
       ownerKey: user.id,
       blogKey: key,
@@ -129,7 +135,7 @@ export const setBlogComments = action(CommentsChangeSchema, async ({ key, basedO
   if (failure === 'conflict' || failure === 'not_found') return { saved: false as const, error: failure };
   if (error) throw new Error('Could not change comments');
   refreshBlogSocial(key);
-  after(() => trackServer('blog_managed', user.id, managedProperties(key, { action: 'comments', on })));
+  after(() => trackServer('comments_toggled', user.id, commentsToggledProperties(key, on)));
   return { saved: true as const, savedAt: data as string };
 });
 
@@ -150,6 +156,6 @@ export const deleteBlog = action(z.object({ key: z.uuid() }), async ({ key }, { 
     handles: removed.handles,
     slugs: removed.slug ? [removed.slug] : [],
   });
-  after(() => trackServer('blog_managed', user.id, managedProperties(key, { action: 'delete' })));
+  after(() => trackServer('content_deleted', user.id, postedDeletedProperties(key)));
   return { deleted: true as const };
 });

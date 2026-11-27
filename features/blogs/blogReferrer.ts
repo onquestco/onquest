@@ -1,5 +1,5 @@
-// blog_viewed.referrer (spec §10): where the reader came from, as one of four words. Never the
-// referring URL itself.
+// blog_viewed.referrer: where the reader came from, as one of four words (sent as its code,
+// REFERRER_CODE in lib/analytics/codes.ts). Never the referring URL itself.
 
 export type BlogReferrer = 'whatsapp' | 'instagram' | 'other' | 'none';
 

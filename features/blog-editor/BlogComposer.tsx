@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 import { useStore } from 'zustand';
 import { Button } from '@/design-system/components/Button';
 import { Toast } from '@/design-system/components/Toast';
+import { editorActionProperties } from '@/features/blogs/blogEvents';
 import { track } from '@/lib/analytics/client';
 import type { QuestCard } from '@/lib/trip/cards';
 import { discardBlogDraft } from './actions';
@@ -94,7 +95,7 @@ function ComposerScreen({ store, saver, quests, writer }: ScreenProps) {
   }
 
   function preview() {
-    track('blog_previewed', { blog_id: store.getState().key });
+    track('blog_editor_action', editorActionProperties(store.getState().key, 'preview'));
     store.getState().setMode('preview');
     window.scrollTo({ top: 0 });
   }

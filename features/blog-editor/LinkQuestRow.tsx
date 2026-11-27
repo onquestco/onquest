@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useStore } from 'zustand';
 import { QuestsIcon } from '@/design-system/components/icons';
+import { editorActionProperties } from '@/features/blogs/blogEvents';
 import { track } from '@/lib/analytics/client';
 import type { QuestCard } from '@/lib/trip/cards';
 import type { BlogDraftSaver } from './blogDraftSaver';
@@ -34,13 +35,13 @@ export function LinkQuestRow({
 
   function choose(quest: QuestCard) {
     store.getState().change({ linkedQuestKey: quest.key });
-    track('blog_quest_linked', { blog_id: key, action: 'link' });
+    track('blog_editor_action', editorActionProperties(key, 'link_quest'));
     setOpen(false);
   }
 
   function remove() {
     store.getState().change({ linkedQuestKey: undefined });
-    track('blog_quest_linked', { blog_id: key, action: 'remove' });
+    track('blog_editor_action', editorActionProperties(key, 'remove_quest'));
   }
 
   async function createQuest() {

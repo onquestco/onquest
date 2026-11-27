@@ -1,47 +1,33 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { CLIENT_EVENTS, SERVER_EVENTS } from './taxonomy';
 import {
   OPTIONAL_OVERRIDES,
   commonPropertiesFromCsv,
   parseCsv,
   readEventRows,
-  renderTaxonomyModule,
   renderTaxonomyV2Module,
-  taxonomyFromCsv,
   taxonomyV2FromCsv,
   type EventRule,
 } from './taxonomyFromCsv';
-import { COMMON_PROPERTIES, EVENTS } from './taxonomyV2';
+import { COMMON_PROPERTIES, EVENTS } from './taxonomy';
+import { CLIENT_EVENTS, SERVER_EVENTS } from './taxonomyV1';
 
 const csv = (name: string) => readFileSync(join(process.cwd(), 'docs', 'analytics', `${name}.csv`), 'utf8');
 const generated = (name: string) => readFileSync(join(process.cwd(), 'lib', 'analytics', name), 'utf8');
 
-describe('taxonomy.ts', () => {
-  it('matches the CSV export (run npm run analytics after re-exporting the sheet)', () => {
-    const expected = renderTaxonomyModule(
-      taxonomyFromCsv(csv('client-events')),
-      taxonomyFromCsv(csv('server-events')),
-    );
-    expect(generated('taxonomy.ts')).toBe(expected);
-  });
-
-  it('reads enums, ranges, comma lists and events with common properties only', () => {
-    expect(CLIENT_EVENTS.app_opened.entry).toEqual({
+describe('taxonomyV1.ts (frozen for /ingest, spec §3.5)', () => {
+  it('still has the v1 rules old tabs send', () => {
+    expect(CLIENT_EVENTS.legal_page_viewed.page).toMatchObject({
       type: 'STRING',
-      required: true,
-      values: ['direct', 'shared_link', 'email', 'notification'],
+      values: ['privacy', 'terms'],
     });
+    expect(SERVER_EVENTS.blog_managed.action).toMatchObject({ type: 'STRING' });
     expect(CLIENT_EVENTS.photos_picked.count).toMatchObject({ type: 'INT64', min: 3, max: 15 });
-    expect(SERVER_EVENTS.profile_updated.fields).toMatchObject({
-      list: ['name', 'username', 'photo', 'city', 'bio'],
-    });
-    expect(CLIENT_EVENTS.settings_viewed).toEqual({});
   });
 });
 
-describe('taxonomyV2.ts', () => {
+describe('taxonomy.ts', () => {
   const header = csv('v2/events').split('\n')[0];
   const events: Record<string, EventRule> = EVENTS;
 
@@ -50,7 +36,7 @@ describe('taxonomyV2.ts', () => {
       taxonomyV2FromCsv(csv('v2/events')),
       commonPropertiesFromCsv(csv('v2/common')),
     );
-    expect(generated('taxonomyV2.ts')).toBe(expected);
+    expect(generated('taxonomy.ts')).toBe(expected);
   });
 
   it('has the sheet’s 72 events: 1 Live, 14 renamed, 57 to build', () => {

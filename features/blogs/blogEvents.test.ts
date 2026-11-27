@@ -1,16 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { SERVER_EVENTS } from '@/lib/analytics/taxonomy';
-import { propertyProblems } from '@/lib/analytics/validate';
+import { expectNoProblems, validateEvent } from '@/lib/analytics/validate';
 import { BlogDocumentSchema } from '@/lib/blog/schema';
 import {
   charsBucket,
-  deletedProperties,
+  commentPostedProperties,
+  commentsToggledProperties,
+  createStartedProperties,
+  draftDeletedProperties,
   draftSavedProperties,
-  managedProperties,
+  editorActionProperties,
+  likedProperties,
+  postedDeletedProperties,
   publishedProperties,
+  updatedProperties,
+  visibilityChangedProperties,
 } from './blogEvents';
 
-// Each blog server event's properties must pass the taxonomy, or trackServer drops the event.
+// Each builder fills every required property of its v2 event (analytics v2 §4.2), so nothing is
+// stripped or reported when it's sent.
 
 const KEY = '00000000-0000-4000-8000-0000000000c1';
 const photo = { id: '00000000-0000-4000-8000-0000000000b1', width: 1600, height: 1200 };
@@ -27,11 +34,30 @@ describe('charsBucket', () => {
   });
 });
 
+describe('blog_create_started', () => {
+  it('sends where the composer was opened from as click_loc', () => {
+    expect(createStartedProperties(KEY, 'create')).toEqual({ blog_id: KEY, click_loc: 0 });
+    expect(createStartedProperties(KEY, 'write_your_own')).toEqual({ blog_id: KEY, click_loc: 1 });
+    expectNoProblems('blog_create_started', createStartedProperties(KEY, 'write_your_own'));
+  });
+});
+
+describe('blog_editor_action', () => {
+  it('Link a Quest, Remove linked Quest and Preview (was blog_quest_linked, blog_previewed)', () => {
+    expect(editorActionProperties(KEY, 'link_quest')).toEqual({ blog_id: KEY, action: 3 });
+    expect(editorActionProperties(KEY, 'remove_quest')).toEqual({ blog_id: KEY, action: 7 });
+    expect(editorActionProperties(KEY, 'preview')).toEqual({ blog_id: KEY, action: 5 });
+    for (const action of ['link_quest', 'remove_quest', 'preview'] as const) {
+      expectNoProblems('blog_editor_action', editorActionProperties(KEY, action));
+    }
+  });
+});
+
 describe('blog_draft_saved', () => {
-  it('carries the band and the photo count, valid for the taxonomy', () => {
+  it('carries the band and the photo count', () => {
     const properties = draftSavedProperties(KEY, BlogDocumentSchema.parse({ body: 'Hello', photos: [photo] }));
-    expect(properties).toEqual({ blog_id: KEY, chars_bucket: '1-500', photos: 1 });
-    expect(propertyProblems(SERVER_EVENTS.blog_draft_saved, properties)).toEqual([]);
+    expect(properties).toEqual({ blog_id: KEY, chars_bucket: '1-500', photo_count: 1 });
+    expectNoProblems('blog_draft_saved', properties);
   });
 });
 
@@ -48,66 +74,108 @@ describe('blog_published', () => {
     const properties = publishedProperties(KEY, document, 'unlisted', NOW);
     expect(properties).toEqual({
       blog_id: KEY,
-      visibility: 'unlisted',
-      photos: 1,
+      visibility: 1,
+      photo_count: 1,
       chars_bucket: '501-2000',
-      has_quest: true,
-      has_place: true,
+      has_quest_flg: true,
+      has_place_flg: true,
       minutes_since_start: 30,
     });
-    expect(propertyProblems(SERVER_EVENTS.blog_published, properties)).toEqual([]);
+    expectNoProblems('blog_published', properties);
   });
 
-  it('leaves minutes_since_start out without a start, and is still valid', () => {
-    const properties = publishedProperties(KEY, BlogDocumentSchema.parse({ title: 'Goa', body: 'Hi' }), 'public', NOW);
-    expect(properties).toMatchObject({ has_quest: false, has_place: false, minutes_since_start: undefined });
-    expect(propertyProblems(SERVER_EVENTS.blog_published, properties)).toEqual([]);
+  it('an old draft with no startedAt is still sent, without minutes_since_start (spec §8)', () => {
+    // A draft stored before startedAt existed: the shape the database still holds.
+    const oldDraft = BlogDocumentSchema.parse({ title: 'Goa', body: 'Hi', photos: [] });
+    expect(oldDraft.startedAt).toBeUndefined();
+    const properties = publishedProperties(KEY, oldDraft, 'public', NOW);
+    expect(properties).toMatchObject({ visibility: 0, has_quest_flg: false, has_place_flg: false });
+    expect(properties.minutes_since_start).toBeUndefined();
+    expectNoProblems('blog_published', properties);
+    expect(validateEvent('blog_published', properties).properties).not.toHaveProperty('minutes_since_start');
   });
 });
 
-describe('blog_deleted', () => {
-  it('carries counts only, valid for the taxonomy', () => {
-    const empty = deletedProperties(KEY, BlogDocumentSchema.parse({}));
-    expect(empty).toEqual({ blog_id: KEY, status: 'draft', photos: 0, chars_bucket: '0', has_quest: false });
-    expect(propertyProblems(SERVER_EVENTS.blog_deleted, empty)).toEqual([]);
+describe('blog_updated', () => {
+  it('names the blog only (days_since_post is AN-09’s)', () => {
+    expect(updatedProperties(KEY)).toEqual({ blog_id: KEY });
+    expectNoProblems('blog_updated', updatedProperties(KEY));
+  });
+});
 
-    const full = deletedProperties(
+describe('content_deleted', () => {
+  it('a never-posted draft: counts only (was blog_deleted)', () => {
+    const empty = draftDeletedProperties(KEY, BlogDocumentSchema.parse({}));
+    expect(empty).toEqual({ content_type: 1, content_id: KEY, was_published_flg: false, photo_count: 0 });
+    expectNoProblems('content_deleted', empty);
+
+    const full = draftDeletedProperties(
       KEY,
       BlogDocumentSchema.parse({
         title: 'Goa',
         body: 'x'.repeat(10_000),
         photos: Array.from({ length: 10 }, (_, i) => ({ ...photo, id: `00000000-0000-4000-8000-00000000010${i}` })),
-        linkedQuestKey: '00000000-0000-4000-8000-0000000000a1',
       }),
     );
-    expect(full).toEqual({ blog_id: KEY, status: 'draft', photos: 10, chars_bucket: '5001-10000', has_quest: true });
-    expect(propertyProblems(SERVER_EVENTS.blog_deleted, full)).toEqual([]);
+    expect(full.photo_count).toBe(10);
+    expectNoProblems('content_deleted', full);
+  });
+
+  it('a posted blog (was blog_managed {action: delete})', () => {
+    expect(postedDeletedProperties(KEY)).toEqual({
+      content_type: 1,
+      content_id: KEY,
+      was_published_flg: true,
+    });
+    expectNoProblems('content_deleted', postedDeletedProperties(KEY));
   });
 });
 
-describe('blog_managed', () => {
-  const changes: [Parameters<typeof managedProperties>[1], string][] = [
-    [{ action: 'edit' }, 'none'],
-    [{ action: 'delete' }, 'none'],
-    [{ action: 'visibility', visibility: 'private' }, 'private'],
-    [{ action: 'comments', on: false }, 'off'],
-    [{ action: 'comments', on: true }, 'on'],
-  ];
+describe('visibility_changed and comments_toggled (were blog_managed)', () => {
+  it('send the new visibility as its code', () => {
+    const codes = { public: 0, unlisted: 1, private: 2 } as const;
+    for (const [visibility, code] of Object.entries(codes) as [keyof typeof codes, number][]) {
+      const properties = visibilityChangedProperties(KEY, visibility);
+      expect(properties).toEqual({ content_type: 1, content_id: KEY, to_visibility: code });
+      expectNoProblems('visibility_changed', properties);
+    }
+  });
 
-  it('names the action and the new value, valid for the taxonomy', () => {
-    for (const [change, value] of changes) {
-      const properties = managedProperties(KEY, change);
-      expect(properties).toEqual({ blog_id: KEY, action: change.action, value });
-      expect(propertyProblems(SERVER_EVENTS.blog_managed, properties)).toEqual([]);
+  it('send the comments switch as a flag', () => {
+    for (const on of [true, false]) {
+      expect(commentsToggledProperties(KEY, on)).toEqual({
+        content_type: 1,
+        content_id: KEY,
+        comments_on_flg: on,
+      });
+      expectNoProblems('comments_toggled', commentsToggledProperties(KEY, on));
     }
   });
 });
 
-describe('blog_liked and blog_comment_posted', () => {
-  it('are in the taxonomy with the properties the actions send', () => {
-    expect(
-      propertyProblems(SERVER_EVENTS.blog_liked, { blog_id: KEY, unlike: false, source: 'after_sign_in' }),
-    ).toEqual([]);
-    expect(propertyProblems(SERVER_EVENTS.blog_comment_posted, { blog_id: KEY, length: 300 })).toEqual([]);
+describe('content_liked (was blog_liked)', () => {
+  it('sends the source code and the count after the change', () => {
+    expect(likedProperties(KEY, true, 'blog_page', 4)).toEqual({
+      content_type: 1,
+      content_id: KEY,
+      unlike_flg: false,
+      source: 0,
+      like_count_after: 4,
+    });
+    expect(likedProperties(KEY, false, 'after_sign_in', 0)).toMatchObject({ unlike_flg: true, source: 3 });
+    expect(likedProperties(KEY, true, 'feed', 1).source).toBe(2);
+    for (const source of ['blog_page', 'feed', 'after_sign_in'] as const) {
+      expectNoProblems('content_liked', likedProperties(KEY, true, source, 1));
+    }
+  });
+});
+
+describe('comment_posted (was blog_comment_posted)', () => {
+  it('sends the length in code points, never the text', () => {
+    const properties = commentPostedProperties(KEY, '😀 Lovely');
+    expect(properties).toEqual({ content_type: 1, content_id: KEY, comment_length: 8 });
+    expect(JSON.stringify(properties)).not.toContain('Lovely');
+    expectNoProblems('comment_posted', properties);
+    expectNoProblems('comment_posted', commentPostedProperties(KEY, 'x'.repeat(300)));
   });
 });

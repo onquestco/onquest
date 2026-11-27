@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CLIENT_EVENTS } from './taxonomy';
+import { CLIENT_EVENTS } from './taxonomyV1';
 import { expectNoProblems, keepAllowed, propertyProblems, validateEvent, validateProperties } from './validate';
 
 describe('propertyProblems', () => {
