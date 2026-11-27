@@ -4,8 +4,10 @@ import Link from 'next/link';
 import { useState, useTransition, type FormEvent } from 'react';
 import { Button } from '@/design-system/components/Button';
 import { TextField } from '@/design-system/components/TextField';
+import { track } from '@/lib/analytics/client';
 import type { SignInReturn } from '@/lib/auth/next';
 import { signInWithEmail, signInWithGoogle } from './actions';
+import { signInClickProperties, type SignInMethod } from './signInProperties';
 
 // Email links need our own mail sender (Resend); until it's set up, Supabase only emails its own team,
 // so friends see Google only. Set NEXT_PUBLIC_EMAIL_SIGN_IN=on once email works.
@@ -35,7 +37,12 @@ export function LoginForm({
     });
   }
 
+  // Browser-side only, never counted as a sign-in: user_signed_in / user_signed_up are (spec §10).
+  const trackClick = (method: SignInMethod) =>
+    track('sign_in_click', signInClickProperties(method, signInReturn, new Date()));
+
   function continueWithGoogle() {
+    trackClick('google');
     startTransition(async () => {
       const result = await signInWithGoogle(signInReturn);
       if (result.ok) window.location.assign(result.data);
@@ -68,7 +75,14 @@ export function LoginForm({
           </Button>
         </form>
       ) : (
-        <Button variant="quiet" block onClick={() => setUsingEmail(true)}>
+        <Button
+          variant="quiet"
+          block
+          onClick={() => {
+            trackClick('email_link');
+            setUsingEmail(true);
+          }}
+        >
           Email me a sign-in link
         </Button>
       )}

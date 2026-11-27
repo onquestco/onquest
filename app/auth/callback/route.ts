@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { finishDeletionOnSignIn } from '@/features/account/finishDeletionOnSignIn';
 import { getMyProfile } from '@/features/account/getCurrentUser';
+import { sendSignInEvent } from '@/features/account/signInEvents';
 import { afterSignIn, readSignInReturn } from '@/lib/auth/next';
 import { absoluteUrl } from '@/lib/site';
 import { createServerSupabase } from '@/lib/supabase/server';
@@ -18,8 +19,8 @@ export async function GET(request: NextRequest) {
   const deleted = await finishDeletionOnSignIn(supabase);
   if (deleted) return NextResponse.redirect(absoluteUrl(deleted));
 
+  const signInReturn = readSignInReturn(request.nextUrl.searchParams);
   const hasProfile = Boolean(await getMyProfile(data.user.id));
-  return NextResponse.redirect(
-    absoluteUrl(afterSignIn(readSignInReturn(request.nextUrl.searchParams), hasProfile)),
-  );
+  sendSignInEvent({ method: 'google', userKey: data.user.id, hasProfile, signInReturn });
+  return NextResponse.redirect(absoluteUrl(afterSignIn(signInReturn, hasProfile)));
 }

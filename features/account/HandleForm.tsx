@@ -1,10 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useTransition, type FormEvent } from 'react';
+import { useRef, useState, useTransition, type FormEvent } from 'react';
 import { Button } from '@/design-system/components/Button';
 import { TextField } from '@/design-system/components/TextField';
+import { track } from '@/lib/analytics/client';
 import { setHandle } from './actions';
+import { usernameRejectedProperties, type UsernameRejection } from './onboardingProperties';
 
 /** `done`: where to go once the username is saved (the welcome screens, or back to a Quest). */
 export function HandleForm({ initialName, done }: { initialName: string; done: string }) {
@@ -13,16 +15,27 @@ export function HandleForm({ initialName, done }: { initialName: string; done: s
   const [name, setName] = useState(initialName);
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
+  // Refusals shown before the save, for username_set.rejected_attempts.
+  const rejectedAttempts = useRef(0);
+
+  function rejected(reason: UsernameRejection) {
+    rejectedAttempts.current += 1;
+    track('username_rejected', usernameRejectedProperties(reason, 'onboarding'));
+  }
 
   function save(event: FormEvent) {
     event.preventDefault();
     startTransition(async () => {
-      const result = await setHandle({ handle, name });
+      const analytics = { rejectedAttempts: rejectedAttempts.current };
+      const result = await setHandle({ handle, name, analytics });
       if (!result.ok) {
+        // Invalid input here is the handle's format: the name field is required and capped.
+        if (result.error === 'Invalid input') rejected('invalid');
         setError(
           result.error === 'Invalid input' ? 'Use 3–20 letters, numbers or underscores' : result.error,
         );
       } else if (!result.data.saved) {
+        rejected(result.data.rejected);
         setError(result.data.reason);
       } else {
         router.replace(done);

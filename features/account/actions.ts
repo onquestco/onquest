@@ -1,8 +1,10 @@
 'use server';
 
 import { updateTag } from 'next/cache';
+import { after } from 'next/server';
 import { z } from 'zod';
 import { action, type ActionResult } from '@/lib/action';
+import { trackServer } from '@/lib/analytics/server';
 import { readSignInReturn, withSignInReturn } from '@/lib/auth/next';
 import { HandleSchema, isReservedHandle } from '@/lib/handles';
 import { blogSocialTag, blogUrlTag, profileTag, profileUrlTag, tripSocialTag, tripUrlTag } from '@/lib/cacheTags';
@@ -11,6 +13,7 @@ import { avatarUrl } from '@/lib/storage';
 import { VisibilitySchema } from '@/lib/trip/schema';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { deleteAccount } from './accountDeletion';
+import { usernameSetProperties } from './onboardingProperties';
 
 // Error codes raised by public.save_profile (migration 8).
 const HANDLE_TAKEN = 'OQ423';
@@ -49,20 +52,36 @@ export async function signInWithGoogle(rawReturn?: unknown): Promise<ActionResul
     : { ok: true, data: data.url };
 }
 
+// For username_set (analytics v2): how many refusals the form showed before this save. Optional,
+// so old bundles still save; anything malformed is dropped rather than failing the save.
+const UsernameAnalyticsSchema = z
+  .object({ rejectedAttempts: z.number().int().min(0).max(1000) })
+  .optional()
+  .catch(undefined);
+
 const ProfileInputSchema = z.object({
   handle: HandleSchema,
   name: z.string().trim().min(1).max(60),
+  analytics: UsernameAnalyticsSchema,
 });
 
-export const setHandle = action(ProfileInputSchema, async ({ handle, name }, { db }) => {
-  if (isReservedHandle(handle)) return { saved: false as const, reason: 'That handle is reserved' };
+export const setHandle = action(ProfileInputSchema, async ({ handle, name, analytics }, { user, db }) => {
+  if (isReservedHandle(handle)) {
+    return { saved: false as const, reason: 'That handle is reserved', rejected: 'reserved' as const };
+  }
 
   // Creates the profile and claims the handle for good (handles are never reused).
   const { error } = await db.rpc('save_profile', { p_based_on: null, p_profile: { handle, name } });
-  if (error?.code === HANDLE_TAKEN) return { saved: false as const, reason: 'That handle is taken' };
+  if (error?.code === HANDLE_TAKEN) {
+    return { saved: false as const, reason: 'That handle is taken', rejected: 'taken' as const };
+  }
   // Already has a profile (onboarding finished in another tab): nothing left to do.
   if (error?.code === PROFILE_EXISTS) return { saved: true as const };
   if (error) throw new Error('Could not save profile');
+  // Only now that the username is saved (spec §10).
+  after(() =>
+    trackServer('username_set', user.id, usernameSetProperties(handle, true, analytics?.rejectedAttempts)),
+  );
   return { saved: true as const };
 });
 
@@ -76,6 +95,7 @@ const SaveProfileSchema = z.object({
   homeCity: z.string().trim().max(60),
   /** A new photo's id (uploaded to {userId}/avatar/{id}/), null to remove, or 'keep'. */
   avatarPhotoId: z.union([z.uuid(), z.null(), z.literal('keep')]),
+  analytics: UsernameAnalyticsSchema,
 });
 
 export const saveProfile = action(SaveProfileSchema, async (input, { user, db }) => {
@@ -110,6 +130,15 @@ export const saveProfile = action(SaveProfileSchema, async (input, { user, db })
   const handleChanged = current.handle !== input.handle;
   const shownChanged = handleChanged || current.name !== input.name || current.avatar_url !== avatar;
   await refreshAfterProfileSave(db, user.id, [current.handle, input.handle], shownChanged);
+  if (handleChanged) {
+    after(() =>
+      trackServer(
+        'username_set',
+        user.id,
+        usernameSetProperties(input.handle, false, input.analytics?.rejectedAttempts),
+      ),
+    );
+  }
   return { saved: true as const, savedAt: data as string, handleChanged };
 });
 

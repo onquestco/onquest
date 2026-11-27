@@ -1,7 +1,13 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { readSignInReturn, safeNext, type SignInIntent, type SignInReturn } from '@/lib/auth/next';
+import {
+  readSignInReturn,
+  safeNext,
+  type SignInIntent,
+  type SignInReturn,
+  type SignInSource,
+} from '@/lib/auth/next';
 
 // The sign-in popup (OQ-16): anyone can look around OnQuest signed out, and the popup opens when
 // they try to do something (like, comment, follow, create). One popup for the whole app, opened
@@ -19,11 +25,14 @@ export function askToSignIn({
   intent,
   next,
   ref,
-}: { intent?: SignInIntent; next?: string; ref?: string } = {}) {
+  source,
+}: { intent?: SignInIntent; next?: string; ref?: string; source?: SignInSource } = {}) {
   asking = {
     next: safeNext(next ?? `${window.location.pathname}${window.location.search}`),
     intent,
     ref,
+    // What opened sign-in, for analytics; worked out from intent and next when not given.
+    ...(source ? { source } : {}),
   };
   emit();
 }

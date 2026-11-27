@@ -24,6 +24,8 @@ type Props = {
   blogsEnabled?: boolean;
   /** Where the chooser was opened from, passed on to the composer for blog_create_started. */
   source?: BlogCreateSource;
+  /** For create_quest_click.is_first_quest_flg; undefined when it couldn't be read. */
+  hasPublishedQuest?: boolean;
 };
 
 /** create_option_click: `available_flg` is false for the "Releasing soon" blog tap. */
@@ -46,7 +48,7 @@ const blogCopy = (
  * The Create tab (the prototype's own screen): a Quest, the main thing, or a blog. "Write a blog"
  * opens the composer for people with access; everyone else keeps "Releasing soon" (PRD B1, rollout).
  */
-export function CreateChooser({ blogsEnabled = false, source = 'create' }: Props) {
+export function CreateChooser({ blogsEnabled = false, source = 'create', hasPublishedQuest }: Props) {
   const router = useRouter();
   const [blogNote, setBlogNote] = useState(false);
 
@@ -77,8 +79,7 @@ export function CreateChooser({ blogsEnabled = false, source = 'create' }: Props
           href="/quests/new?source=create_menu"
           onClick={() => {
             track('create_option_click', createOptionProperties('quest', blogsEnabled, currentFromScreen()));
-            // This screen doesn't know whether the person has published: is_first_quest_flg is left out.
-            trackCreateClick({ source: 'create_menu' });
+            trackCreateClick({ source: 'create_menu', hasPublishedQuest });
           }}
           className="flex flex-col gap-3.5 rounded-lg border-2 border-brand-strong bg-brand-wash p-4.5 shadow-brand"
         >

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { buttonClassName } from '@/design-system/components/Button';
+import { checkHasPublishedQuest } from '@/features/editor/firstQuestActions';
 import { trackCreateClick } from '@/features/editor/trackCreateClick';
 import { signInPath } from './socialActions';
 import { useQuestSocial } from './useQuestSocial';
@@ -24,6 +25,23 @@ export function MakeYourOwnBar() {
     return () => clearTimeout(timer);
   }, []);
 
+  // The cached page can't know whether the viewer has published: asked once they're known to be
+  // signed in, for create_quest_click.is_first_quest_flg (left out until it answers).
+  const [hasPublishedQuest, setHasPublishedQuest] = useState<boolean>();
+  const askFirstQuest = viewer.signedIn && !viewer.isOwner;
+  useEffect(() => {
+    if (!askFirstQuest) return;
+    let current = true;
+    void checkHasPublishedQuest({}).then((result) => {
+      if (current && result.ok && result.data.hasPublishedQuest !== null) {
+        setHasPublishedQuest(result.data.hasPublishedQuest);
+      }
+    });
+    return () => {
+      current = false;
+    };
+  }, [askFirstQuest]);
+
   if (viewer.isOwner) return null;
   // Tagged so the draft counts it as "Make your own Quest", not the Create menu.
   const href = viewer.signedIn
@@ -36,10 +54,9 @@ export function MakeYourOwnBar() {
       }`}
     >
       <div className="mx-auto max-w-lg">
-        {/* Someone else's Quest: whether the viewer has published isn't known here. */}
         <Link
           href={href}
-          onClick={() => trackCreateClick({ source: 'make_your_own', contentId: tripKey })}
+          onClick={() => trackCreateClick({ source: 'make_your_own', contentId: tripKey, hasPublishedQuest })}
           className={buttonClassName({ block: true })}
         >
           Make your own Quest
