@@ -58,6 +58,7 @@ vi.mock('@/features/account/getCurrentUser', () => ({
 vi.mock('./questRows', () => ({ loadOwnTrip: mocks.loadOwnTrip }));
 vi.mock('./refreshTrip', () => ({ refreshQuestPages: mocks.refreshQuestPages, refreshQuestSocial: vi.fn() }));
 vi.mock('@/lib/storage', () => ({
+  photoUrls: () => ({ thumb: 'thumb.webp', display: 'display.webp' }),
   listPhotoIds: async () => [],
   photoUploadedAt: vi.fn(),
   deletePhotoFiles: vi.fn(),
